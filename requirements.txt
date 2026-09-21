@@ -1,0 +1,10 @@
+pandas
+requests
+pdfplumber
+pyarrow
+fastparquet
+chromadb
+sentence-transformers
+fastapi
+uvicorn
+anthropic
