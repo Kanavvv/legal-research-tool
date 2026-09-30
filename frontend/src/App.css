@@ -1135,3 +1135,103 @@ html, body {
 }
 
 .newsletter-status.error { color: var(--red); }
+
+/* ---------- Welcome popup ---------- */
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+
+.welcome-overlay.entering { opacity: 1; }
+
+.welcome-modal {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  max-width: 440px;
+  width: 100%;
+  padding: 34px 30px 28px;
+  text-align: center;
+  border: 2px solid var(--rule);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  transform: scale(0.92) translateY(10px);
+  transition: transform 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.welcome-overlay.entering .welcome-modal {
+  transform: scale(1) translateY(0);
+}
+
+.welcome-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+
+.welcome-close:hover { color: var(--red); }
+
+.welcome-stamp {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  background: var(--red);
+  color: var(--paper);
+  font-family: "Special Elite", monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 5px 16px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+.welcome-headline {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 24px;
+  line-height: 1.3;
+  margin: 8px 0 12px;
+  color: var(--ink);
+}
+
+.welcome-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  margin: 0 0 22px;
+}
+
+.welcome-google-btn {
+  width: 100%;
+  font-size: 12.5px;
+  padding: 12px 18px;
+}
+
+.welcome-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--ink-dim);
+}
+
+.welcome-links a {
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.welcome-links a:hover { color: var(--red); }

@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 export default function Navbar({ theme, toggleTheme }) {
   const location = useLocation();
+  const { user } = useAuth();
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   return (
@@ -26,6 +28,9 @@ export default function Navbar({ theme, toggleTheme }) {
         <Link to="/" className={location.pathname === "/" ? "nav-link active" : "nav-link"}>The Docket</Link>
         <Link to="/argument-builder" className={location.pathname === "/argument-builder" ? "nav-link active" : "nav-link"}>Moot Court Desk</Link>
         <Link to="/about" className={location.pathname === "/about" ? "nav-link active" : "nav-link"}>About the Paper</Link>
+        <Link to="/account" className={location.pathname === "/account" ? "nav-link active" : "nav-link"}>
+          {user ? "My Desk" : "Sign In"}
+        </Link>
       </nav>
     </header>
   );
