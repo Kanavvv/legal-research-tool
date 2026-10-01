@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import TriviaGame from "../games/TriviaGame";
 import LatinMatchGame from "../games/LatinMatchGame";
 import VerdictGame from "../games/VerdictGame";
@@ -46,6 +47,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [sources, setSources] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
@@ -94,6 +96,7 @@ export default function Home() {
     setLoading(true);
     setError("");
     setAnswer("");
+    setIsStreaming(false);
     setSources([]);
     setHasSearched(true);
     setFeedbackGiven(null);
@@ -111,27 +114,95 @@ export default function Home() {
           level: readingLevel,
         }),
       });
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
 
-      const data = await res.json();
-      setAnswer(data.answer);
+      if (!res.ok) {
+        let detail = `Server responded with ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData.detail) detail = errData.detail;
+        } catch (_) {}
+        throw new Error(detail);
+      }
 
-      const uniqueSources = [];
-      const seen = new Set();
-      for (const s of data.sources || []) {
-        if (!seen.has(s.case_id)) {
-          seen.add(s.case_id);
-          uniqueSources.push(s);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let gotFirstContent = false;
+      let pendingText = "";
+      let flushTimer = null;
+
+      function flushPending() {
+        if (pendingText) {
+          const chunk = pendingText;
+          pendingText = "";
+          setAnswer((prev) => prev + chunk);
+        }
+        flushTimer = null;
+      }
+
+      function scheduleFlush() {
+        if (!flushTimer) {
+          flushTimer = setTimeout(flushPending, 30);
         }
       }
-      setSources(uniqueSources);
-      setStampKey((k) => k + 1);
-      setTimeout(() => playStamp(), 150);
-      saveToHistory(q);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (flushTimer) clearTimeout(flushTimer);
+          flushPending();
+          if (buffer.trim()) {
+            try {
+              const msg = JSON.parse(buffer);
+              if (msg.type === "delta") setAnswer((prev) => prev + msg.text);
+            } catch (_) {}
+          }
+          setIsStreaming(false);
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop(); // last (possibly incomplete) line stays in the buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const msg = JSON.parse(line);
+
+          if (msg.type === "sources") {
+            const uniqueSources = [];
+            const seen = new Set();
+            for (const s of msg.sources || []) {
+              if (!seen.has(s.case_id)) {
+                seen.add(s.case_id);
+                uniqueSources.push(s);
+              }
+            }
+            setSources(uniqueSources);
+          } else if (msg.type === "delta") {
+            if (!gotFirstContent) {
+              gotFirstContent = true;
+              setLoading(false); // reveal the article box now, text will keep growing
+              setIsStreaming(true);
+            }
+            pendingText += msg.text;
+            scheduleFlush();
+          } else if (msg.type === "error") {
+            throw new Error(msg.detail || "Something went wrong while writing the answer.");
+          } else if (msg.type === "done") {
+            if (flushTimer) clearTimeout(flushTimer);
+            flushPending();
+            setIsStreaming(false);
+            setStampKey((k) => k + 1);
+            setTimeout(() => playStamp(), 150);
+            saveToHistory(q);
+          }
+        }
+      }
     } catch (err) {
       setError(`The presses have jammed. Make sure the backend is running at ${API_URL}`);
     } finally {
       setLoading(false);
+      setIsStreaming(false);
     }
   }
 
@@ -297,7 +368,11 @@ export default function Home() {
           <div className="article-dateline">FROM THE LAW DESK</div>
           <div className="article-body">
             <div className="stamp">On the<br />Record</div>
-            <ReactMarkdown>{answer}</ReactMarkdown>
+            {isStreaming ? (
+              <div className="article-plain">{answer}</div>
+            ) : (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+            )}
           </div>
 
           {sources.length > 0 && (

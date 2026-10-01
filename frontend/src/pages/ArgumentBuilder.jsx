@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
@@ -93,7 +94,7 @@ export default function ArgumentBuilder() {
         <div className="article">
           <div className="article-dateline">FROM THE MOOT COURT DESK</div>
           <div className="article-body">
-            <ReactMarkdown>{brief}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
           </div>
 
           {sources.length > 0 && (

@@ -1235,3 +1235,40 @@ html, body {
 }
 
 .welcome-links a:hover { color: var(--red); }
+
+/* ---------- Markdown tables (from the AI's answers) ---------- */
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 14px;
+}
+
+.article-body th,
+.article-body td {
+  border: 1px solid var(--rule);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.article-body th {
+  background: var(--card);
+  font-family: "Special Elite", monospace;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.article-body tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--card) 40%, transparent);
+}
+
+/* ---------- Plain-text view while an answer is actively streaming ---------- */
+.article-plain {
+  white-space: pre-wrap;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+}
