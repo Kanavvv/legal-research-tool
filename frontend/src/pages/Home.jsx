@@ -7,6 +7,7 @@ import { useAuth } from "../AuthContext";
 import TriviaGame from "../games/TriviaGame";
 import LatinMatchGame from "../games/LatinMatchGame";
 import VerdictGame from "../games/VerdictGame";
+import OnThisDay from "../components/OnThisDay";
 import { playStamp } from "../sound";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
@@ -24,7 +25,26 @@ const SURPRISE_POOL = [
   { tag: "CRIMINAL", q: "What is the standard of proof required for a criminal conviction?" },
   { tag: "CONSTITUTIONAL", q: "How has the court interpreted the right to equality under Article 14?" },
   { tag: "FAMILY LAW", q: "What factors does the court consider in child custody disputes?" },
+  { tag: "EVIDENCE", q: "When is circumstantial evidence sufficient to convict someone?" },
+  { tag: "LABOUR", q: "What constitutes wrongful termination of employment in India?" },
+  { tag: "IP LAW", q: "What is the test for trademark infringement under Indian law?" },
+  { tag: "CONSUMER", q: "What remedies are available for deficiency in service under consumer law?" },
 ];
+
+/** Picks a daily-rotating set of headline questions from the pool -- the
+ * same set all day for everyone, but a different combination each day. */
+function getTodaysHeadlines(pool, count = 4) {
+  const start = new Date();
+  const dayOfYear = Math.floor(
+    (start - new Date(start.getFullYear(), 0, 0)) / 86400000
+  );
+  const offset = dayOfYear % pool.length;
+  const picks = [];
+  for (let i = 0; i < count; i++) {
+    picks.push(pool[(offset + i) % pool.length]);
+  }
+  return picks;
+}
 
 const HISTORY_KEY = "nyaya-search-history";
 
@@ -55,6 +75,7 @@ export default function Home() {
   const location = useLocation();
   const { user } = useAuth();
   const [favorited, setFavorited] = useState({}); // case_id -> true/false
+  const [todaysHeadlines] = useState(() => getTodaysHeadlines(SURPRISE_POOL));
   const [relatedOpen, setRelatedOpen] = useState({});
   const [relatedData, setRelatedData] = useState({});
 
@@ -394,7 +415,7 @@ export default function Home() {
             <button className="surprise-btn" onClick={surpriseMe}>Surprise Me &#127775;</button>
           </div>
           <div className="headlines-grid">
-            {EXAMPLE_QUESTIONS.map((item, i) => (
+            {todaysHeadlines.map((item, i) => (
               <button key={i} className="headline-item" onClick={() => runSearch(item.q)}>
                 <span className="headline-tag">{item.tag}</span>
                 <span className="headline-text">{item.q}</span>
@@ -414,6 +435,8 @@ export default function Home() {
           )}
         </div>
       )}
+
+      {!hasSearched && <OnThisDay />}
 
       {error && <div className="error-box">{error}</div>}
 

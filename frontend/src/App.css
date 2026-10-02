@@ -1378,3 +1378,48 @@ html, body {
   padding: 10px 12px;
   border-radius: 2px;
 }
+
+/* ---------- On This Day feature ---------- */
+.on-this-day {
+  max-width: 900px;
+  margin: 28px auto 0;
+  padding: 18px 24px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
+
+.otd-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 6px 0 4px;
+}
+
+.otd-meta {
+  font-size: 12px;
+  color: var(--ink-dim);
+  font-family: "Special Elite", monospace;
+  letter-spacing: 0.3px;
+}
+
+.otd-blurb {
+  font-family: Georgia, serif;
+  font-size: 14.5px;
+  font-style: italic;
+  color: var(--ink);
+  max-width: 600px;
+  margin: 10px auto 6px;
+  line-height: 1.6;
+}
+
+.otd-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--red);
+  text-decoration: none;
+}
+
+.otd-link:hover { text-decoration: underline; }
