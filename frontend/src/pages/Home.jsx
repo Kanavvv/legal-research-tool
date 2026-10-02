@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { authFetch } from "../authFetch";
+import { exportToWord } from "../exportToWord";
 import { useAuth } from "../AuthContext";
 import TriviaGame from "../games/TriviaGame";
 import LatinMatchGame from "../games/LatinMatchGame";
@@ -514,6 +515,12 @@ export default function Home() {
           <div className="article-actions">
             <button className="action-btn" onClick={copyAnswer}>
               {copyStatus || "Copy this report"}
+            </button>
+            <button
+              className="action-btn"
+              onClick={() => exportToWord({ title: question, markdown: answer, sources })}
+            >
+              Export to Word
             </button>
             <div className="feedback-row">
               <span>Useful?</span>

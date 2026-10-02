@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { exportToWord } from "../exportToWord";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
@@ -95,6 +96,15 @@ export default function ArgumentBuilder() {
           <div className="article-dateline">FROM THE MOOT COURT DESK</div>
           <div className="article-body">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
+          </div>
+
+          <div className="article-actions">
+            <button
+              className="action-btn"
+              onClick={() => exportToWord({ title: "Moot Court Brief", markdown: brief, sources, filename: "nyaya-moot-court-brief.docx" })}
+            >
+              Export to Word
+            </button>
           </div>
 
           {sources.length > 0 && (
