@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { authFetch } from "../authFetch";
+import { useAuth } from "../AuthContext";
 import TriviaGame from "../games/TriviaGame";
 import LatinMatchGame from "../games/LatinMatchGame";
 import VerdictGame from "../games/VerdictGame";
@@ -48,6 +51,25 @@ export default function Home() {
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const [favorited, setFavorited] = useState({}); // case_id -> true/false
+  const [relatedOpen, setRelatedOpen] = useState({});
+  const [relatedData, setRelatedData] = useState({});
+
+  async function toggleRelated(caseId) {
+    setRelatedOpen((prev) => ({ ...prev, [caseId]: !prev[caseId] }));
+    if (relatedData[caseId] !== undefined) return; // already fetched
+    setRelatedData((prev) => ({ ...prev, [caseId]: "loading" }));
+    try {
+      const res = await fetch(`${API_URL}/related/${encodeURIComponent(caseId)}`);
+      const data = await res.json();
+      setRelatedData((prev) => ({ ...prev, [caseId]: data.related || [] }));
+    } catch (_) {
+      setRelatedData((prev) => ({ ...prev, [caseId]: [] }));
+    }
+  }
   const [sources, setSources] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
@@ -76,7 +98,48 @@ export default function Home() {
       try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch (e) {}
       return updated;
     });
+    if (user) {
+      authFetch(`${API_URL}/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q }),
+      }).catch(() => {}); // best-effort, local history already covers the offline/signed-out case
+    }
   }
+
+  async function toggleFavorite(s) {
+    if (!user) {
+      navigate("/account");
+      return;
+    }
+    const isFav = favorited[s.case_id];
+    setFavorited((prev) => ({ ...prev, [s.case_id]: !isFav }));
+    try {
+      if (isFav) {
+        await authFetch(`${API_URL}/favorites/${encodeURIComponent(s.case_id)}`, { method: "DELETE" });
+      } else {
+        await authFetch(`${API_URL}/favorites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            case_id: s.case_id, title: s.title, citation: s.citation, source_url: s.source_url || "",
+          }),
+        });
+      }
+    } catch (_) {
+      setFavorited((prev) => ({ ...prev, [s.case_id]: isFav })); // revert on failure
+    }
+  }
+
+  useEffect(() => {
+    const rerun = location.state && location.state.rerunQuestion;
+    if (rerun) {
+      setQuestion(rerun);
+      runSearch(rerun);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   useEffect(() => {
     if (loading) {
@@ -397,6 +460,28 @@ export default function Home() {
                     <button className="cite-btn" onClick={() => copyCitation(s, i)}>
                       {citationCopied === i ? "Copied!" : "Copy Citation"}
                     </button>
+                    <button className="related-btn" onClick={() => toggleRelated(s.case_id)}>
+                      {relatedOpen[s.case_id] ? "Hide Related Cases" : "Related Cases"}
+                    </button>
+                    <button className="favorite-btn" onClick={() => toggleFavorite(s)}>
+                      {favorited[s.case_id] ? "\u2605 Saved" : "\u2606 Save"}
+                    </button>
+                    {relatedOpen[s.case_id] && (
+                      <div className="related-list">
+                        {relatedData[s.case_id] === "loading" ? (
+                          <div className="related-empty">Checking the index...</div>
+                        ) : relatedData[s.case_id] && relatedData[s.case_id].length > 0 ? (
+                          relatedData[s.case_id].map((r, j) => (
+                            <div key={j} className="related-item">
+                              <span className="related-title">{r.title}</span>
+                              <span className="related-citation">{r.citation}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="related-empty">No related cases found in the corpus yet.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1322,3 +1322,59 @@ html, body {
   color: var(--ink-dim);
   font-style: italic;
 }
+
+/* ---------- Save to Favorites button ---------- */
+.favorite-btn {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid var(--rule-light);
+  padding: 4px 10px;
+  margin-left: 6px;
+  font-family: "Special Elite", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.3px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.favorite-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ---------- My Desk: history & favorites ---------- */
+.desk-section {
+  max-width: 700px;
+  margin: 28px auto 0;
+  padding: 0 24px;
+}
+
+.desk-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.desk-history-item {
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--rule-light);
+  padding: 9px 12px;
+  font-family: Georgia, serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.desk-history-item:hover { border-color: var(--red); }
+
+.desk-favorite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--rule-light);
+  padding: 10px 12px;
+  border-radius: 2px;
+}

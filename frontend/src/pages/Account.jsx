@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   signInWithPopup,
@@ -8,6 +8,9 @@ import {
 } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { useAuth } from "../AuthContext";
+import { authFetch } from "../authFetch";
+
+const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 export default function Account() {
   const { user, signOutUser } = useAuth();
@@ -18,6 +21,32 @@ export default function Account() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [history, setHistory] = useState(null); // null = loading
+  const [favorites, setFavorites] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    authFetch(`${API_URL}/history`)
+      .then((res) => res && res.json())
+      .then((data) => setHistory(data ? data.history || [] : []))
+      .catch(() => setHistory([]));
+    authFetch(`${API_URL}/favorites`)
+      .then((res) => res && res.json())
+      .then((data) => setFavorites(data ? data.favorites || [] : []))
+      .catch(() => setFavorites([]));
+  }, [user]);
+
+  async function removeFavorite(caseId) {
+    setFavorites((prev) => prev.filter((f) => f.case_id !== caseId));
+    try {
+      await authFetch(`${API_URL}/favorites/${encodeURIComponent(caseId)}`, { method: "DELETE" });
+    } catch (_) {}
+  }
+
+  function rerunSearch(question) {
+    navigate("/", { state: { rerunQuestion: question } });
+  }
 
   async function handleGoogle() {
     setError("");
@@ -72,14 +101,57 @@ export default function Account() {
           <h1 className="headline">Welcome back</h1>
           <p className="deck">Signed in as {user.displayName || user.email}</p>
         </section>
-        <div className="submit-box" style={{ textAlign: "center", padding: "20px" }}>
-          <button
-            className="puzzle-next"
-            onClick={async () => { await signOutUser(); navigate("/"); }}
-          >
+
+        <div className="submit-box" style={{ textAlign: "center", padding: "16px" }}>
+          <button className="puzzle-next" onClick={async () => { await signOutUser(); navigate("/"); }}>
             Sign Out
           </button>
         </div>
+
+        <section className="desk-section">
+          <div className="footer-heading">Search History</div>
+          {history === null ? (
+            <div className="related-empty">Loading...</div>
+          ) : history.length === 0 ? (
+            <div className="related-empty">No searches saved yet &mdash; ask something on The Docket.</div>
+          ) : (
+            <div className="desk-list">
+              {history.map((q, i) => (
+                <button key={i} className="desk-history-item" onClick={() => rerunSearch(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="desk-section">
+          <div className="footer-heading">Favorite Cases</div>
+          {favorites === null ? (
+            <div className="related-empty">Loading...</div>
+          ) : favorites.length === 0 ? (
+            <div className="related-empty">No favorites saved yet &mdash; look for the Save button on a search result.</div>
+          ) : (
+            <div className="desk-list">
+              {favorites.map((f) => (
+                <div key={f.case_id} className="desk-favorite-item">
+                  <div>
+                    <div className="related-title">{f.title}</div>
+                    <div className="related-citation">{f.citation}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {f.source_url && (
+                      <a href={f.source_url} target="_blank" rel="noreferrer" className="related-btn" style={{ textDecoration: "none" }}>
+                        Read
+                      </a>
+                    )}
+                    <button className="favorite-btn" onClick={() => removeFavorite(f.case_id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     );
   }
