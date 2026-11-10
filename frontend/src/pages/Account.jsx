@@ -184,19 +184,19 @@ export default function Account() {
         <form onSubmit={handleEmailSubmit}>
           {mode === "signup" && (
             <div className="filter-field" style={{ marginBottom: "10px" }}>
-              <label>Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: "100%" }} />
+              <label htmlFor="account-name">Full Name</label>
+              <input id="account-name" autoComplete="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: "100%" }} />
             </div>
           )}
           <div className="filter-field" style={{ marginBottom: "10px" }}>
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%" }} />
+            <label htmlFor="account-email">Email</label>
+            <input id="account-email" autoComplete="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%" }} />
           </div>
           <div className="filter-field" style={{ marginBottom: "14px" }}>
-            <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={{ width: "100%" }} />
+            <label htmlFor="account-password">Password</label>
+            <input id="account-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={{ width: "100%" }} />
           </div>
-          {error && <div className="error-box" style={{ marginBottom: "14px" }}>{error}</div>}
+          {error && <div className="error-box" role="alert" style={{ marginBottom: "14px" }}>{error}</div>}
           <button type="submit" className="puzzle-next" style={{ width: "100%" }} disabled={loading}>
             {loading ? "..." : mode === "signup" ? "Create Account" : "Sign In"}
           </button>

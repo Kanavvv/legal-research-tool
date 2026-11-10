@@ -284,7 +284,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      setError(`The presses have jammed. Make sure the backend is running at ${API_URL}`);
+      setError("The presses have jammed — we couldn't file an answer just now. Check your connection and try again in a moment.");
     } finally {
       setLoading(false);
       setIsStreaming(false);
@@ -349,10 +349,11 @@ export default function Home() {
       )}
 
       <form onSubmit={handleSubmit} className="submit-box">
-        <div className="submit-label">Submit Your Query</div>
+        <label className="submit-label" htmlFor="home-question">Submit Your Query</label>
         <div className="submit-row">
           <SearchIcon />
           <input
+            id="home-question"
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -381,8 +382,9 @@ export default function Home() {
         {showFilters && (
           <div className="filters-panel">
             <div className="filter-field">
-              <label>Year</label>
+              <label htmlFor="filter-year">Year</label>
               <input
+                id="filter-year"
                 type="number"
                 placeholder="e.g. 2023"
                 value={filterYear}
@@ -390,16 +392,16 @@ export default function Home() {
               />
             </div>
             <div className="filter-field">
-              <label>Court</label>
-              <select value={filterCourt} onChange={(e) => setFilterCourt(e.target.value)}>
+              <label htmlFor="filter-court">Court</label>
+              <select id="filter-court" value={filterCourt} onChange={(e) => setFilterCourt(e.target.value)}>
                 <option value="">All Courts</option>
                 <option value="Supreme Court of India">Supreme Court of India</option>
                 <option value="Bombay High Court">Bombay High Court</option>
               </select>
             </div>
             <div className="filter-field">
-              <label>Type</label>
-              <select value={filterDocType} onChange={(e) => setFilterDocType(e.target.value)}>
+              <label htmlFor="filter-doctype">Type</label>
+              <select id="filter-doctype" value={filterDocType} onChange={(e) => setFilterDocType(e.target.value)}>
                 <option value="">Case Law &amp; Statutes</option>
                 <option value="judgment">Case Law Only</option>
                 <option value="statute">Statutes Only</option>
@@ -439,7 +441,7 @@ export default function Home() {
 
       {!hasSearched && <OnThisDay />}
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" role="alert">{error}</div>}
 
       {loading && (
         <div className="printing-block">

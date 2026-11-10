@@ -44,6 +44,8 @@ export default function Footer() {
           <form className="newsletter-form" onSubmit={handleSubscribe}>
             <input
               type="email"
+              aria-label="Email address for the newsletter"
+              autoComplete="email"
               placeholder="your.email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

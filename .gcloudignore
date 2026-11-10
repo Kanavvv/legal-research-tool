@@ -1,0 +1,17 @@
+.git/
+.gitignore
+corpus/
+corpus_hc/
+corpus_statutes/
+*.csv
+missing_from_index.csv
+indexed_case_ids.txt
+frontend/
+.DS_Store
+__pycache__/
+*.pyc
+*.bak
+node_modules/
+package.json
+package-lock.json
+chroma_db/
