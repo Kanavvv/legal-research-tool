@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import FadeVideo from "../ui/FadeVideo";
+import DoorScene from "../ui/DoorScene";
 import Reveal from "../ui/Reveal";
 import { Mark } from "../ui/Nav";
 import { prefersReducedMotion } from "../ui/motion";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
-const DOOR_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260808_112712_da9d53df-6d27-4b12-bdf6-aa9dc2622bdf.mp4";
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ export default function Footer() {
   return (
     <footer className="foot">
       <section className="door" aria-labelledby="door-title">
-        <FadeVideo src={DOOR_VIDEO} className="door-video" />
+        <DoorScene />
         <div className="door-scrim" aria-hidden="true" />
         <Reveal className="door-copy">
           <h2 id="door-title" className="door-title">Ask the question you've been <em>putting off</em>.</h2>
