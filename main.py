@@ -247,8 +247,18 @@ def ask_endpoint(request: AskRequest, req: Request):
         user_content = f"Question: {request.question}\n\nCase excerpts:\n\n{context_text}"
 
         sources_payload = [
-            {"title": meta["title"], "citation": meta["citation"], "case_id": meta["case_id"], "source_url": meta.get("source_url", "")}
-            for _, _, meta in results
+            {
+                "title": meta["title"],
+                "citation": meta["citation"],
+                "case_id": meta["case_id"],
+                "source_url": meta.get("source_url", ""),
+                # Extra fields for the frontend's depth view; all optional there
+                "score": round(float(score), 4),
+                "court": meta.get("court", ""),
+                "year": meta.get("year"),
+                "doc_type": meta.get("doc_type", "judgment"),
+            }
+            for score, _, meta in results
         ]
 
     def generate():

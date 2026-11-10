@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { playCorrect, playWrong, playClick } from "../sound";
 import { submitGameScore } from "../gameScore";
 import Leaderboard from "../components/Leaderboard";
@@ -29,21 +29,22 @@ function pickRandomQuestions(count = 6) {
   return shuffled.slice(0, count);
 }
 
-function Confetti() {
-  const pieces = Array.from({ length: 60 });
+// A column of bubbles rising out of the card for a near-perfect round
+function BubbleBurst() {
+  const [bubbles] = useState(() =>
+    Array.from({ length: 36 }, () => ({
+      left: Math.random() * 100,
+      size: 4 + Math.random() * 12,
+      delay: Math.random() * 0.6,
+      dur: 1.6 + Math.random() * 1.4,
+    }))
+  );
   return (
-    <div className="confetti-burst">
-      {pieces.map((_, i) => (
+    <div className="bubble-burst" aria-hidden="true">
+      {bubbles.map((b, i) => (
         <span
           key={i}
-          className="confetti-piece"
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 0.4}s`,
-            animationDuration: `${1.8 + Math.random() * 1.2}s`,
-            background: ["#9c2b2b", "#2f4f3e", "#c9a84c", "#1f3d30", "#e8ddc4"][i % 5],
-            transform: `rotate(${Math.random() * 360}deg)`,
-          }}
+          style={{ left: `${b.left}%`, width: b.size, height: b.size, animationDelay: `${b.delay}s`, animationDuration: `${b.dur}s` }}
         />
       ))}
     </div>
@@ -51,7 +52,7 @@ function Confetti() {
 }
 
 export default function TriviaGame() {
-  const [questions] = useState(() => pickRandomQuestions(6));
+  const [questions, setQuestions] = useState(() => pickRandomQuestions(6));
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
@@ -62,7 +63,6 @@ export default function TriviaGame() {
   const [popScore, setPopScore] = useState(false);
   const [gameResult, setGameResult] = useState(null); // backend response after submitting
   const [leaderboardKey, setLeaderboardKey] = useState(0);
-  const highScoreRef = useRef(null);
 
   function pick(i) {
     if (selected !== null) return;
@@ -103,7 +103,14 @@ export default function TriviaGame() {
   }
 
   function restart() {
-    window.location.reload(); // simplest way to reshuffle a fresh question set
+    setQuestions(pickRandomQuestions(6));
+    setCurrent(0);
+    setSelected(null);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setGameResult(null);
+    setDone(false);
   }
 
   const q = questions[current];
@@ -111,19 +118,19 @@ export default function TriviaGame() {
 
   return (
     <div className={`puzzle-box ${shake ? "shake" : ""}`}>
-      {isGreatScore && <Confetti />}
+      {isGreatScore && <BubbleBurst />}
       <div className="puzzle-number">01</div>
       <div className="puzzle-heading">
-        <h3><span className="puzzle-icon">&#128296;</span> The Daily Docket Quiz</h3>
+        <h3>Landmark quiz</h3>
         <p>Landmark Indian law, shuffled fresh every time. No looking things up.</p>
       </div>
 
       {!done ? (
         <>
           <div className="puzzle-progress-row">
-            <div className="puzzle-progress">Question {current + 1} of {questions.length} &middot; Score: {score}</div>
+            <div className="puzzle-progress">Question {current + 1} of {questions.length} · Score {score}</div>
             {streak >= 2 && (
-              <div className="streak-badge">&#128293; {streak} in a row</div>
+              <div className="streak-badge">{streak} in a row</div>
             )}
           </div>
           <div className="quiz-question">{q.q}</div>
@@ -135,7 +142,7 @@ export default function TriviaGame() {
                 else if (i === selected) cls += " wrong";
               }
               return (
-                <button key={i} className={cls} onClick={() => pick(i)}>
+                <button key={i} type="button" className={cls} onClick={() => pick(i)}>
                   {opt}
                   {selected !== null && i === q.answer && popScore && (
                     <span className="score-pop">+1</span>
@@ -145,14 +152,14 @@ export default function TriviaGame() {
             })}
           </div>
           {selected !== null && (
-            <div className="quiz-note">
+            <div className="quiz-note" role="status">
               {selected === q.answer ? "Correct. " : "Not quite. "}
               {q.note}
             </div>
           )}
           {selected !== null && (
-            <button className="puzzle-next" onClick={next}>
-              {current + 1 >= questions.length ? "See final score" : "Next question"} &rarr;
+            <button type="button" className="puzzle-next" onClick={next}>
+              {current + 1 >= questions.length ? "See final score" : "Next question"}
             </button>
           )}
         </>
@@ -160,26 +167,26 @@ export default function TriviaGame() {
         <div className="puzzle-result">
           <div className="puzzle-result-score">{score} / {questions.length}</div>
           <p>
-            {score === questions.length ? "Called to the bar with honours." : score >= questions.length - 2 ? "A respectable showing." : "Back to the library with you."}
+            {score === questions.length ? "A perfect dive. Called to the bar with honours." : score >= questions.length - 2 ? "A respectable showing." : "Back to the library with you."}
           </p>
           {bestStreak >= 3 && (
-            <div className="streak-badge" style={{ margin: "8px auto" }}>&#128293; Best streak this round: {bestStreak}</div>
+            <div className="streak-badge">Best run this round: {bestStreak}</div>
           )}
           {gameResult && gameResult.is_new_best && (
-            <div className="new-best-banner">&#127942; New personal best!</div>
+            <div className="new-best-banner">New personal best</div>
           )}
           {gameResult && gameResult.streak && gameResult.streak.current > 1 && (
-            <div className="new-best-banner" style={{ background: "var(--card)", color: "var(--ink)" }}>
-              &#128293; {gameResult.streak.current}-day play streak
+            <div className="new-best-banner new-best-banner--quiet">
+              {gameResult.streak.current}-day play streak
             </div>
           )}
           {!gameResult && (
-            <p className="related-empty" style={{ marginTop: "8px" }}>
+            <p className="muted">
               Sign in to save your streak and climb the leaderboard.
             </p>
           )}
-          <button className="puzzle-next" onClick={restart}>Play again, new questions &rarr;</button>
-          <div style={{ marginTop: "20px" }}>
+          <button type="button" className="puzzle-next" onClick={restart}>Play again with new questions</button>
+          <div>
             <Leaderboard refreshKey={leaderboardKey} />
           </div>
         </div>

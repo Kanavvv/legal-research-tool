@@ -1,15 +1,16 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { exportToWord } from "../exportToWord";
+import Sonar from "../ui/Sonar";
+import SourceList from "../ui/SourceList";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 const LOADING_MESSAGES = [
-  "Weighing both sides...",
-  "Digging up counterarguments...",
-  "Playing devil's advocate...",
-  "Consulting the archives...",
+  "Looking for precedents on your side…",
+  "Looking for the ones against you…",
+  "Weighing both sides…",
+  "Drafting the brief…",
 ];
 
 export default function ArgumentBuilder() {
@@ -47,89 +48,62 @@ export default function ArgumentBuilder() {
         if (!seen.has(s.case_id)) { seen.add(s.case_id); uniqueSources.push(s); }
       }
       setSources(uniqueSources);
-    } catch (err) {
-      setError("The presses have jammed — we couldn't build your argument just now. Check your connection and try again in a moment.");
+    } catch {
+      setError("We couldn't build your argument just now. Check your connection and try again in a moment.");
     } finally {
       clearInterval(interval);
       setLoading(false);
     }
   }
 
-  return (
-    <main className="page-body">
-      <section className="front-page">
-        <div className="kicker">MOOT COURT DESK</div>
-        <h1 className="headline">Argument Builder</h1>
-        <p className="deck">
-          Describe one side of a dispute. Nyaya will find real precedents supporting it
-          &mdash; and, just as importantly, the counterarguments a real opponent would raise.
-        </p>
-      </section>
+  async function exportWord() {
+    const { exportToWord } = await import("../exportToWord");
+    exportToWord({ title: "Moot Court Brief", markdown: brief, sources, filename: "nyaya-moot-court-brief.docx" });
+  }
 
-      <form onSubmit={handleSubmit} className="submit-box">
-        <label className="submit-label" htmlFor="argument-position">Describe Your Position</label>
+  return (
+    <main id="main" className="station">
+      <header className="station-head">
+        <h1 className="station-title">Build your <em>argument</em>.</h1>
+        <p className="station-lede">
+          Describe one side of a dispute. Nyaya finds real precedents that support it, and the counterarguments
+          your opponent will raise, so you walk into the moot court ready for both.
+        </p>
+      </header>
+
+      <form onSubmit={handleSubmit} className="instrument">
+        <label className="slot-label" htmlFor="argument-position">Your position</label>
         <textarea
           id="argument-position"
-          className="argument-textarea"
+          className="field-input field-input--area"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
-          placeholder="e.g. My client signed a lease for 3 years. The landlord wants to terminate early over a minor, curable breach. I'm arguing the termination is disproportionate and the lease should be specifically enforced."
+          placeholder="My client signed a three-year lease. The landlord wants to end it early over a small breach that can be fixed. I'm arguing termination is disproportionate."
           rows={5}
         />
-        <div className="argument-submit-row">
-          <button type="submit" disabled={loading}>
-            {loading ? "Building..." : "Build My Argument"}
+        <div className="rig-foot">
+          <button type="submit" className="primary-btn" disabled={loading || !position.trim()}>
+            {loading ? "Building…" : "Build the brief"}
           </button>
+          <p className="muted">{position.trim().split(/\s+/).filter(Boolean).length} words</p>
         </div>
       </form>
 
-      {error && <div className="error-box" role="alert">{error}</div>}
-
-      {loading && (
-        <div className="printing-block">
-          <div className="press-bars"><span /><span /><span /><span /><span /></div>
-          <div className="press-text">{LOADING_MESSAGES[msgIndex]}</div>
-        </div>
-      )}
+      {error && <div className="alert" role="alert">{error}</div>}
+      {loading && <Sonar text={LOADING_MESSAGES[msgIndex]} />}
 
       {brief && !loading && (
-        <div className="article">
-          <div className="article-dateline">FROM THE MOOT COURT DESK</div>
-          <div className="article-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
-          </div>
-
-          <div className="article-actions">
-            <button
-              className="action-btn"
-              onClick={() => exportToWord({ title: "Moot Court Brief", markdown: brief, sources, filename: "nyaya-moot-court-brief.docx" })}
-            >
-              Export to Word
-            </button>
-          </div>
-
-          {sources.length > 0 && (
-            <div className="clippings-section">
-              <div className="section-label">Sources Consulted ({sources.length})</div>
-              <div className="clippings-grid">
-                {sources.map((s, i) => (
-                  <div key={i} className="clipping" style={{ animationDelay: `${i * 0.06}s` }}>
-                    <a
-                      href={s.source_url || undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="clipping-link-wrap"
-                      onClick={(e) => { if (!s.source_url) e.preventDefault(); }}
-                    >
-                      <div className="clipping-badge">{s.case_id}</div>
-                      <div className="clipping-title">{s.title}</div>
-                      <div className="clipping-citation">{s.citation}</div>
-                    </a>
-                  </div>
-                ))}
-              </div>
+        <div className="result-grid">
+          <div className="result-main">
+            <article className="card answer">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
+            </article>
+            <div className="answer-actions">
+              <button type="button" className="ghost-btn" onClick={exportWord}>Export to Word</button>
+              <p className="disclaimer">A practice brief for study and moots, not legal advice.</p>
             </div>
-          )}
+          </div>
+          <SourceList title="Sources consulted" sources={sources} />
         </div>
       )}
     </main>

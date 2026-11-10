@@ -1,21 +1,23 @@
 import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { exportToWord } from "../exportToWord";
+import Sonar from "../ui/Sonar";
+import SourceList from "../ui/SourceList";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 const LOADING_MESSAGES = [
-  "Pulling both files...",
-  "Reading the fine print...",
-  "Weighing one against the other...",
-  "Drafting the comparison...",
+  "Pulling both judgments up from the wall…",
+  "Reading each one's reasoning…",
+  "Setting them side by side…",
+  "Writing the comparison…",
 ];
 
-function CasePicker({ label, selected, onSelect, onClear }) {
+function CasePicker({ id, label, selected, onSelect, onClear }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const timer = useRef(null);
 
   function handleChange(e) {
@@ -27,57 +29,63 @@ function CasePicker({ label, selected, onSelect, onClear }) {
       setOpen(false);
       return;
     }
+    setSearching(true);
     timer.current = setTimeout(async () => {
       try {
         const res = await fetch(`${API_URL}/case-search?q=${encodeURIComponent(val)}`);
         const data = await res.json();
         setResults(data.cases || []);
-        setOpen(true);
-      } catch (_) {
+      } catch {
         setResults([]);
       }
+      setOpen(true);
+      setSearching(false);
     }, 350);
   }
 
-  if (selected) {
-    return (
-      <div className="compare-slot">
-        <div className="compare-slot-label">{label}</div>
-        <div className="compare-selected">
-          <div>
-            <div className="related-title">{selected.title}</div>
-            <div className="related-citation">{selected.citation}</div>
-          </div>
-          <button className="favorite-btn" onClick={onClear}>Change</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="compare-slot">
-      <div className="compare-slot-label">{label}</div>
-      <input
-        type="text"
-        aria-label={`${label}: search for a case by name`}
-        placeholder="Search for a case by name..."
-        value={query}
-        onChange={handleChange}
-        onFocus={() => results.length > 0 && setOpen(true)}
-        className="compare-input"
-      />
-      {open && results.length > 0 && (
-        <div className="compare-dropdown">
-          {results.map((c) => (
-            <button
-              key={c.case_id}
-              className="compare-dropdown-item"
-              onClick={() => { onSelect(c); setOpen(false); setQuery(""); }}
-            >
-              <span className="related-title">{c.title}</span>
-              <span className="related-citation">{c.citation}</span>
-            </button>
-          ))}
+    <div className="slot">
+      <label className="slot-label" htmlFor={id}>{label}</label>
+      {selected ? (
+        <div className="slot-picked">
+          <div>
+            <p className="slot-title">{selected.title}</p>
+            <p className="mono muted">{selected.citation}</p>
+          </div>
+          <button type="button" className="ghost-btn" onClick={onClear}>Change</button>
+        </div>
+      ) : (
+        <div className="slot-search">
+          <input
+            id={id}
+            type="text"
+            className="field-input"
+            placeholder="Type at least 3 letters of a case name"
+            value={query}
+            onChange={handleChange}
+            onFocus={() => results.length > 0 && setOpen(true)}
+            onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+            autoComplete="off"
+            aria-expanded={open}
+            aria-controls={`${id}-list`}
+          />
+          {searching && <span className="slot-pinging" aria-hidden="true" />}
+          {open && (
+            <ul id={`${id}-list`} className="slot-list">
+              {results.length === 0 ? (
+                <li className="muted slot-none">No judgment by that name in the index.</li>
+              ) : (
+                results.map((c) => (
+                  <li key={c.case_id}>
+                    <button type="button" onClick={() => { onSelect(c); setOpen(false); setQuery(""); }}>
+                      <span>{c.title}</span>
+                      <span className="mono muted">{c.citation}</span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
         </div>
       )}
     </div>
@@ -112,7 +120,7 @@ export default function CompareCases() {
       });
       if (!res.ok) {
         let detail = `Server responded with ${res.status}`;
-        try { const d = await res.json(); if (d.detail) detail = d.detail; } catch (_) {}
+        try { const d = await res.json(); if (d.detail) detail = d.detail; } catch { /* not JSON */ }
         throw new Error(detail);
       }
 
@@ -164,80 +172,59 @@ export default function CompareCases() {
           }
         }
       }
-    } catch (err) {
-      setError("The presses have jammed. Please try again.");
+    } catch {
+      setError("We lost the line on the way down. Try the comparison again in a moment.");
     } finally {
       clearInterval(msgTimer);
       setLoading(false);
     }
   }
 
-  return (
-    <main className="page-body">
-      <section className="front-page">
-        <div className="kicker">SIDE BY SIDE</div>
-        <h1 className="headline">Compare Two Cases</h1>
-        <p className="deck">Pick two judgments and get a structured, side-by-side comparison of how they reasoned and ruled.</p>
-      </section>
+  async function exportWord() {
+    const { exportToWord } = await import("../exportToWord");
+    exportToWord({ title: "Case Comparison", markdown: result, sources, filename: "nyaya-case-comparison.docx" });
+  }
 
-      <div className="submit-box" style={{ padding: "24px" }}>
-        <CasePicker label="Case One" selected={caseA} onSelect={setCaseA} onClear={() => setCaseA(null)} />
-        <div style={{ height: "14px" }} />
-        <CasePicker label="Case Two" selected={caseB} onSelect={setCaseB} onClear={() => setCaseB(null)} />
-        <div style={{ textAlign: "center", marginTop: "18px" }}>
-          <button className="puzzle-next" onClick={runCompare} disabled={!caseA || !caseB || loading}>
-            {loading ? "..." : "Compare"}
+  return (
+    <main id="main" className="station">
+      <header className="station-head">
+        <h1 className="station-title">Compare two <em>judgments</em>.</h1>
+        <p className="station-lede">Pick two cases. Nyaya reads both and sets out, point by point, how each court reasoned and where they part ways.</p>
+      </header>
+
+      <div className="instrument compare-rig">
+        <CasePicker id="case-a" label="First judgment" selected={caseA} onSelect={setCaseA} onClear={() => setCaseA(null)} />
+        <div className="compare-vs" aria-hidden="true"><span>vs</span></div>
+        <CasePicker id="case-b" label="Second judgment" selected={caseB} onSelect={setCaseB} onClear={() => setCaseB(null)} />
+        <div className="rig-foot">
+          <button type="button" className="primary-btn" onClick={runCompare} disabled={!caseA || !caseB || loading || isStreaming}>
+            {loading || isStreaming ? "Comparing…" : "Compare"}
           </button>
+          {(!caseA || !caseB) && <p className="muted">Choose both judgments to start.</p>}
         </div>
       </div>
 
-      {error && <div className="error-box" role="alert">{error}</div>}
-
-      {loading && (
-        <div className="printing-block">
-          <div className="press-bars"><span /><span /><span /><span /><span /></div>
-          <div className="press-text">{LOADING_MESSAGES[msgIndex]}</div>
-        </div>
-      )}
+      {error && <div className="alert" role="alert">{error}</div>}
+      {loading && <Sonar text={LOADING_MESSAGES[msgIndex]} />}
 
       {result && !loading && (
-        <div className="article">
-          <div className="article-dateline">FROM THE LAW DESK</div>
-          <div className="article-body">
-            {isStreaming ? (
-              <div className="article-plain">{result}</div>
-            ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+        <div className="result-grid">
+          <div className="result-main">
+            <article className="card answer" aria-live="polite">
+              {isStreaming ? (
+                <div className="answer-plain">{result}<span className="caret" aria-hidden="true" /></div>
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+              )}
+            </article>
+            {!isStreaming && (
+              <div className="answer-actions">
+                <button type="button" className="ghost-btn" onClick={exportWord}>Export to Word</button>
+                <p className="disclaimer">Research help, not legal advice.</p>
+              </div>
             )}
           </div>
-
-          {!isStreaming && (
-            <div className="article-actions">
-              <button
-                className="action-btn"
-                onClick={() => exportToWord({ title: "Case Comparison", markdown: result, sources, filename: "nyaya-case-comparison.docx" })}
-              >
-                Export to Word
-              </button>
-            </div>
-          )}
-
-          {sources.length > 0 && (
-            <div className="clippings-section">
-              <div className="section-label">Cases Compared</div>
-              <div className="clippings-grid">
-                {sources.map((s, i) => (
-                  <div key={i} className="clipping" style={{ animationDelay: `${i * 0.06}s` }}>
-                    <div className="clipping-citation">{s.citation}</div>
-                    <div className="clipping-title">{s.title}</div>
-                    {s.source_url && s.source_url !== "nan" && (
-                      <a href={s.source_url} target="_blank" rel="noreferrer" className="clipping-link">Read full judgment &rarr;</a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <SourceList title="Judgments compared" sources={sources} />
         </div>
       )}
     </main>

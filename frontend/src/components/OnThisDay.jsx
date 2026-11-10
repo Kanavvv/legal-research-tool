@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Reveal from "../ui/Reveal";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
@@ -12,24 +13,25 @@ export default function OnThisDay() {
       .catch(() => setJudgment(null));
   }, []);
 
-  if (judgment === undefined || judgment === null) return null;
+  if (!judgment) return null;
 
-  const dateLabel = (() => {
-    const d = new Date(judgment.decision_date);
-    return isNaN(d) ? judgment.decision_date : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  })();
+  const d = new Date(judgment.decision_date);
+  const dateLabel = isNaN(d)
+    ? judgment.decision_date
+    : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="on-this-day">
-      <div className="kicker">ON THIS DAY</div>
-      <div className="otd-title">{judgment.title}</div>
-      <div className="otd-meta">{judgment.citation} &middot; decided {dateLabel}</div>
+    <Reveal as="section" className="card tool tool--day" style={{ "--i": 3 }} aria-labelledby="otd-title">
+      <div className="card-bar">
+        <span className="mono">on this day</span>
+        <span className="mono muted">{dateLabel}</span>
+      </div>
+      <h3 id="otd-title" className="otd-title">{judgment.title}</h3>
+      <p className="mono muted">{judgment.citation}</p>
       {judgment.blurb && <p className="otd-blurb">{judgment.blurb}</p>}
       {judgment.source_url && judgment.source_url !== "nan" && (
-        <a href={judgment.source_url} target="_blank" rel="noreferrer" className="otd-link">
-          Read the full judgment &rarr;
-        </a>
+        <a href={judgment.source_url} target="_blank" rel="noreferrer" className="text-link">Read the full judgment</a>
       )}
-    </div>
+    </Reveal>
   );
 }

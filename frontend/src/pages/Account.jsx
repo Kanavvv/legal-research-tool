@@ -41,7 +41,7 @@ export default function Account() {
     setFavorites((prev) => prev.filter((f) => f.case_id !== caseId));
     try {
       await authFetch(`${API_URL}/favorites/${encodeURIComponent(caseId)}`, { method: "DELETE" });
-    } catch (_) {}
+    } catch { /* will reappear on reload */ }
   }
 
   function rerunSearch(question) {
@@ -95,120 +95,114 @@ export default function Account() {
 
   if (user) {
     return (
-      <main className="page-body">
-        <section className="front-page">
-          <div className="kicker">YOUR DESK</div>
-          <h1 className="headline">Welcome back</h1>
-          <p className="deck">Signed in as {user.displayName || user.email}</p>
-        </section>
-
-        <div className="submit-box" style={{ textAlign: "center", padding: "16px" }}>
-          <button className="puzzle-next" onClick={async () => { await signOutUser(); navigate("/"); }}>
-            Sign Out
+      <main id="main" className="station">
+        <header className="station-head station-head--row">
+          <div>
+            <h1 className="station-title">Your <em>desk</em>.</h1>
+            <p className="station-lede">Signed in as {user.displayName || user.email}. Your questions and saved cases follow you across devices.</p>
+          </div>
+          <button type="button" className="btn btn--ghost" onClick={async () => { await signOutUser(); navigate("/"); }}>
+            Sign out
           </button>
+        </header>
+
+        <div className="desk">
+          <section className="card desk-card" aria-labelledby="desk-history">
+            <div className="card-bar">
+              <h2 id="desk-history" className="mono">recent questions</h2>
+              <span className="mono muted">{history ? history.length : ""}</span>
+            </div>
+            {history === null ? (
+              <p className="muted">Loading…</p>
+            ) : history.length === 0 ? (
+              <p className="muted">Nothing yet. Ask something on the home page and it will show up here.</p>
+            ) : (
+              <ul className="desk-list">
+                {history.map((q, i) => (
+                  <li key={i}>
+                    <button type="button" className="desk-row" onClick={() => rerunSearch(q)}>
+                      <span className="dot" aria-hidden="true" />
+                      <span>{q}</span>
+                      <span className="mono muted desk-go">ask again</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="card desk-card" aria-labelledby="desk-saved">
+            <div className="card-bar">
+              <h2 id="desk-saved" className="mono">saved cases</h2>
+              <span className="mono muted">{favorites ? favorites.length : ""}</span>
+            </div>
+            {favorites === null ? (
+              <p className="muted">Loading…</p>
+            ) : favorites.length === 0 ? (
+              <p className="muted">No saved cases. Use Save on any source in an answer.</p>
+            ) : (
+              <ul className="desk-list">
+                {favorites.map((f) => (
+                  <li key={f.case_id} className="desk-saved">
+                    <div>
+                      <p className="desk-saved-title">{f.title}</p>
+                      <p className="mono muted">{f.citation}</p>
+                    </div>
+                    <div className="desk-saved-actions">
+                      {f.source_url && <a href={f.source_url} target="_blank" rel="noreferrer" className="btn btn--ghost btn--sm">Read</a>}
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => removeFavorite(f.case_id)}>Remove</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
-
-        <section className="desk-section">
-          <div className="footer-heading">Search History</div>
-          {history === null ? (
-            <div className="related-empty">Loading...</div>
-          ) : history.length === 0 ? (
-            <div className="related-empty">No searches saved yet &mdash; ask something on The Docket.</div>
-          ) : (
-            <div className="desk-list">
-              {history.map((q, i) => (
-                <button key={i} className="desk-history-item" onClick={() => rerunSearch(q)}>
-                  {q}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="desk-section">
-          <div className="footer-heading">Favorite Cases</div>
-          {favorites === null ? (
-            <div className="related-empty">Loading...</div>
-          ) : favorites.length === 0 ? (
-            <div className="related-empty">No favorites saved yet &mdash; look for the Save button on a search result.</div>
-          ) : (
-            <div className="desk-list">
-              {favorites.map((f) => (
-                <div key={f.case_id} className="desk-favorite-item">
-                  <div>
-                    <div className="related-title">{f.title}</div>
-                    <div className="related-citation">{f.citation}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    {f.source_url && (
-                      <a href={f.source_url} target="_blank" rel="noreferrer" className="related-btn" style={{ textDecoration: "none" }}>
-                        Read
-                      </a>
-                    )}
-                    <button className="favorite-btn" onClick={() => removeFavorite(f.case_id)}>Remove</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
       </main>
     );
   }
 
   return (
-    <main className="page-body">
-      <section className="front-page">
-        <div className="kicker">READER'S DESK</div>
-        <h1 className="headline">{mode === "signup" ? "Create an Account" : "Sign In"}</h1>
-        <p className="deck">
-          Save your search history and favorite cases permanently, across any device.
-        </p>
-      </section>
+    <main id="main" className="station station--narrow">
+      <header className="station-head">
+        <h1 className="station-title">{mode === "signup" ? <>Open your <em>desk</em>.</> : <>Welcome <em>back</em>.</>}</h1>
+        <p className="station-lede">Sign in to keep your questions and saved cases across devices, and to put your game scores on the board.</p>
+      </header>
 
-      <div className="submit-box" style={{ padding: "24px" }}>
-        <button
-          type="button"
-          className="puzzle-next"
-          style={{ width: "100%", marginBottom: "16px" }}
-          onClick={handleGoogle}
-          disabled={loading}
-        >
+      <div className="card auth">
+        <button type="button" className="btn btn--lime btn--block" onClick={handleGoogle} disabled={loading}>
           Continue with Google
         </button>
 
-        <div style={{ textAlign: "center", color: "var(--ink-dim)", fontSize: "12px", margin: "12px 0" }}>
-          &mdash; or with email &mdash;
-        </div>
+        <p className="auth-or mono muted"><span>or with email</span></p>
 
-        <form onSubmit={handleEmailSubmit}>
+        <form onSubmit={handleEmailSubmit} className="auth-form">
           {mode === "signup" && (
-            <div className="filter-field" style={{ marginBottom: "10px" }}>
-              <label htmlFor="account-name">Full Name</label>
-              <input id="account-name" autoComplete="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: "100%" }} />
+            <div className="field">
+              <label htmlFor="account-name">Full name</label>
+              <input id="account-name" autoComplete="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
           )}
-          <div className="filter-field" style={{ marginBottom: "10px" }}>
+          <div className="field">
             <label htmlFor="account-email">Email</label>
-            <input id="account-email" autoComplete="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%" }} />
+            <input id="account-email" autoComplete="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
-          <div className="filter-field" style={{ marginBottom: "14px" }}>
+          <div className="field">
             <label htmlFor="account-password">Password</label>
-            <input id="account-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={{ width: "100%" }} />
+            <input id="account-password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </div>
-          {error && <div className="error-box" role="alert" style={{ marginBottom: "14px" }}>{error}</div>}
-          <button type="submit" className="puzzle-next" style={{ width: "100%" }} disabled={loading}>
-            {loading ? "..." : mode === "signup" ? "Create Account" : "Sign In"}
+          {error && <div className="alert" role="alert">{error}</div>}
+          <button type="submit" className="btn btn--light btn--block" disabled={loading}>
+            {loading ? "One moment…" : mode === "signup" ? "Create account" : "Sign in"}
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: "16px", fontSize: "13px" }}>
-          {mode === "signup" ? (
-            <>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setMode("signin"); setError(""); }}>Sign in</a></>
-          ) : (
-            <>New here? <a href="#" onClick={(e) => { e.preventDefault(); setMode("signup"); setError(""); }}>Create an account</a></>
-          )}
-        </div>
+        <p className="auth-switch">
+          {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
+          <button type="button" className="text-link" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(""); }}>
+            {mode === "signup" ? "Sign in" : "Create an account"}
+          </button>
+        </p>
       </div>
     </main>
   );

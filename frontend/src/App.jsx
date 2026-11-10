@@ -1,52 +1,74 @@
-import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./AuthContext";
-import Navbar from "./components/Navbar";
+import Currents from "./ui/Currents";
+import Nav from "./ui/Nav";
+import { prefersReducedMotion } from "./ui/motion";
 import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import ArgumentBuilder from "./pages/ArgumentBuilder";
-import CompareCases from "./pages/CompareCases";
-import StatuteBrowser from "./pages/StatuteBrowser";
-import Account from "./pages/Account";
 import WelcomeModal from "./components/WelcomeModal";
+import Home from "./pages/Home";
 import "./App.css";
 
-function App() {
-  const [theme, setTheme] = useState(() => localStorage.getItem("nyaya-theme") || "light");
+// Everything off the surface loads on demand
+const ArgumentBuilder = lazy(() => import("./pages/ArgumentBuilder"));
+const CompareCases = lazy(() => import("./pages/CompareCases"));
+const StatuteBrowser = lazy(() => import("./pages/StatuteBrowser"));
+const Account = lazy(() => import("./pages/Account"));
+const About = lazy(() => import("./pages/About"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
+function ScrollManager() {
+  const { pathname, hash } = useLocation();
   useEffect(() => {
-    localStorage.setItem("nyaya-theme", theme);
-  }, [theme]);
+    if (hash) {
+      // Wait a frame so the target section exists
+      requestAnimationFrame(() => {
+        const el = document.getElementById(hash.slice(1));
+        if (el) el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+      });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+  return null;
+}
 
-  function toggleTheme() {
-    setTheme((t) => (t === "light" ? "dark" : "light"));
-  }
+function Loading() {
+  return (
+    <div className="sonar" role="status">
+      <span className="sonar-ring" aria-hidden="true" />
+      <span className="sonar-text">Loading…</span>
+    </div>
+  );
+}
 
+export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="gazette" data-theme={theme}>
-          <div className="paper-texture" />
-          <Navbar theme={theme} toggleTheme={toggleTheme} />
+        <ScrollManager />
+        <Currents />
+        <div className="site">
+          <Nav />
           <WelcomeModal />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/argument-builder" element={<ArgumentBuilder />} />
-            <Route path="/compare" element={<CompareCases />} />
-            <Route path="/statutes" element={<StatuteBrowser />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-          </Routes>
-          <Footer />
+          <div className="column">
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/argument-builder" element={<ArgumentBuilder />} />
+                <Route path="/compare" element={<CompareCases />} />
+                <Route path="/statutes" element={<StatuteBrowser />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+              </Routes>
+            </Suspense>
+            <Footer />
+          </div>
         </div>
       </BrowserRouter>
     </AuthProvider>
   );
 }
-
-export default App;

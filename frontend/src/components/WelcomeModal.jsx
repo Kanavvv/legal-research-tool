@@ -75,7 +75,7 @@ export default function WelcomeModal() {
     try {
       await signInWithPopup(auth, googleProvider);
       dismiss();
-    } catch (err) {
+    } catch {
       setSigningIn(false);
     }
   }
@@ -98,19 +98,20 @@ export default function WelcomeModal() {
         aria-describedby="welcome-desc"
         onClick={(e) => e.stopPropagation()}
       >
-        <button type="button" className="welcome-close" onClick={dismiss} aria-label="Close">&times;</button>
-        <div className="welcome-stamp" aria-hidden="true">EXTRA</div>
-        <div className="kicker" style={{ marginTop: "6px" }}>SPECIAL NOTICE</div>
-        <h2 id="welcome-title" className="welcome-headline">Get Your Own Desk at the Gazette</h2>
+        <button type="button" className="welcome-close" onClick={dismiss} aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        </button>
+        <div className="welcome-gauge" aria-hidden="true"><span>000.0</span>m</div>
+        <h2 id="welcome-title" className="welcome-headline">Keep a log of every dive.</h2>
         <p id="welcome-desc" className="welcome-body">
-          Sign in to permanently save your search history and favorite cases &mdash;
-          synced across every device, kept for as long as you want it.
+          Sign in to save your questions and the cases you pin, synced across your devices,
+          and to put your Reef scores on the leaderboard.
         </p>
 
         <button
           ref={primaryRef}
           type="button"
-          className="puzzle-next welcome-google-btn"
+          className="primary-btn welcome-google-btn"
           onClick={handleGoogle}
           disabled={signingIn}
         >

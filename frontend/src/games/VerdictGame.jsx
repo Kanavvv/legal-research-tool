@@ -63,13 +63,13 @@ export default function VerdictGame() {
     <div className="puzzle-box">
       <div className="puzzle-number">03</div>
       <div className="puzzle-heading">
-        <h3><span className="puzzle-icon">&#128220;</span> Guess the Verdict</h3>
+        <h3>Guess the verdict</h3>
         <p>Illustrative scenarios based on real legal principles. What's the likely outcome?</p>
       </div>
 
       {!done ? (
         <>
-          <div className="puzzle-progress">Scenario {current + 1} of {SCENARIOS.length} &middot; Score: {score}</div>
+          <div className="puzzle-progress">Scenario {current + 1} of {SCENARIOS.length} · Score {score}</div>
           <div className="verdict-facts">{s.facts}</div>
           <div className="quiz-question">{s.question}</div>
           <div className="quiz-options">
@@ -80,16 +80,16 @@ export default function VerdictGame() {
                 else if (i === selected) cls += " wrong";
               }
               return (
-                <button key={i} className={cls} onClick={() => pick(i)}>
+                <button key={i} type="button" className={cls} onClick={() => pick(i)}>
                   {opt}
                 </button>
               );
             })}
           </div>
-          {selected !== null && <div className="quiz-note">{s.note}</div>}
+          {selected !== null && <div className="quiz-note" role="status">{s.note}</div>}
           {selected !== null && (
-            <button className="puzzle-next" onClick={next}>
-              {current + 1 >= SCENARIOS.length ? "See final score" : "Next scenario"} &rarr;
+            <button type="button" className="puzzle-next" onClick={next}>
+              {current + 1 >= SCENARIOS.length ? "See final score" : "Next scenario"}
             </button>
           )}
         </>
@@ -97,7 +97,7 @@ export default function VerdictGame() {
         <div className="puzzle-result">
           <div className="puzzle-result-score">{score} / {SCENARIOS.length}</div>
           <p>{score === SCENARIOS.length ? "You'd make a fine judge." : "Even judges get reversed on appeal sometimes."}</p>
-          <button className="puzzle-next" onClick={restart}>Try again &rarr;</button>
+          <button type="button" className="puzzle-next" onClick={restart}>Try again</button>
         </div>
       )}
     </div>

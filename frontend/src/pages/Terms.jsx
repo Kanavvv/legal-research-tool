@@ -1,6 +1,7 @@
 export default function Terms() {
   return (
-    <main className="prose-page">
+    <main id="main" className="station station--narrow">
+      <article className="prose prose--page">
       <h1>Terms of Service</h1>
       <p className="prose-meta">Last updated: [26/09/2026]</p>
 
@@ -62,6 +63,7 @@ export default function Terms() {
 
       <h2>10. Contact</h2>
       <p>Questions about these Terms can be directed to: [kanavkedia060@gmail.com]</p>
+      </article>
     </main>
   );
 }

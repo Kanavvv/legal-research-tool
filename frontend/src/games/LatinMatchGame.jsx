@@ -62,7 +62,7 @@ export default function LatinMatchGame() {
     <div className="puzzle-box">
       <div className="puzzle-number">02</div>
       <div className="puzzle-heading">
-        <h3><span className="puzzle-icon">&#9878;</span> Match the Maxim</h3>
+        <h3>Match the maxim</h3>
         <p>Pair each Latin term with its meaning. {matched.length} of {PAIRS.length} matched.</p>
       </div>
 
@@ -71,11 +71,12 @@ export default function LatinMatchGame() {
           const isFlipped = flipped.some((f) => f.id === card.id) || matched.includes(card.pairId);
           return (
             <button
+              type="button"
               key={card.id}
               className={`match-card ${isFlipped ? "flipped" : ""} ${matched.includes(card.pairId) ? "matched" : ""} ${card.type}`}
               onClick={() => handleClick(card)}
             >
-              {isFlipped ? card.label : <span className="card-back-icon">&#9878;</span>}
+              {isFlipped ? card.label : <span className="card-back-icon" aria-label="Face-down card" />}
             </button>
           );
         })}
@@ -84,7 +85,7 @@ export default function LatinMatchGame() {
       {allDone && (
         <div className="puzzle-result">
           <p>All matched. The bench is impressed.</p>
-          <button className="puzzle-next" onClick={restart}>Shuffle again &rarr;</button>
+          <button type="button" className="puzzle-next" onClick={restart}>Shuffle again</button>
         </div>
       )}
     </div>
