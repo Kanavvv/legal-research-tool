@@ -15,7 +15,8 @@ import { playSonar } from "../sound";
 import { pulseCurrents, smoothScrollTo } from "../ui/motion";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
-const HERO_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4";
+// Old books by candlelight. Pexels video 10425839, free to use under the Pexels license.
+const HERO_VIDEO = "https://videos.pexels.com/video-files/10425839/10425839-hd_1280_720_25fps.mp4";
 
 const QUESTION_POOL = [
   "What did the court decide about specific performance of a contract?",
