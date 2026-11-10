@@ -1,15 +1,12 @@
 """
-fetch_corpus.py
+fetch_corpus.py (v2 -- multi-year, resumable)
 
-STAGE 1 of the Legal Research Tool project.
+Downloads real Indian Supreme Court judgments across MULTIPLE years,
+extracts their text, and appends to a growing local corpus + manifest.
 
-Downloads a manageable batch of REAL Indian Supreme Court judgments
-(public domain, via AWS Open Data / eCourts) for a chosen year,
-extracts their text, and saves everything into a local "corpus"
-folder ready for the next stage (embeddings + vector search).
-
-Source: https://github.com/vanga/indian-supreme-court-judgments
-License: CC-BY-4.0
+Resumable: if you run this again (e.g. to add another year, or because
+a previous run was interrupted), it skips anything already downloaded
+rather than starting over.
 """
 
 import pandas as pd
@@ -19,86 +16,112 @@ import os
 import io
 import time
 
-YEAR = 2023          # which year of judgments to pull
-NUM_JUDGMENTS = 150  # how many to download for this first batch (keep small to start)
+# Add/remove years here. Run this script again any time to fetch more.
+# Covers ~30 years to reach toward the 4GB free-tier ceiling (~26,000 judgments).
+# Each year naturally yields roughly 800-1000 English judgments regardless of
+# NUM_PER_YEAR, so more years -- not a higher number here -- is what grows the corpus.
+# Which years to fetch. Override without editing this file, e.g.:
+#   FETCH_YEARS=2026,2025,2024 python3 fetch_corpus.py
+_years_env = os.environ.get("FETCH_YEARS", "").strip()
+if _years_env:
+    YEARS = [int(y) for y in _years_env.split(",") if y.strip()]
+else:
+    YEARS = list(range(2023, 1993, -1))  # 2023 down to 1994, newest first
+NUM_PER_YEAR = 5000  # effectively "take everything available" per year
 
 OUTPUT_DIR = "corpus"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+MANIFEST_PATH = f"{OUTPUT_DIR}/manifest.csv"
 os.makedirs(f"{OUTPUT_DIR}/text", exist_ok=True)
 
 BASE_URL = "https://indian-supreme-court-judgments.s3.amazonaws.com"
 
-# ---- Step 1: download that year's metadata (tells us what judgments exist) ----
-metadata_url = f"{BASE_URL}/metadata/parquet/year={YEAR}/metadata.parquet"
-print(f"Downloading metadata for {YEAR}...")
-resp = requests.get(metadata_url, timeout=60)
-resp.raise_for_status()
+# Load existing manifest so we know what's already done
+if os.path.exists(MANIFEST_PATH) and os.path.getsize(MANIFEST_PATH) > 0:
+    try:
+        existing_manifest = pd.read_csv(MANIFEST_PATH)
+        done_case_ids = set(existing_manifest["case_id"].astype(str))
+        print(f"Found existing manifest with {len(done_case_ids)} judgments already fetched.")
+    except Exception:
+        existing_manifest = pd.DataFrame()
+        done_case_ids = set()
+else:
+    existing_manifest = pd.DataFrame()
+    done_case_ids = set()
 
-temp_parquet = f"{OUTPUT_DIR}/_metadata_temp.parquet"
-with open(temp_parquet, "wb") as f:
-    f.write(resp.content)
+new_rows = []
 
-try:
-    metadata = pd.read_parquet(temp_parquet, engine="pyarrow")
-except Exception as e1:
-    print(f"pyarrow engine failed ({e1}), trying fastparquet instead...")
-    metadata = pd.read_parquet(temp_parquet, engine="fastparquet")
-
-print(f"Found {len(metadata)} total judgments for {YEAR}")
-
-# Keep only ones with English available (language codes are like "ENG,HIN,PUN")
-metadata = metadata[metadata["available_languages"].apply(lambda x: "ENG" in str(x).split(","))]
-metadata = metadata.head(NUM_JUDGMENTS).reset_index(drop=True)
-print(f"Downloading {len(metadata)} English judgments...\n")
-
-manifest_rows = []
-
-for i, row in metadata.iterrows():
-    case_id = row.get("case_id", f"case_{i}")
-    safe_id = str(case_id).replace("/", "_").replace(" ", "_")
-    pdf_path = row.get("path", "")
-
-    if not pdf_path:
+for YEAR in YEARS:
+    print(f"\n=== YEAR {YEAR} ===")
+    metadata_url = f"{BASE_URL}/metadata/parquet/year={YEAR}/metadata.parquet"
+    try:
+        resp = requests.get(metadata_url, timeout=60)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"  Could not fetch metadata for {YEAR}: {e}")
         continue
 
-    pdf_url = f"{BASE_URL}/data/pdf/year={YEAR}/english/{os.path.basename(pdf_path)}_EN.pdf"
+    temp_parquet = f"{OUTPUT_DIR}/_metadata_temp.parquet"
+    with open(temp_parquet, "wb") as f:
+        f.write(resp.content)
 
     try:
-        pdf_resp = requests.get(pdf_url, timeout=30)
-        if pdf_resp.status_code != 200:
-            print(f"  [{i+1}/{len(metadata)}] Skipped {safe_id} (not found)")
+        metadata = pd.read_parquet(temp_parquet, engine="pyarrow")
+    except Exception:
+        metadata = pd.read_parquet(temp_parquet, engine="fastparquet")
+
+    print(f"  Found {len(metadata)} total judgments for {YEAR}")
+
+    metadata = metadata[metadata["available_languages"].apply(lambda x: "ENG" in str(x).split(","))]
+    metadata = metadata[~metadata["case_id"].astype(str).isin(done_case_ids)]  # skip already-done
+    metadata = metadata.head(NUM_PER_YEAR).reset_index(drop=True)
+    print(f"  {len(metadata)} new English judgments to fetch this run")
+
+    for i, row in metadata.iterrows():
+        case_id = row.get("case_id", f"case_{YEAR}_{i}")
+        safe_id = str(case_id).replace("/", "_").replace(" ", "_")
+        pdf_path = row.get("path", "")
+        if not pdf_path:
             continue
 
-        with pdfplumber.open(io.BytesIO(pdf_resp.content)) as pdf:
-            text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+        pdf_url = f"{BASE_URL}/data/pdf/year={YEAR}/english/{os.path.basename(pdf_path)}_EN.pdf"
 
-        if len(text.strip()) < 200:
-            print(f"  [{i+1}/{len(metadata)}] Skipped {safe_id} (barely any text extracted)")
-            continue
+        try:
+            pdf_resp = requests.get(pdf_url, timeout=30)
+            if pdf_resp.status_code != 200:
+                continue
 
-        text_filename = f"{OUTPUT_DIR}/text/{safe_id}.txt"
-        with open(text_filename, "w", encoding="utf-8") as f:
-            f.write(text)
+            with pdfplumber.open(io.BytesIO(pdf_resp.content)) as pdf:
+                text = "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-        manifest_rows.append({
-            "case_id": case_id,
-            "title": row.get("title", ""),
-            "petitioner": row.get("petitioner", ""),
-            "respondent": row.get("respondent", ""),
-            "citation": row.get("citation", ""),
-            "court": row.get("court", ""),
-            "decision_date": row.get("decision_date", ""),
-            "text_file": text_filename,
-        })
-        print(f"  [{i+1}/{len(metadata)}] Saved {safe_id}")
+            if len(text.strip()) < 200:
+                continue
 
-    except Exception as e:
-        print(f"  [{i+1}/{len(metadata)}] Error on {safe_id}: {e}")
+            text_filename = f"{OUTPUT_DIR}/text/{safe_id}.txt"
+            with open(text_filename, "w", encoding="utf-8") as f:
+                f.write(text)
 
-    time.sleep(0.2)  # be polite to the server, don't hammer it
+            new_rows.append({
+                "case_id": case_id, "title": row.get("title", ""),
+                "petitioner": row.get("petitioner", ""), "respondent": row.get("respondent", ""),
+                "citation": row.get("citation", ""), "court": row.get("court", ""),
+                "decision_date": row.get("decision_date", ""), "text_file": text_filename,
+                "year": YEAR, "source_url": pdf_url,
+            })
 
-manifest = pd.DataFrame(manifest_rows)
-manifest.to_csv(f"{OUTPUT_DIR}/manifest.csv", index=False)
+            if len(new_rows) % 50 == 0:
+                print(f"    ...{len(new_rows)} new judgments saved so far this run")
 
-print(f"\nDone. Saved {len(manifest)} judgments with text to {OUTPUT_DIR}/text/")
-print(f"Manifest (case info) saved to {OUTPUT_DIR}/manifest.csv")
+        except Exception as e:
+            pass
+
+        time.sleep(0.15)
+
+    # Save progress after EVERY year, so pressing Control+C never loses
+    # everything -- at worst you lose the current year's partial progress
+    new_df = pd.DataFrame(new_rows)
+    full_manifest = pd.concat([existing_manifest, new_df], ignore_index=True) if len(existing_manifest) else new_df
+    full_manifest.to_csv(MANIFEST_PATH, index=False)
+    print(f"  Saved progress: {len(full_manifest)} total judgments in manifest so far")
+
+print(f"\nDone. Added {len(new_rows)} new judgments this run.")
+print(f"Total judgments in corpus now: {len(full_manifest)}")

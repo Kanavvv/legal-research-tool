@@ -9,6 +9,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ArgumentBuilder from "./pages/ArgumentBuilder";
 import CompareCases from "./pages/CompareCases";
+import StatuteBrowser from "./pages/StatuteBrowser";
 import Account from "./pages/Account";
 import WelcomeModal from "./components/WelcomeModal";
 import "./App.css";
@@ -35,6 +36,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/argument-builder" element={<ArgumentBuilder />} />
             <Route path="/compare" element={<CompareCases />} />
+            <Route path="/statutes" element={<StatuteBrowser />} />
             <Route path="/account" element={<Account />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />

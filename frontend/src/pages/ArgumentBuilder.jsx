@@ -48,7 +48,7 @@ export default function ArgumentBuilder() {
       }
       setSources(uniqueSources);
     } catch (err) {
-      setError(`The presses have jammed. Make sure the backend is running at ${API_URL}`);
+      setError("The presses have jammed — we couldn't build your argument just now. Check your connection and try again in a moment.");
     } finally {
       clearInterval(interval);
       setLoading(false);
@@ -67,8 +67,9 @@ export default function ArgumentBuilder() {
       </section>
 
       <form onSubmit={handleSubmit} className="submit-box">
-        <div className="submit-label">Describe Your Position</div>
+        <label className="submit-label" htmlFor="argument-position">Describe Your Position</label>
         <textarea
+          id="argument-position"
           className="argument-textarea"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
@@ -82,7 +83,7 @@ export default function ArgumentBuilder() {
         </div>
       </form>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" role="alert">{error}</div>}
 
       {loading && (
         <div className="printing-block">

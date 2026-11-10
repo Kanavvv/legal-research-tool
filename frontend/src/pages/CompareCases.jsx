@@ -59,6 +59,7 @@ function CasePicker({ label, selected, onSelect, onClear }) {
       <div className="compare-slot-label">{label}</div>
       <input
         type="text"
+        aria-label={`${label}: search for a case by name`}
         placeholder="Search for a case by name..."
         value={query}
         onChange={handleChange}
@@ -190,7 +191,7 @@ export default function CompareCases() {
         </div>
       </div>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box" role="alert">{error}</div>}
 
       {loading && (
         <div className="printing-block">

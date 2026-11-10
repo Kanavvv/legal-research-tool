@@ -3,10 +3,11 @@ requests
 pdfplumber
 pyarrow
 fastparquet
-chromadb
+qdrant-client
+sentence-transformers
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
-sentence-transformers
 fastapi
 uvicorn
 anthropic
+firebase-admin

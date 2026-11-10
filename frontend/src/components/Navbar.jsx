@@ -28,6 +28,7 @@ export default function Navbar({ theme, toggleTheme }) {
         <Link to="/" className={location.pathname === "/" ? "nav-link active" : "nav-link"}>The Docket</Link>
         <Link to="/argument-builder" className={location.pathname === "/argument-builder" ? "nav-link active" : "nav-link"}>Moot Court Desk</Link>
         <Link to="/compare" className={location.pathname === "/compare" ? "nav-link active" : "nav-link"}>Compare Cases</Link>
+        <Link to="/statutes" className={location.pathname === "/statutes" ? "nav-link active" : "nav-link"}>Statute Browser</Link>
         <Link to="/about" className={location.pathname === "/about" ? "nav-link active" : "nav-link"}>About the Paper</Link>
         <Link to="/account" className={location.pathname === "/account" ? "nav-link active" : "nav-link"}>
           {user ? "My Desk" : "Sign In"}

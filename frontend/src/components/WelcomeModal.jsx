@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
@@ -12,6 +12,9 @@ export default function WelcomeModal() {
   const [visible, setVisible] = useState(false);
   const [entering, setEntering] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
+  const modalRef = useRef(null);
+  const primaryRef = useRef(null);
+  const returnFocusRef = useRef(null);
 
   useEffect(() => {
     if (loading) return;
@@ -22,6 +25,44 @@ export default function WelcomeModal() {
     const t = setTimeout(() => setEntering(true), 20);
     return () => clearTimeout(t);
   }, [loading, user]);
+
+  // While open: move focus in, keep Tab inside, close on Escape,
+  // then hand focus back to wherever it was.
+  useEffect(() => {
+    if (!visible) return;
+    returnFocusRef.current = document.activeElement;
+    primaryRef.current?.focus();
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        dismiss();
+        return;
+      }
+      if (e.key !== "Tab" || !modalRef.current) return;
+      const focusable = modalRef.current.querySelectorAll(
+        'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      const el = returnFocusRef.current;
+      if (el && typeof el.focus === "function" && document.contains(el)) el.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   function dismiss() {
     sessionStorage.setItem(SEEN_KEY, "1");
@@ -48,24 +89,38 @@ export default function WelcomeModal() {
 
   return (
     <div className={`welcome-overlay ${entering ? "entering" : ""}`} onClick={dismiss}>
-      <div className="welcome-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="welcome-close" onClick={dismiss} aria-label="Close">&times;</button>
-        <div className="welcome-stamp">EXTRA</div>
+      <div
+        ref={modalRef}
+        className="welcome-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="welcome-title"
+        aria-describedby="welcome-desc"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="welcome-close" onClick={dismiss} aria-label="Close">&times;</button>
+        <div className="welcome-stamp" aria-hidden="true">EXTRA</div>
         <div className="kicker" style={{ marginTop: "6px" }}>SPECIAL NOTICE</div>
-        <h2 className="welcome-headline">Get Your Own Desk at the Gazette</h2>
-        <p className="welcome-body">
+        <h2 id="welcome-title" className="welcome-headline">Get Your Own Desk at the Gazette</h2>
+        <p id="welcome-desc" className="welcome-body">
           Sign in to permanently save your search history and favorite cases &mdash;
           synced across every device, kept for as long as you want it.
         </p>
 
-        <button className="puzzle-next welcome-google-btn" onClick={handleGoogle} disabled={signingIn}>
-          {signingIn ? "..." : "Continue with Google"}
+        <button
+          ref={primaryRef}
+          type="button"
+          className="puzzle-next welcome-google-btn"
+          onClick={handleGoogle}
+          disabled={signingIn}
+        >
+          {signingIn ? "Opening Google sign-in…" : "Continue with Google"}
         </button>
 
         <div className="welcome-links">
-          <a href="#" onClick={(e) => { e.preventDefault(); goToEmailSignIn(); }}>Sign in with email instead</a>
-          <span>&middot;</span>
-          <a href="#" onClick={(e) => { e.preventDefault(); dismiss(); }}>Not today</a>
+          <button type="button" onClick={goToEmailSignIn}>Sign in with email instead</button>
+          <span aria-hidden="true">&middot;</span>
+          <button type="button" onClick={dismiss}>Not today</button>
         </div>
       </div>
     </div>
