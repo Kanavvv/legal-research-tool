@@ -13,28 +13,24 @@ export default function Leaderboard({ refreshKey }) {
   }, [refreshKey]);
 
   if (rows === null) return null;
-  if (rows.length === 0) {
-    return (
-      <div className="leaderboard-box">
-        <div className="section-label">Leaderboard</div>
-        <div className="related-empty">No scores yet &mdash; be the first on the board.</div>
-      </div>
-    );
-  }
 
   return (
-    <div className="leaderboard-box">
-      <div className="section-label">Leaderboard</div>
-      <div className="leaderboard-list">
-        {rows.map((r, i) => (
-          <div key={i} className="leaderboard-row">
-            <span className="leaderboard-rank">{i + 1}</span>
-            <span className="leaderboard-name">{r.displayName}</span>
-            {r.streak > 1 && <span className="leaderboard-streak">&#128293;{r.streak}</span>}
-            <span className="leaderboard-score">{r.totalScore} pts</span>
-          </div>
-        ))}
-      </div>
+    <div className="board">
+      <h4 className="board-title">Deepest divers</h4>
+      {rows.length === 0 ? (
+        <p className="muted">No scores yet. Be the first on the board.</p>
+      ) : (
+        <ol className="board-list">
+          {rows.map((r, i) => (
+            <li key={i} className="board-row">
+              <span className="board-rank">{String(i + 1).padStart(2, "0")}</span>
+              <span className="board-name">{r.displayName}</span>
+              {r.streak > 1 && <span className="board-streak">{r.streak}-day streak</span>}
+              <span className="board-score">{r.totalScore} pts</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

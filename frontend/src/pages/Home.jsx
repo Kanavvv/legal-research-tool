@@ -1,123 +1,116 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { authFetch } from "../authFetch";
-import { exportToWord } from "../exportToWord";
 import { useAuth } from "../AuthContext";
 import TriviaGame from "../games/TriviaGame";
 import LatinMatchGame from "../games/LatinMatchGame";
 import VerdictGame from "../games/VerdictGame";
 import OnThisDay from "../components/OnThisDay";
-import { playStamp } from "../sound";
+import Pipeline from "../ui/Pipeline";
+import Reveal from "../ui/Reveal";
+import FadeVideo from "../ui/FadeVideo";
+import { playSonar } from "../sound";
+import { pulseCurrents, smoothScrollTo } from "../ui/motion";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
+const HERO_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4";
 
-const EXAMPLE_QUESTIONS = [
-  { tag: "CONTRACTS", q: "What did the court decide about specific performance of a contract?" },
-  { tag: "COMMERCIAL", q: "What did the court say about termination of a dealership agreement?" },
-  { tag: "ARBITRATION", q: "What is the standard for judicial interference with an arbitral award?" },
-  { tag: "TORTS", q: "How does the court determine compensation in motor accident claims?" },
+const QUESTION_POOL = [
+  "What did the court decide about specific performance of a contract?",
+  "What did the court say about termination of a dealership agreement?",
+  "What is the standard for judicial interference with an arbitral award?",
+  "How does the court determine compensation in motor accident claims?",
+  "What did the court say about adverse possession claims?",
+  "What is the standard of proof required for a criminal conviction?",
+  "How has the court interpreted the right to equality under Article 14?",
+  "What factors does the court consider in child custody disputes?",
+  "When is circumstantial evidence sufficient to convict someone?",
+  "What constitutes wrongful termination of employment in India?",
+  "What is the test for trademark infringement under Indian law?",
+  "What remedies are available for deficiency in service under consumer law?",
 ];
-
-const SURPRISE_POOL = [
-  ...EXAMPLE_QUESTIONS,
-  { tag: "PROPERTY", q: "What did the court say about adverse possession claims?" },
-  { tag: "CRIMINAL", q: "What is the standard of proof required for a criminal conviction?" },
-  { tag: "CONSTITUTIONAL", q: "How has the court interpreted the right to equality under Article 14?" },
-  { tag: "FAMILY LAW", q: "What factors does the court consider in child custody disputes?" },
-  { tag: "EVIDENCE", q: "When is circumstantial evidence sufficient to convict someone?" },
-  { tag: "LABOUR", q: "What constitutes wrongful termination of employment in India?" },
-  { tag: "IP LAW", q: "What is the test for trademark infringement under Indian law?" },
-  { tag: "CONSUMER", q: "What remedies are available for deficiency in service under consumer law?" },
-];
-
-/** Picks a daily-rotating set of headline questions from the pool -- the
- * same set all day for everyone, but a different combination each day. */
-function getTodaysHeadlines(pool, count = 4) {
-  const start = new Date();
-  const dayOfYear = Math.floor(
-    (start - new Date(start.getFullYear(), 0, 0)) / 86400000
-  );
-  const offset = dayOfYear % pool.length;
-  const picks = [];
-  for (let i = 0; i < count; i++) {
-    picks.push(pool[(offset + i) % pool.length]);
-  }
-  return picks;
-}
 
 const HISTORY_KEY = "nyaya-search-history";
 
-const LOADING_MESSAGES = [
-  "Setting the type...",
-  "Consulting the archives...",
-  "The presses are running...",
-  "Fact-checking with the bench...",
-  "Inking the final draft...",
-];
+function linkCitations(md) {
+  // [Source 3] becomes a link to the matching source card
+  return md.replace(/\[Source (\d+)\]/g, "[Source $1](#src-$1)");
+}
 
-function SearchIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8"/>
-      <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  );
+function relevance(sources) {
+  const scores = sources.map((s) => (typeof s.score === "number" ? s.score : null));
+  if (scores.some((v) => v === null)) {
+    return sources.map((_, i) => 1 - (i / Math.max(1, sources.length)) * 0.75);
+  }
+  const hi = Math.max(...scores);
+  const lo = Math.min(...scores);
+  return scores.map((v) => (hi === lo ? 1 : 0.25 + ((v - lo) / (hi - lo)) * 0.75));
+}
+
+function readHistory() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    // Older versions stored plain strings
+    return raw.map((r) => (typeof r === "string" ? { q: r } : r)).filter((r) => r && r.q);
+  } catch {
+    return [];
+  }
 }
 
 export default function Home() {
-  const [question, setQuestion] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [favorited, setFavorited] = useState({}); // case_id -> true/false
-  const [todaysHeadlines] = useState(() => getTodaysHeadlines(SURPRISE_POOL));
+
+  const [question, setQuestion] = useState("");
+  const [asked, setAsked] = useState("");
+  const [phase, setPhase] = useState("idle"); // idle | running | writing | done | error
+  const [step, setStep] = useState(0);
+  const [timings, setTimings] = useState({});
+  const [answer, setAnswer] = useState("");
+  const [sources, setSources] = useState([]);
+  const [error, setError] = useState("");
+  const [highlight, setHighlight] = useState(null);
+
+  const [history, setHistory] = useState(readHistory);
+  const [favorited, setFavorited] = useState({});
   const [relatedOpen, setRelatedOpen] = useState({});
   const [relatedData, setRelatedData] = useState({});
-
-  async function toggleRelated(caseId) {
-    setRelatedOpen((prev) => ({ ...prev, [caseId]: !prev[caseId] }));
-    if (relatedData[caseId] !== undefined) return; // already fetched
-    setRelatedData((prev) => ({ ...prev, [caseId]: "loading" }));
-    try {
-      const res = await fetch(`${API_URL}/related/${encodeURIComponent(caseId)}`);
-      const data = await res.json();
-      setRelatedData((prev) => ({ ...prev, [caseId]: data.related || [] }));
-    } catch (_) {
-      setRelatedData((prev) => ({ ...prev, [caseId]: [] }));
-    }
-  }
-  const [sources, setSources] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
-  const [stampKey, setStampKey] = useState(0);
-  const [history, setHistory] = useState([]);
   const [copyStatus, setCopyStatus] = useState("");
+  const [citationCopied, setCitationCopied] = useState(null);
   const [feedbackGiven, setFeedbackGiven] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
+
+  const [showSettings, setShowSettings] = useState(false);
   const [filterYear, setFilterYear] = useState("");
   const [filterCourt, setFilterCourt] = useState("");
   const [filterDocType, setFilterDocType] = useState("");
   const [readingLevel, setReadingLevel] = useState("standard");
-  const [citationCopied, setCitationCopied] = useState(null);
-  const intervalRef = useRef(null);
+
+  const timers = useRef([]);
+  const resultRef = useRef(null);
+
+  const busy = phase === "running" || phase === "writing";
+  const widths = useMemo(() => relevance(sources), [sources]);
+  const settingsCount = [filterYear, filterCourt, filterDocType].filter(Boolean).length;
+  const pipeStatus = busy ? "running" : phase === "done" ? "answered" : phase === "error" ? "error" : "ready";
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-      setHistory(saved);
-    } catch (e) {}
-  }, []);
+    const rerun = location.state && location.state.rerunQuestion;
+    if (rerun) {
+      runSearch(rerun);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
-  function saveToHistory(q) {
+  function saveToHistory(q, ms) {
     setHistory((prev) => {
-      const updated = [q, ...prev.filter((h) => h !== q)].slice(0, 5);
-      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch (e) {}
+      const updated = [{ q, ms }, ...prev.filter((h) => h.q !== q)].slice(0, 6);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch { /* storage off */ }
       return updated;
     });
     if (user) {
@@ -125,7 +118,143 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
-      }).catch(() => {}); // best-effort, local history already covers the offline/signed-out case
+      }).catch(() => {}); // best effort; local history covers signed-out use
+    }
+  }
+
+  async function runSearch(raw) {
+    const q = raw.trim();
+    if (!q || busy) return;
+    const t0 = performance.now();
+
+    setQuestion(q);
+    setAsked(q);
+    setPhase("running");
+    setError("");
+    setAnswer("");
+    setSources([]);
+    setFeedbackGiven(null);
+    setCopyStatus("");
+    setHighlight(null);
+    setTimings({});
+    setStep(0);
+    pulseCurrents(1);
+
+    // The first stages run inside the server before anything streams back, so
+    // the diagram paces them; measured timings arrive with the sources.
+    timers.current.forEach(clearTimeout);
+    timers.current = [
+      setTimeout(() => setStep((s) => Math.max(s, 1)), 350),
+      setTimeout(() => setStep((s) => Math.max(s, 2)), 1200),
+    ];
+
+    try {
+      const res = await fetch(`${API_URL}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: q,
+          year: filterYear ? parseInt(filterYear, 10) : null,
+          court: filterCourt || null,
+          doc_type: filterDocType || null,
+          level: readingLevel,
+        }),
+      });
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let pending = "";
+      let flushTimer = null;
+      let wrote = false;
+      let finished = false;
+
+      const flush = () => {
+        if (pending) {
+          const chunk = pending;
+          pending = "";
+          setAnswer((prev) => prev + chunk);
+        }
+        flushTimer = null;
+      };
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        if (flushTimer) clearTimeout(flushTimer);
+        flush();
+        const total = performance.now() - t0;
+        setTimings((prev) => ({ ...prev, total }));
+        setPhase("done");
+        setStep(5);
+        playSonar();
+        pulseCurrents(0.6);
+        saveToHistory(q, total);
+      };
+
+      const handle = (msg) => {
+        if (msg.type === "sources") {
+          timers.current.forEach(clearTimeout);
+          const seen = new Set();
+          const unique = (msg.sources || []).filter((s) => !seen.has(s.case_id) && seen.add(s.case_id));
+          setSources(unique);
+          // Retrieval is one server call: the time to sources covers stages 1-3
+          setTimings({ 3: performance.now() - t0 });
+          setStep(4);
+          requestAnimationFrame(() => smoothScrollTo(resultRef.current));
+        } else if (msg.type === "delta") {
+          if (!wrote) {
+            wrote = true;
+            setPhase("writing");
+            setStep(4);
+          }
+          pending += msg.text;
+          if (!flushTimer) flushTimer = setTimeout(flush, 30);
+        } else if (msg.type === "error") {
+          throw new Error(msg.detail || "stream error");
+        } else if (msg.type === "done") {
+          finish();
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) if (line.trim()) handle(JSON.parse(line));
+      }
+      if (buffer.trim()) handle(JSON.parse(buffer));
+      finish();
+    } catch {
+      timers.current.forEach(clearTimeout);
+      setPhase("error");
+      setError("We couldn't reach the index just now, so no answer came back. Check your connection and try again in a moment.");
+      requestAnimationFrame(() => smoothScrollTo(resultRef.current));
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    runSearch(question);
+  }
+
+  function surprise() {
+    runSearch(QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)]);
+  }
+
+  async function toggleRelated(caseId) {
+    setRelatedOpen((prev) => ({ ...prev, [caseId]: !prev[caseId] }));
+    if (relatedData[caseId] !== undefined) return;
+    setRelatedData((prev) => ({ ...prev, [caseId]: "loading" }));
+    try {
+      const res = await fetch(`${API_URL}/related/${encodeURIComponent(caseId)}`);
+      const data = await res.json();
+      setRelatedData((prev) => ({ ...prev, [caseId]: data.related || [] }));
+    } catch {
+      setRelatedData((prev) => ({ ...prev, [caseId]: [] }));
     }
   }
 
@@ -143,181 +272,35 @@ export default function Home() {
         await authFetch(`${API_URL}/favorites`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            case_id: s.case_id, title: s.title, citation: s.citation, source_url: s.source_url || "",
-          }),
+          body: JSON.stringify({ case_id: s.case_id, title: s.title, citation: s.citation, source_url: s.source_url || "" }),
         });
       }
-    } catch (_) {
-      setFavorited((prev) => ({ ...prev, [s.case_id]: isFav })); // revert on failure
-    }
-  }
-
-  useEffect(() => {
-    const rerun = location.state && location.state.rerunQuestion;
-    if (rerun) {
-      setQuestion(rerun);
-      runSearch(rerun);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
-
-  useEffect(() => {
-    if (loading) {
-      setLoadingMsgIndex(0);
-      intervalRef.current = setInterval(() => {
-        setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
-      }, 1400);
-    } else {
-      clearInterval(intervalRef.current);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [loading]);
-
-  async function runSearch(q) {
-    if (!q.trim()) return;
-    setQuestion(q);
-    setLoading(true);
-    setError("");
-    setAnswer("");
-    setIsStreaming(false);
-    setSources([]);
-    setHasSearched(true);
-    setFeedbackGiven(null);
-    setCopyStatus("");
-
-    try {
-      const res = await fetch(`${API_URL}/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: q,
-          year: filterYear ? parseInt(filterYear) : null,
-          court: filterCourt || null,
-          doc_type: filterDocType || null,
-          level: readingLevel,
-        }),
-      });
-
-      if (!res.ok) {
-        let detail = `Server responded with ${res.status}`;
-        try {
-          const errData = await res.json();
-          if (errData.detail) detail = errData.detail;
-        } catch (_) {}
-        throw new Error(detail);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let gotFirstContent = false;
-      let pendingText = "";
-      let flushTimer = null;
-
-      function flushPending() {
-        if (pendingText) {
-          const chunk = pendingText;
-          pendingText = "";
-          setAnswer((prev) => prev + chunk);
-        }
-        flushTimer = null;
-      }
-
-      function scheduleFlush() {
-        if (!flushTimer) {
-          flushTimer = setTimeout(flushPending, 30);
-        }
-      }
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (flushTimer) clearTimeout(flushTimer);
-          flushPending();
-          if (buffer.trim()) {
-            try {
-              const msg = JSON.parse(buffer);
-              if (msg.type === "delta") setAnswer((prev) => prev + msg.text);
-            } catch (_) {}
-          }
-          setIsStreaming(false);
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop(); // last (possibly incomplete) line stays in the buffer
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const msg = JSON.parse(line);
-
-          if (msg.type === "sources") {
-            const uniqueSources = [];
-            const seen = new Set();
-            for (const s of msg.sources || []) {
-              if (!seen.has(s.case_id)) {
-                seen.add(s.case_id);
-                uniqueSources.push(s);
-              }
-            }
-            setSources(uniqueSources);
-          } else if (msg.type === "delta") {
-            if (!gotFirstContent) {
-              gotFirstContent = true;
-              setLoading(false); // reveal the article box now, text will keep growing
-              setIsStreaming(true);
-            }
-            pendingText += msg.text;
-            scheduleFlush();
-          } else if (msg.type === "error") {
-            throw new Error(msg.detail || "Something went wrong while writing the answer.");
-          } else if (msg.type === "done") {
-            if (flushTimer) clearTimeout(flushTimer);
-            flushPending();
-            setIsStreaming(false);
-            setStampKey((k) => k + 1);
-            setTimeout(() => playStamp(), 150);
-            saveToHistory(q);
-          }
-        }
-      }
-    } catch (err) {
-      setError("The presses have jammed — we couldn't file an answer just now. Check your connection and try again in a moment.");
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
+    } catch {
+      setFavorited((prev) => ({ ...prev, [s.case_id]: isFav }));
     }
   }
 
   async function copyCitation(s, index) {
-    const formatted = `${s.title}, ${s.citation}.`;
     try {
-      await navigator.clipboard.writeText(formatted);
+      await navigator.clipboard.writeText(`${s.title}, ${s.citation}.`);
       setCitationCopied(index);
       setTimeout(() => setCitationCopied(null), 1500);
-    } catch (e) {}
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    runSearch(question);
-  }
-
-  function surpriseMe() {
-    const pick = SURPRISE_POOL[Math.floor(Math.random() * SURPRISE_POOL.length)];
-    runSearch(pick.q);
+    } catch { /* clipboard blocked */ }
   }
 
   async function copyAnswer() {
     try {
-      await navigator.clipboard.writeText(`Q: ${question}\n\n${answer}`);
-      setCopyStatus("Copied to clipboard");
-      setTimeout(() => setCopyStatus(""), 2000);
-    } catch (e) {
+      await navigator.clipboard.writeText(`Q: ${asked}\n\n${answer}`);
+      setCopyStatus("Copied");
+    } catch {
       setCopyStatus("Couldn't copy");
     }
+    setTimeout(() => setCopyStatus(""), 2000);
+  }
+
+  async function exportWord() {
+    const { exportToWord } = await import("../exportToWord");
+    exportToWord({ title: asked, markdown: answer, sources });
   }
 
   async function sendFeedback(value) {
@@ -326,228 +309,323 @@ export default function Home() {
       await fetch(`${API_URL}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, helpful: value }),
+        body: JSON.stringify({ question: asked, helpful: value }),
       });
-    } catch (e) {
-      // non-critical, fail silently
-    }
+    } catch { /* non-critical */ }
   }
 
-  return (
-    <main className="page-body">
-      {!hasSearched && (
-        <section className="front-page">
-          <div className="kicker">TODAY'S LEAD STORY</div>
-          <h1 className="headline">
-            Ask a legal question.<br />We'll fetch the verdict.
-          </h1>
-          <p className="deck">
-            Nyaya searches real Indian Supreme Court judgments using semantic AI search,
-            then files a cited, structured answer &mdash; not a guess, a grounded report.
-          </p>
-        </section>
-      )}
+  function jumpToSource(n) {
+    const el = document.getElementById(`src-${n}`);
+    if (!el) return;
+    setHighlight(n);
+    smoothScrollTo(el, "center");
+    setTimeout(() => setHighlight(null), 2200);
+  }
 
-      <form onSubmit={handleSubmit} className="submit-box">
-        <label className="submit-label" htmlFor="home-question">Submit Your Query</label>
-        <div className="submit-row">
-          <SearchIcon />
-          <input
-            id="home-question"
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. What did the court decide about specific performance of a contract?"
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Filing..." : "Submit"}
+  const markdownComponents = {
+    a({ href, children }) {
+      if (href && href.startsWith("#src-")) {
+        const n = Number(href.slice(5));
+        return (
+          <button type="button" className="cite-chip" onClick={() => jumpToSource(n)}>
+            {children}
           </button>
-        </div>
-      </form>
+        );
+      }
+      return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
+    },
+  };
 
-      <div className="filters-row">
-        <button type="button" className="filters-toggle" onClick={() => setShowFilters((s) => !s)}>
-          {showFilters ? "Hide filters" : "+ Narrow your search"}
-        </button>
-        <div className="level-toggle">
-          <button
-            className={readingLevel === "standard" ? "level-btn active" : "level-btn"}
-            onClick={() => setReadingLevel("standard")}
-          >Standard</button>
-          <button
-            className={readingLevel === "simple" ? "level-btn active" : "level-btn"}
-            onClick={() => setReadingLevel("simple")}
-          >Explain Simply</button>
-        </div>
-        {showFilters && (
-          <div className="filters-panel">
-            <div className="filter-field">
-              <label htmlFor="filter-year">Year</label>
+  return (
+    <main id="main" className="home">
+      {/* ---------- Hero ---------- */}
+      <section className="hero" aria-labelledby="hero-title">
+        <FadeVideo src={HERO_VIDEO} className="hero-video" />
+        <div className="hero-scrim" aria-hidden="true" />
+
+        <div className="hero-copy">
+          <p className="pill enter" style={{ "--d": 0 }}>
+            <span className="pill-chip">beta</span>
+            Supreme Court · Bombay HC · Acts
+          </p>
+          <h1 id="hero-title" className="hero-title">
+            <span className="line"><span style={{ "--d": 1 }}>Indian law,</span></span>
+            <span className="line"><span style={{ "--d": 2 }}><em>answered</em> with</span></span>
+            <span className="line"><span style={{ "--d": 3 }}>receipts.</span></span>
+          </h1>
+          <p className="hero-lede enter" style={{ "--d": 4 }}>
+            Ask in plain English. Nyaya reads real judgments and Acts, and every line of the answer
+            points back to the passage it came from.
+          </p>
+
+          <form className="ask enter" style={{ "--d": 5 }} onSubmit={handleSubmit} role="search">
+            <label className="sr-only" htmlFor="home-question">Your legal question</label>
+            <div className="ask-row">
               <input
-                id="filter-year"
-                type="number"
-                placeholder="e.g. 2023"
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
+                id="home-question"
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Can a landlord evict a tenant without notice?"
+                autoComplete="off"
               />
-            </div>
-            <div className="filter-field">
-              <label htmlFor="filter-court">Court</label>
-              <select id="filter-court" value={filterCourt} onChange={(e) => setFilterCourt(e.target.value)}>
-                <option value="">All Courts</option>
-                <option value="Supreme Court of India">Supreme Court of India</option>
-                <option value="Bombay High Court">Bombay High Court</option>
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="filter-doctype">Type</label>
-              <select id="filter-doctype" value={filterDocType} onChange={(e) => setFilterDocType(e.target.value)}>
-                <option value="">Case Law &amp; Statutes</option>
-                <option value="judgment">Case Law Only</option>
-                <option value="statute">Statutes Only</option>
-              </select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {!hasSearched && (
-        <div className="headlines-section">
-          <div className="section-label-row">
-            <div className="section-label">In Today's Edition</div>
-            <button className="surprise-btn" onClick={surpriseMe}>Surprise Me &#127775;</button>
-          </div>
-          <div className="headlines-grid">
-            {todaysHeadlines.map((item, i) => (
-              <button key={i} className="headline-item" onClick={() => runSearch(item.q)}>
-                <span className="headline-tag">{item.tag}</span>
-                <span className="headline-text">{item.q}</span>
+              <button type="submit" className="btn btn--lime" disabled={busy || !question.trim()}>
+                {busy ? "Searching…" : "Ask"}
+                <span className="btn-arrow" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1.5 6h8.5M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </span>
               </button>
-            ))}
-          </div>
-
-          {history.length > 0 && (
-            <div className="recent-searches">
-              <div className="section-label">Back Issues You've Read</div>
-              <div className="recent-chips">
-                {history.map((h, i) => (
-                  <button key={i} className="recent-chip" onClick={() => runSearch(h)}>{h}</button>
-                ))}
-              </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {!hasSearched && <OnThisDay />}
+            <div className="ask-tools">
+              <div className="segmented" role="group" aria-label="Answer style">
+                <button type="button" aria-pressed={readingLevel === "standard"} onClick={() => setReadingLevel("standard")}>Standard</button>
+                <button type="button" aria-pressed={readingLevel === "simple"} onClick={() => setReadingLevel("simple")}>Explain simply</button>
+              </div>
+              <button type="button" className="btn btn--ghost btn--sm" aria-expanded={showSettings} aria-controls="ask-settings" onClick={() => setShowSettings((s) => !s)}>
+                Filters{settingsCount > 0 ? ` · ${settingsCount}` : ""}
+              </button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={surprise} disabled={busy}>Surprise me</button>
+            </div>
 
-      {error && <div className="error-box" role="alert">{error}</div>}
-
-      {loading && (
-        <div className="printing-block">
-          <div className="press-bars">
-            <span /><span /><span /><span /><span />
-          </div>
-          <div className="press-text">{LOADING_MESSAGES[loadingMsgIndex]}</div>
-        </div>
-      )}
-
-      {answer && !loading && (
-        <div className="article" key={stampKey}>
-          <div className="article-dateline">FROM THE LAW DESK</div>
-          <div className="article-body">
-            <div className="stamp">On the<br />Record</div>
-            {isStreaming ? (
-              <div className="article-plain">{answer}</div>
-            ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
+            {showSettings && (
+              <div id="ask-settings" className="settings">
+                <div className="field">
+                  <label htmlFor="filter-year">Year</label>
+                  <input id="filter-year" type="number" inputMode="numeric" placeholder="Any" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="filter-court">Court</label>
+                  <select id="filter-court" value={filterCourt} onChange={(e) => setFilterCourt(e.target.value)}>
+                    <option value="">All courts</option>
+                    <option value="Supreme Court of India">Supreme Court of India</option>
+                    <option value="Bombay High Court">Bombay High Court</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="filter-doctype">Search in</label>
+                  <select id="filter-doctype" value={filterDocType} onChange={(e) => setFilterDocType(e.target.value)}>
+                    <option value="">Judgments and Acts</option>
+                    <option value="judgment">Judgments only</option>
+                    <option value="statute">Acts only</option>
+                  </select>
+                </div>
+              </div>
             )}
-          </div>
+          </form>
 
-          {sources.length > 0 && (
-            <div className="clippings-section">
-              <div className="section-label">Related Clippings ({sources.length})</div>
-              <div className="clippings-grid">
-                {sources.map((s, i) => (
-                  <div key={i} className="clipping" style={{ animationDelay: `${i * 0.08}s` }}>
-                    <a
-                      href={s.source_url || undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="clipping-link-wrap"
-                      style={{ cursor: s.source_url ? "pointer" : "default" }}
-                      onClick={(e) => { if (!s.source_url) e.preventDefault(); }}
-                    >
-                      <div className="clipping-badge">{s.case_id}</div>
-                      <div className="clipping-title">{s.title}</div>
-                      <div className="clipping-citation">{s.citation}</div>
-                      {s.source_url && <div className="clipping-link">Read full judgment &rarr;</div>}
-                    </a>
-                    <button className="cite-btn" onClick={() => copyCitation(s, i)}>
-                      {citationCopied === i ? "Copied!" : "Copy Citation"}
-                    </button>
-                    <button className="related-btn" onClick={() => toggleRelated(s.case_id)}>
-                      {relatedOpen[s.case_id] ? "Hide Related Cases" : "Related Cases"}
-                    </button>
-                    <button className="favorite-btn" onClick={() => toggleFavorite(s)}>
-                      {favorited[s.case_id] ? "\u2605 Saved" : "\u2606 Save"}
-                    </button>
-                    {relatedOpen[s.case_id] && (
-                      <div className="related-list">
-                        {relatedData[s.case_id] === "loading" ? (
-                          <div className="related-empty">Checking the index...</div>
-                        ) : relatedData[s.case_id] && relatedData[s.case_id].length > 0 ? (
-                          relatedData[s.case_id].map((r, j) => (
-                            <div key={j} className="related-item">
-                              <span className="related-title">{r.title}</span>
-                              <span className="related-citation">{r.citation}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="related-empty">No related cases found in the corpus yet.</div>
-                        )}
-                      </div>
-                    )}
+          <p className="hero-fine mono enter" style={{ "--d": 6 }}>free / no sign-up / not legal advice</p>
+        </div>
+
+        <div className="hero-visual enter" style={{ "--d": 4 }}>
+          <Pipeline
+            step={step}
+            status={pipeStatus}
+            question={asked}
+            timings={timings}
+            log={history}
+            onReplay={(q) => runSearch(q)}
+          />
+        </div>
+      </section>
+
+      {/* ---------- Result ---------- */}
+      <section ref={resultRef} className={phase === "idle" ? "result result--empty" : "result"} aria-live="polite" aria-busy={busy}>
+        {phase !== "idle" && (
+          <>
+            <header className="result-head">
+              <p className="mono muted">you asked</p>
+              <h2 className="result-q">{asked}</h2>
+            </header>
+
+            {error && <div className="alert" role="alert">{error}</div>}
+
+            {phase !== "error" && (
+              <div className="result-grid">
+                <article className="card answer">
+                  <div className="card-bar">
+                    <span className="mono">answer</span>
+                    <span className={`pipe-status pipe-status--${pipeStatus}`}><span className="dot" aria-hidden="true" />{phase === "done" ? "complete" : phase === "writing" ? "writing" : "searching"}</span>
                   </div>
-                ))}
+                  {!answer && (
+                    <div className="skeleton" aria-hidden="true"><span /><span /><span /><span /></div>
+                  )}
+                  {answer && (
+                    <div className="prose">
+                      {phase === "writing" ? (
+                        <div className="answer-plain">{answer}<span className="caret" aria-hidden="true" /></div>
+                      ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {linkCitations(answer)}
+                        </ReactMarkdown>
+                      )}
+                    </div>
+                  )}
+                  {phase === "done" && answer && (
+                    <div className="answer-actions">
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={copyAnswer}>{copyStatus || "Copy answer"}</button>
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={exportWord}>Export to Word</button>
+                      <div className="feedback" role="group" aria-label="Was this useful?">
+                        <span className="mono muted">useful?</span>
+                        <button type="button" aria-pressed={feedbackGiven === true} onClick={() => sendFeedback(true)}>Yes</button>
+                        <button type="button" aria-pressed={feedbackGiven === false} onClick={() => sendFeedback(false)}>No</button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+
+                <aside className="card sources" aria-label="Sources">
+                  <div className="card-bar">
+                    <span className="mono">sources</span>
+                    <span className="mono muted">{sources.length ? `${sources.length} found` : "searching"}</span>
+                  </div>
+                  {sources.length === 0 && (
+                    <div className="skeleton skeleton--list" aria-hidden="true"><span /><span /><span /></div>
+                  )}
+                  <ol className="source-list">
+                    {sources.map((s, i) => (
+                      <li
+                        key={s.case_id}
+                        id={`src-${i + 1}`}
+                        className={highlight === i + 1 ? "source source--lit" : "source"}
+                        style={{ "--i": i, "--rel": widths[i] }}
+                      >
+                        <div className="source-top">
+                          <span className="source-n mono">{String(i + 1).padStart(2, "0")}</span>
+                          <span className="mono muted">
+                            {[s.doc_type === "statute" ? "Act" : s.court, s.year].filter(Boolean).join(" · ")}
+                          </span>
+                        </div>
+                        <h3 className="source-title">
+                          {s.source_url && s.source_url !== "nan" ? (
+                            <a href={s.source_url} target="_blank" rel="noreferrer">{s.title}</a>
+                          ) : s.title}
+                        </h3>
+                        <p className="source-cite mono">{s.citation}</p>
+                        <div className="meter" aria-hidden="true"><span /></div>
+                        <div className="source-actions">
+                          <button type="button" onClick={() => copyCitation(s, i)}>{citationCopied === i ? "Copied" : "Copy citation"}</button>
+                          <button type="button" aria-expanded={!!relatedOpen[s.case_id]} onClick={() => toggleRelated(s.case_id)}>Related</button>
+                          <button type="button" aria-pressed={!!favorited[s.case_id]} onClick={() => toggleFavorite(s)}>
+                            {favorited[s.case_id] ? "Saved" : "Save"}
+                          </button>
+                        </div>
+                        {relatedOpen[s.case_id] && (
+                          <div className="related">
+                            {relatedData[s.case_id] === "loading" ? (
+                              <p className="muted">Looking for related cases…</p>
+                            ) : relatedData[s.case_id] && relatedData[s.case_id].length > 0 ? (
+                              relatedData[s.case_id].map((r) => (
+                                <p key={r.case_id || r.title} className="related-item">
+                                  <span>{r.title}</span>
+                                  <span className="mono muted">{r.citation}</span>
+                                </p>
+                              ))
+                            ) : (
+                              <p className="muted">No related cases in the index yet.</p>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </aside>
               </div>
-            </div>
-          )}
+            )}
+            <p className="fine mono">Research help, not legal advice. Check the judgment before you rely on it.</p>
+          </>
+        )}
+      </section>
 
-          <div className="article-actions">
-            <button className="action-btn" onClick={copyAnswer}>
-              {copyStatus || "Copy this report"}
-            </button>
-            <button
-              className="action-btn"
-              onClick={() => exportToWord({ title: question, markdown: answer, sources })}
-            >
-              Export to Word
-            </button>
-            <div className="feedback-row">
-              <span>Useful?</span>
-              <button
-                className={`feedback-btn ${feedbackGiven === true ? "active" : ""}`}
-                onClick={() => sendFeedback(true)}
-              >Yes</button>
-              <button
-                className={`feedback-btn ${feedbackGiven === false ? "active" : ""}`}
-                onClick={() => sendFeedback(false)}
-              >No</button>
-            </div>
+      {/* ---------- What it reads ---------- */}
+      <Reveal as="section" className="reads" aria-label="What Nyaya reads">
+        <p className="mono muted">reads from, and only from</p>
+        <ul className="reads-row">
+          {[
+            ["SC", "Supreme Court"],
+            ["BH", "Bombay High Court"],
+            ["CA", "Central Acts"],
+            ["CI", "Constitution"],
+          ].map(([code, name], i) => (
+            <li key={code} style={{ "--i": i }}>
+              <span className="reads-code mono">{code}</span>
+              <span className="mono muted">{name}</span>
+            </li>
+          ))}
+        </ul>
+      </Reveal>
+
+      {/* ---------- Tools ---------- */}
+      <section className="block" aria-labelledby="tools-title">
+        <Reveal className="block-head">
+          <div>
+            <p className="pill"><span className="dot" aria-hidden="true" />tools</p>
+            <h2 id="tools-title" className="block-title">Most of research is <em>reading</em>.</h2>
           </div>
-        </div>
-      )}
+          <p className="block-lede">
+            Finding the right judgment is half the work. Then you compare it, argue from it and go back to the Act.
+            Nyaya does the reading with you.
+          </p>
+        </Reveal>
 
-      <div className="games-section">
-        <div className="games-divider">
-          <span>While You're Here</span>
+        <div className="bento">
+          <Reveal as={Link} to="/compare" className="card tool tool--wide" style={{ "--i": 0 }}>
+            <div className="tool-copy">
+              <h3>Compare two judgments</h3>
+              <p>Pick any two cases. See how each court reasoned and exactly where they part ways.</p>
+            </div>
+            <div className="mini mini--compare" aria-hidden="true">
+              <div className="mini-case"><span className="mono">case a</span><span className="mini-line" /><span className="mini-line mini-line--short" /></div>
+              <span className="mini-vs mono">vs</span>
+              <div className="mini-case"><span className="mono">case b</span><span className="mini-line" /><span className="mini-line mini-line--short" /></div>
+            </div>
+            <span className="tool-go mono">open compare</span>
+          </Reveal>
+
+          <Reveal as={Link} to="/argument-builder" className="card tool" style={{ "--i": 1 }}>
+            <div className="tool-copy">
+              <h3>Build an argument</h3>
+              <p>Describe your side. Get the precedents for it and the ones your opponent will raise.</p>
+            </div>
+            <div className="mini mini--bars" aria-hidden="true">
+              <div><span className="mono">for</span><span className="bar" style={{ "--w": "78%" }} /></div>
+              <div><span className="mono">against</span><span className="bar bar--dim" style={{ "--w": "52%" }} /></div>
+            </div>
+            <span className="tool-go mono">open argument</span>
+          </Reveal>
+
+          <Reveal as={Link} to="/statutes" className="card tool" style={{ "--i": 2 }}>
+            <div className="tool-copy">
+              <h3>Read the Acts</h3>
+              <p>Every indexed Act, section by section, each with a link you can share.</p>
+            </div>
+            <div className="mini mini--rows" aria-hidden="true">
+              <span><b className="mono">§ 10</b><i /></span>
+              <span><b className="mono">§ 23</b><i /></span>
+              <span className="on"><b className="mono">§ 73</b><i /></span>
+            </div>
+            <span className="tool-go mono">open statutes</span>
+          </Reveal>
+
+          <OnThisDay />
         </div>
-        <p className="games-intro">Three small legal puzzles, for readers who somehow still want more.</p>
-        <TriviaGame />
-        <LatinMatchGame />
-        <VerdictGame />
-      </div>
+      </section>
+
+      {/* ---------- Games ---------- */}
+      <section id="games" className="block" aria-labelledby="games-title">
+        <Reveal className="block-head">
+          <div>
+            <p className="pill"><span className="dot" aria-hidden="true" />games</p>
+            <h2 id="games-title" className="block-title">Learn the law in <em>short bursts</em>.</h2>
+          </div>
+          <p className="block-lede">Three quick games. Sign in to keep a daily streak and get on the leaderboard.</p>
+        </Reveal>
+        <div className="games">
+          <TriviaGame />
+          <LatinMatchGame />
+          <VerdictGame />
+        </div>
+      </section>
     </main>
   );
 }

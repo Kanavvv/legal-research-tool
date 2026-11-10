@@ -1,10 +1,10 @@
 export default function About() {
   return (
-    <main className="prose-page">
-      <h1>About Nyaya</h1>
+    <main id="main" className="station station--narrow">
+      <article className="prose prose--page">
+      <h1>How Nyaya <em>works</em>.</h1>
       <p className="prose-lead">
-        Nyaya is an AI-powered research tool that searches real Indian Supreme Court
-        judgments and answers legal questions with citations grounded in actual case text.
+        Nyaya is a free research tool that searches real Indian judgments and Acts, and answers legal questions with citations grounded in the actual text.
       </p>
 
       <h2>How it works</h2>
@@ -44,6 +44,7 @@ export default function About() {
         keywords. Nyaya is an attempt to make searching real case law more accessible, especially
         for students and early-career researchers.
       </p>
+      </article>
     </main>
   );
 }

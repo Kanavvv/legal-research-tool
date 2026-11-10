@@ -46,3 +46,9 @@ export function playStamp() {
 export function playClick() {
   tone(500, 0.05, "triangle", 0.05);
 }
+
+// A soft sonar ping: the answer has come back up.
+export function playSonar() {
+  tone(1180, 0.5, "sine", 0.07);
+  setTimeout(() => tone(1180, 0.9, "sine", 0.025), 420);
+}

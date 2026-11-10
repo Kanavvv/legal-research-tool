@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import Sonar from "../ui/Sonar";
+import { prefersReducedMotion } from "../ui/motion";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
@@ -31,7 +33,7 @@ export default function StatuteBrowser() {
         return res.json();
       })
       .then((data) => setActs(data.acts || []))
-      .catch(() => setError("The statute book couldn't be fetched. Please try again."))
+      .catch(() => setError("The Acts couldn't be brought up just now. Please try again in a moment."))
       .finally(() => setLoadingActs(false));
   }, []);
 
@@ -50,7 +52,7 @@ export default function StatuteBrowser() {
 
   useEffect(() => {
     if (shownSection && sectionRef.current) {
-      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      sectionRef.current.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
     }
   }, [shownSection]);
 
@@ -75,100 +77,90 @@ export default function StatuteBrowser() {
   const next = position >= 0 && position < act.sections.length - 1 ? act.sections[position + 1] : null;
 
   return (
-    <main className="page-body">
-      <section className="front-page">
-        <div className="kicker">THE STATUTE BOOK</div>
-        <h1 className="headline">Statute Browser</h1>
-        <p className="deck">Leaf through the indexed Acts section by section, from the Constitution to the Contract Act. No search query needed.</p>
-      </section>
+    <main id="main" className="station">
+      <header className="station-head">
+        <h1 className="station-title">Read the <em>Acts</em>.</h1>
+        <p className="station-lede">Go through each indexed Act section by section, from the Constitution to the Contract Act. No question needed; every section has its own link.</p>
+      </header>
 
-      {error && <div className="error-box" role="alert">{error}</div>}
-      {sectionFailed && <div className="error-box" role="alert">That section couldn't be fetched. Please try again.</div>}
-
-      {loadingActs && (
-        <div className="printing-block">
-          <div className="press-bars"><span /><span /><span /><span /><span /></div>
-          <div className="press-text">Fetching the statute book...</div>
-        </div>
-      )}
+      {error && <div className="alert" role="alert">{error}</div>}
+      {sectionFailed && <div className="alert" role="alert">That section couldn't be fetched. Please try again.</div>}
+      {loadingActs && <Sonar text="Bringing up the Acts…" />}
 
       {!loadingActs && acts.length > 0 && (
-        <div className="headlines-section" style={{ marginTop: 0 }}>
-          <div className="section-label">The Acts</div>
-          <div className="headlines-grid">
-            {acts.map((a) => (
+        <section aria-labelledby="acts-title">
+          <h2 id="acts-title" className="zone-title">The Acts</h2>
+          <div className="acts">
+            {acts.map((a, i) => (
               <button
                 key={a.name}
-                className={a.name === actName ? "headline-item statute-act active" : "headline-item statute-act"}
+                type="button"
+                style={{ "--i": i }}
+                className={a.name === actName ? "act act--on" : "act"}
+                aria-pressed={a.name === actName}
                 onClick={() => chooseAct(a.name)}
               >
-                <span className="headline-tag">{a.sections.length} {a.unit.toUpperCase()}S</span>
-                <span className="headline-text">{a.name}</span>
+                <span className="act-count">{a.sections.length} {a.unit.toLowerCase()}s</span>
+                <span className="act-name">{a.name}</span>
               </button>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {act && (
-        <div className="headlines-section">
-          <div className="section-label">Contents &middot; {act.name}</div>
-          <input
-            type="text"
-            className="compare-input"
-            aria-label={`Filter ${act.name} contents`}
-            placeholder={`Narrow by ${act.unit.toLowerCase()} number or heading...`}
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <div className="statute-contents">
-            {visibleSections.map((s) => (
-              <button
-                key={s.case_id}
-                className={s.case_id === sectionId ? "statute-row active" : "statute-row"}
-                onClick={() => chooseSection(s.case_id)}
-              >
-                <span className="statute-row-number">{s.number}</span>
-                <span className="statute-row-heading">{s.heading}</span>
-              </button>
-            ))}
-            {visibleSections.length === 0 && (
-              <div className="related-empty statute-empty">No {act.unit.toLowerCase()}s match that.</div>
-            )}
-          </div>
-        </div>
-      )}
+        <div className={shownSection || loadingSection ? "reader reader--open" : "reader"}>
+          <section className="contents" aria-labelledby="contents-title">
+            <h2 id="contents-title" className="zone-title">Contents of {act.name}</h2>
+            <label className="sr-only" htmlFor="contents-filter">Filter {act.name} contents</label>
+            <input
+              id="contents-filter"
+              type="text"
+              className="field-input"
+              placeholder={`Filter by ${act.unit.toLowerCase()} number or heading`}
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            <div className="contents-list">
+              {visibleSections.map((s) => (
+                <button
+                  key={s.case_id}
+                  type="button"
+                  className={s.case_id === sectionId ? "contents-row contents-row--on" : "contents-row"}
+                  aria-current={s.case_id === sectionId ? "true" : undefined}
+                  onClick={() => chooseSection(s.case_id)}
+                >
+                  <span className="contents-n">{s.number}</span>
+                  <span>{s.heading}</span>
+                </button>
+              ))}
+              {visibleSections.length === 0 && <p className="muted">No {act.unit.toLowerCase()}s match that.</p>}
+            </div>
+          </section>
 
-      {loadingSection && (
-        <div className="printing-block">
-          <div className="press-bars"><span /><span /><span /><span /><span /></div>
-          <div className="press-text">Turning to the page...</div>
-        </div>
-      )}
-
-      {shownSection && (
-        <div className="article" ref={sectionRef}>
-          <div className="article-dateline">
-            {(act ? act.unit : "Section").toUpperCase()} {shownSection.number} &middot; {shownSection.act}
-          </div>
-          <div className="article-body">
-            <h2>{shownSection.heading}</h2>
-            {shownSection.text.split("\n\n").map((para, i) => <p key={i}>{para}</p>)}
-          </div>
-
-          <div className="article-actions">
-            {prev && (
-              <button className="action-btn" onClick={() => chooseSection(prev.case_id)}>
-                &larr; {act.unit} {prev.number}
-              </button>
-            )}
-            {next && (
-              <button className="action-btn" onClick={() => chooseSection(next.case_id)}>
-                {act.unit} {next.number} &rarr;
-              </button>
-            )}
-            {shownSection.source_url && shownSection.source_url !== "nan" && (
-              <a href={shownSection.source_url} target="_blank" rel="noreferrer" className="clipping-link">Read on India Code &rarr;</a>
+          <div className="reader-page">
+            {loadingSection && <Sonar text="Turning to the section…" />}
+            {shownSection && (
+              <article className="card answer statute" ref={sectionRef}>
+                <p className="statute-where">{act ? act.unit : "Section"} {shownSection.number} · {shownSection.act}</p>
+                <h2>{shownSection.heading}</h2>
+                {shownSection.text.split("\n\n").map((para, i) => <p key={i}>{para}</p>)}
+                <div className="answer-actions">
+                  {prev && (
+                    <button type="button" className="ghost-btn" onClick={() => chooseSection(prev.case_id)}>
+                      Previous: {act.unit} {prev.number}
+                    </button>
+                  )}
+                  {next && (
+                    <button type="button" className="ghost-btn" onClick={() => chooseSection(next.case_id)}>
+                      Next: {act.unit} {next.number}
+                    </button>
+                  )}
+                  {shownSection.source_url && shownSection.source_url !== "nan" && (
+                    <a href={shownSection.source_url} target="_blank" rel="noreferrer" className="text-link">Read on India Code</a>
+                  )}
+                </div>
+              </article>
             )}
           </div>
         </div>
