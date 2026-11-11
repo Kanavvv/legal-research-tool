@@ -10,12 +10,12 @@ import VerdictGame from "../games/VerdictGame";
 import OnThisDay from "../components/OnThisDay";
 import Pipeline from "../ui/Pipeline";
 import Reveal from "../ui/Reveal";
-import FadeVideo from "../ui/FadeVideo";
+import Scales from "../ui/Scales";
+import HeroFeatures from "../ui/HeroFeatures";
 import { playSonar } from "../sound";
 import { pulseCurrents, smoothScrollTo } from "../ui/motion";
 
 const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
-const HERO_VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4";
 
 const QUESTION_POOL = [
   "What did the court decide about specific performance of a contract?",
@@ -87,6 +87,7 @@ export default function Home() {
   const [filterCourt, setFilterCourt] = useState("");
   const [filterDocType, setFilterDocType] = useState("");
   const [readingLevel, setReadingLevel] = useState("standard");
+  const [askHint, setAskHint] = useState("");
 
   const timers = useRef([]);
   const resultRef = useRef(null);
@@ -238,7 +239,12 @@ export default function Home() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    runSearch(question);
+    const q = question.trim();
+    if (!q) { setAskHint("Type a question first, for example: can my landlord keep my deposit?"); return; }
+    if (q.length < 8) { setAskHint("Add a little more detail so Nyaya knows what to look for."); return; }
+    if (q.length > 600) { setAskHint("Keep it under 600 characters. Ask the core question; you can follow up after."); return; }
+    setAskHint("");
+    runSearch(q);
   }
 
   function surprise() {
@@ -340,22 +346,22 @@ export default function Home() {
     <main id="main" className="home">
       {/* ---------- Hero ---------- */}
       <section className="hero" aria-labelledby="hero-title">
-        <FadeVideo src={HERO_VIDEO} className="hero-video" />
         <div className="hero-scrim" aria-hidden="true" />
 
         <div className="hero-copy">
           <p className="pill enter" style={{ "--d": 0 }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v13M3 14.5h10M2 5h12M2 5l-1.5 4.5a2 2 0 0 0 3 0L2 5Zm12 0-1.5 4.5a2 2 0 0 0 3 0L14 5Z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Supreme Court · Bombay HC · Central Acts
             <span className="pill-chip">beta</span>
-            Supreme Court · Bombay HC · Acts
           </p>
           <h1 id="hero-title" className="hero-title">
             <span className="line"><span style={{ "--d": 1 }}>Indian law,</span></span>
-            <span className="line"><span style={{ "--d": 2 }}><em>answered</em> with</span></span>
-            <span className="line"><span style={{ "--d": 3 }}>receipts.</span></span>
+            <span className="line"><span style={{ "--d": 2 }}>answered with</span></span>
+            <span className="line"><span style={{ "--d": 3 }}><em>receipts.</em></span></span>
           </h1>
           <p className="hero-lede enter" style={{ "--d": 4 }}>
-            Ask in plain English. Nyaya reads real judgments and Acts, and every line of the answer
-            points back to the passage it came from.
+            Ask in plain English. Nyaya reads the judgments and the Acts, and every line of the
+            answer points back to the passage it came from. No login, no jargon you didn't ask for.
           </p>
 
           <form className="ask enter" style={{ "--d": 5 }} onSubmit={handleSubmit} role="search">
@@ -365,17 +371,22 @@ export default function Home() {
                 id="home-question"
                 type="text"
                 value={question}
-                onChange={(e) => setQuestion(e.target.value)}
+                onChange={(e) => { setQuestion(e.target.value); if (askHint) setAskHint(""); }}
+                aria-invalid={askHint ? true : undefined}
+                aria-describedby={askHint ? "ask-hint" : undefined}
+                maxLength={600}
                 placeholder="Can a landlord evict a tenant without notice?"
                 autoComplete="off"
               />
-              <button type="submit" className="btn btn--lime" disabled={busy || !question.trim()}>
+              <button type="submit" className="btn btn--lime" disabled={busy}>
                 {busy ? "Searching…" : "Ask"}
                 <span className="btn-arrow" aria-hidden="true">
                   <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1.5 6h8.5M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
               </button>
             </div>
+
+            {askHint && <p id="ask-hint" className="ask-hint" role="alert">{askHint}</p>}
 
             <div className="ask-tools">
               <div className="segmented" role="group" aria-label="Answer style">
@@ -414,10 +425,16 @@ export default function Home() {
             )}
           </form>
 
-          <p className="hero-fine mono enter" style={{ "--d": 6 }}>free / no sign-up / not legal advice</p>
+          <p className="hero-fine mono enter" style={{ "--d": 6 }}>free / no sign-up / research help, not legal advice</p>
         </div>
 
         <div className="hero-visual enter" style={{ "--d": 4 }}>
+          <div className="seal" aria-hidden="true">
+            <Scales status={pipeStatus} size={92} />
+            <span className="seal-ring">
+              <svg viewBox="0 0 120 120"><defs><path id="seal-path" d="M60 60 m-48 0 a48 48 0 1 1 96 0 a48 48 0 1 1 -96 0" /></defs><text><textPath href="#seal-path">nyaya · justice by reason · every claim cited · nyaya · justice by reason · every claim cited · </textPath></text></svg>
+            </span>
+          </div>
           <Pipeline
             step={step}
             status={pipeStatus}
@@ -427,6 +444,8 @@ export default function Home() {
             onReplay={(q) => runSearch(q)}
           />
         </div>
+
+        <HeroFeatures />
       </section>
 
       {/* ---------- Result ---------- */}
@@ -442,7 +461,14 @@ export default function Home() {
 
             {phase !== "error" && (
               <div className="result-grid">
-                <article className="card answer">
+                <article className={`card answer paper${phase === "done" ? " paper--done" : ""}`}>
+                  {phase === "done" && answer && (
+                    <span className="stamp" aria-hidden="true">
+                      <span className="stamp-top mono">nyaya</span>
+                      <span className="stamp-main">Cited</span>
+                      <span className="stamp-bot mono">{sources.length} sources</span>
+                    </span>
+                  )}
                   <div className="card-bar">
                     <span className="mono">answer</span>
                     <span className={`pipe-status pipe-status--${pipeStatus}`}><span className="dot" aria-hidden="true" />{phase === "done" ? "complete" : phase === "writing" ? "writing" : "searching"}</span>
@@ -536,24 +562,6 @@ export default function Home() {
           </>
         )}
       </section>
-
-      {/* ---------- What it reads ---------- */}
-      <Reveal as="section" className="reads" aria-label="What Nyaya reads">
-        <p className="mono muted">reads from, and only from</p>
-        <ul className="reads-row">
-          {[
-            ["SC", "Supreme Court"],
-            ["BH", "Bombay High Court"],
-            ["CA", "Central Acts"],
-            ["CI", "Constitution"],
-          ].map(([code, name], i) => (
-            <li key={code} style={{ "--i": i }}>
-              <span className="reads-code mono">{code}</span>
-              <span className="mono muted">{name}</span>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
 
       {/* ---------- Tools ---------- */}
       <section className="block" aria-labelledby="tools-title">
