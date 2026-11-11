@@ -14,7 +14,7 @@ export function Mark({ size = 28 }) {
   return (
     <svg className="mark" width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
       <rect width="28" height="28" rx="7" fill="currentColor" />
-      <path d="M8.5 20V8.5l11 11V8" fill="none" stroke="#0B0D0C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 20V8.5l11 11V8" fill="none" stroke="#14213D" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

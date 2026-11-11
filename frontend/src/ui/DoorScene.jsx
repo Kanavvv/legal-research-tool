@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import { prefersReducedMotion } from "./motion";
 
 // The doorway's backdrop, drawn in code: three columns of judgment text
-// drift upward, and every so often a line lights up lime and a thread
+// drift upward, and every so often a line lights up coral and a thread
 // carries it toward the question. Pauses off screen; static with reduced motion.
 
-const LIME = [212, 243, 107];
+const LIME = [255, 107, 91];
 
 function makeRows(seed) {
   let s = seed;
@@ -54,8 +54,8 @@ export default function DoorScene({ className = "" }) {
       cols.forEach((c, ci) => {
         const x0 = L.left + ci * (L.colW + L.gap);
         // the page itself
-        ctx.fillStyle = "rgba(242, 244, 238, 0.025)";
-        ctx.strokeStyle = "rgba(242, 244, 238, 0.07)";
+        ctx.fillStyle = "rgba(244, 237, 224, 0.025)";
+        ctx.strokeStyle = "rgba(244, 237, 224, 0.07)";
         ctx.beginPath();
         ctx.roundRect(x0, -20, L.colW, h + 40, 14);
         ctx.fill(); ctx.stroke();
@@ -73,7 +73,7 @@ export default function DoorScene({ className = "" }) {
           const a = row.lit;
           ctx.fillStyle = a > 0
             ? `rgba(${LIME[0]}, ${LIME[1]}, ${LIME[2]}, ${0.18 + a * 0.7})`
-            : "rgba(242, 244, 238, 0.12)";
+            : "rgba(244, 237, 224, 0.12)";
           ctx.beginPath();
           ctx.roundRect(x0 + 18, y, bw, 4, 2);
           ctx.fill();

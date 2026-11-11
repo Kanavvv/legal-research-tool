@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import DoorScene from "../ui/DoorScene";
 import Reveal from "../ui/Reveal";
@@ -12,16 +12,27 @@ export default function Footer() {
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState(""); // "", "loading", "done", "already", "error"
+  const [hint, setHint] = useState("");
+  const [trap, setTrap] = useState(""); // honeypot: people never see it, bots fill it
+  const shownAt = useRef(0);
+  useEffect(() => { shownAt.current = Date.now(); }, []);
 
   async function handleSubscribe(e) {
     e.preventDefault();
-    if (!email.trim()) return;
+    const clean = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) {
+      setHint("That doesn't look like an email address. Check for a typo.");
+      return;
+    }
+    setHint("");
+    // Bots fill the hidden field or submit within a second; pretend it worked
+    if (trap || Date.now() - shownAt.current < 1500) { setStatus("done"); return; }
     setStatus("loading");
     try {
       const res = await fetch(`${API_URL}/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: clean }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Something went wrong");
@@ -76,12 +87,19 @@ export default function Footer() {
           ) : status === "already" ? (
             <p className="foot-news-status" role="status">You're already on the list.</p>
           ) : (
-            <form className="email-pill" onSubmit={handleSubscribe}>
+            <form className="email-pill" onSubmit={handleSubscribe} noValidate>
               <label className="sr-only" htmlFor="news-email">Email address</label>
-              <input id="news-email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input id="news-email" type="email" autoComplete="email" placeholder="you@example.com" value={email}
+                onChange={(e) => { setEmail(e.target.value); if (hint) setHint(""); }}
+                aria-invalid={hint ? true : undefined} aria-describedby={hint ? "news-hint" : undefined} maxLength={254} />
+              <div className="hp-field" aria-hidden="true">
+                <label htmlFor="news-company">Company</label>
+                <input id="news-company" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
+              </div>
               <button type="submit" disabled={status === "loading"}>{status === "loading" ? "Sending…" : "Subscribe"}</button>
             </form>
           )}
+          {hint && <p id="news-hint" className="foot-news-status" role="alert">{hint}</p>}
           {status === "error" && <p className="foot-news-status" role="alert">Couldn't subscribe right now. Try again shortly.</p>}
         </Reveal>
       </div>

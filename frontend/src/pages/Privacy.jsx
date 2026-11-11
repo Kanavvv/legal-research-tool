@@ -17,9 +17,11 @@ export default function Privacy() {
       <p><strong>Automatically collected data.</strong> Our hosting providers (Google Cloud, Vercel) may
       automatically log standard technical information such as IP address, browser type, and
       request timestamps, for security and reliability purposes.</p>
-      <p><strong>Cookies and advertising.</strong> [If/when this site displays advertising, this section will
-      be updated to describe the cookies and tracking technologies used by our ad provider(s),
-      and how to opt out, in compliance with applicable law.]</p>
+      <p><strong>Analytics and cookies.</strong> Only if you choose "Allow" on the banner, we count page
+      visits with Vercel Web Analytics. It sets no cookies, does not follow you across other sites, and
+      reports only aggregate numbers such as page views and country. If you choose "No thanks", it
+      never loads. Your choice is stored in your browser's local storage under "nyaya-consent";
+      clear your site data to be asked again. We do not show advertising.</p>
 
       <h2>2. How We Use Information</h2>
       <ul>
@@ -33,7 +35,7 @@ export default function Privacy() {
       <ul>
         <li><strong>Anthropic</strong> (Claude API) -- processes query text to generate answers</li>
         <li><strong>Google Cloud Platform</strong> -- hosts our backend server</li>
-        <li><strong>Vercel</strong> -- hosts our frontend website</li>
+        <li><strong>Vercel</strong> -- hosts our frontend website and, if you allow it, counts anonymous page visits</li>
         <li><strong>Qdrant</strong> -- hosts our vector database of judgment text</li>
       </ul>
 
