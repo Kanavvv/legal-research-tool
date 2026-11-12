@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { PRO_ON } from "../config";
 
 const LINKS = [
   { to: "/", label: "Ask", end: true },
@@ -10,7 +11,7 @@ const LINKS = [
   { to: "/documents", label: "Documents" },
   { to: "/tools", label: "More" },
   { to: "/pricing", label: "Pro" },
-];
+].filter((l) => PRO_ON || (l.to !== "/pricing" && l.to !== "/documents"));
 
 export function Mark({ size = 28 }) {
   return (

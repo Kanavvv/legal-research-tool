@@ -40,6 +40,8 @@ FEATURE_NAMES = {
 }
 PRO_PRICE_PAISE = int(os.environ.get("PRO_PRICE_PAISE", "19900"))
 PRO_DAYS = 30
+# Pro is paused until Razorpay is live: set PRO_ENABLED=1 (and PRO_ON in frontend/src/config.js) to bring it back.
+PRO_ENABLED = os.environ.get("PRO_ENABLED", "0") == "1"
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -112,7 +114,9 @@ def use_quota(req: Request, feature: str, claims=None):
     limit = PLANS[plan][feature]
     name = FEATURE_NAMES[feature]
     if limit == 0:
-        raise HTTPException(status_code=402, detail=f"{name.capitalize()} are part of Nyaya Pro (Rs 199 for 30 days).")
+        raise HTTPException(status_code=402, detail=(
+            f"{name.capitalize()} are part of Nyaya Pro (Rs 199 for 30 days)." if PRO_ENABLED
+            else f"{name.capitalize()} are coming back in a few days."))
     if _db is None:
         return plan
     day = datetime.datetime.now(guard.IST).strftime("%Y%m%d")
@@ -137,7 +141,7 @@ def use_quota(req: Request, feature: str, claims=None):
 
     if not ok:
         log_event("quota_reached", feature=feature, plan=plan, signed_in=bool(uid))
-        if plan == "free":
+        if plan == "free" and PRO_ENABLED:
             more = PLANS["pro"][feature]
             raise HTTPException(status_code=429, detail=(
                 f"You've used today's {limit} free {name}. They reset at midnight IST, "
@@ -168,13 +172,16 @@ def me(req: Request, claims=Depends(required_user)):
         "limits": PLANS[plan],
         "used_today": usage_today(req, uid),
         "price_inr": PRO_PRICE_PAISE // 100,
-        "payments_enabled": bool(RZP_KEY_ID and RZP_KEY_SECRET),
+        "payments_enabled": PRO_ENABLED and bool(RZP_KEY_ID and RZP_KEY_SECRET),
+        "pro_enabled": PRO_ENABLED,
     }
 
 
 # ---------------- Razorpay ----------------
 
 def _require_payments():
+    if not PRO_ENABLED:
+        raise HTTPException(status_code=503, detail="Nyaya Pro is paused for a few days. Everything else is free to use.")
     if not (RZP_KEY_ID and RZP_KEY_SECRET):
         raise HTTPException(status_code=503, detail="Payments aren't switched on yet. Please check back soon.")
 

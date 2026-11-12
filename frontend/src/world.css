@@ -483,3 +483,10 @@ a.tool:hover { border-color: rgba(255, 107, 91, 0.5); }
 }
 .pipe-log ul { grid-template-columns: minmax(0, 1fr); }
 html, body { overflow-x: clip; }
+
+/* WhatsApp shortcut under the ask box */
+.wa-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #25D366 45%, transparent); color: inherit; text-decoration: none; font-size: 14px;
+  background: color-mix(in srgb, #25D366 10%, transparent); transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
+.wa-cta svg { color: #25D366; }
+.wa-cta:hover, .wa-cta:focus-visible { background: color-mix(in srgb, #25D366 18%, transparent); border-color: #25D366; }

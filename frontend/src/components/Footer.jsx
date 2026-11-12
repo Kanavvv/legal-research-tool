@@ -5,6 +5,7 @@ import Reveal from "../ui/Reveal";
 import { Mark } from "../ui/Nav";
 import { prefersReducedMotion } from "../ui/motion";
 import { API_URL } from "../api";
+import { PRO_ON, WHATSAPP_URL } from "../config";
 
 
 export default function Footer() {
@@ -117,8 +118,8 @@ export default function Footer() {
           <Link to="/compare">Compare</Link>
           <Link to="/argument-builder">Argument</Link>
           <Link to="/statutes">Statutes</Link>
-          <Link to="/documents">Documents</Link>
-          <Link to="/drafts">Drafts</Link>
+          {PRO_ON && <Link to="/documents">Documents</Link>}
+          {PRO_ON && <Link to="/drafts">Drafts</Link>}
           <Link to="/convert">IPC ↔ BNS</Link>
         </div>
         <div>
@@ -137,7 +138,8 @@ export default function Footer() {
         <div>
           <p className="mono muted">you</p>
           <Link to="/account">Sign in / My desk</Link>
-          <Link to="/pricing">Pricing</Link>
+          {PRO_ON && <Link to="/pricing">Pricing</Link>}
+          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">Ask on WhatsApp</a>
           <Link to="/lawyers/join">Advocates: list free</Link>
         </div>
         <div>

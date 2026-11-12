@@ -8,6 +8,7 @@ import LangToggle from "../components/LangToggle";
 import { CasePicker } from "./CompareCases";
 import { QUIZ } from "../data/quiz";
 import { sectionLabel, sectionPath } from "../lawCodes";
+import { PRO_ON } from "../config";
 
 const TABS = [
   { id: "brief", label: "Case brief" },
@@ -54,7 +55,7 @@ function Brief() {
       <div className="card doc-form">
         <CasePicker id="brief-case" label="The judgment" selected={picked} onSelect={setPicked} onClear={() => setPicked(null)} />
         <p className="muted">Get facts, issues, arguments, holding, reasoning and ratio, written from the judgment's own text.</p>
-        {error && <div className="alert" role="alert">{error}{upgrade && <> <Link to="/pricing" className="alert-link">See Nyaya Pro</Link></>}</div>}
+        {error && <div className="alert" role="alert">{error}{upgrade && PRO_ON && <> <Link to="/pricing" className="alert-link">See Nyaya Pro</Link></>}</div>}
         <div className="doc-submit">
           <button type="button" className="btn btn--lime" onClick={run} disabled={!picked || phase === "writing"}>{phase === "writing" ? "Writing the brief…" : "Write the brief"}</button>
           <LangToggle />

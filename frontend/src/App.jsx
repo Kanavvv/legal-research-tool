@@ -10,6 +10,7 @@ import WelcomeModal from "./components/WelcomeModal";
 import Home from "./pages/Home";
 import "./App.css";
 import "./world.css";
+import { PRO_ON } from "./config";
 
 // Everything off the surface loads on demand
 const ArgumentBuilder = lazy(() => import("./pages/ArgumentBuilder"));
@@ -43,7 +44,9 @@ const META = {
   "/about": ["How Nyaya works", "How Nyaya finds, reads and cites Indian judgments and Acts, and where its limits are."],
   "/privacy": ["Privacy Policy · Nyaya", "How Nyaya handles your information."],
   "/terms": ["Terms of Use · Nyaya", "The terms for using Nyaya. Nyaya is a research aid, not legal advice."],
-  "/pricing": ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro (Rs 199 for 30 days) adds 200 questions a day, document review, drafts and case alerts."],
+  "/pricing": PRO_ON
+    ? ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro (Rs 199 for 30 days) adds 200 questions a day, document review, drafts and case alerts."]
+    : ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro is paused for a few days."],
   "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement, FIR or order, even a phone photo, and get it explained in plain words with the Indian law that applies."],
   "/convert": ["IPC to BNS converter: old and new criminal law sections · Nyaya", "Convert IPC to BNS, CrPC to BNSS and Evidence Act to BSA sections, both ways, and read the old and new text side by side."],
   "/rights": ["Know your rights: plain guides to Indian law · Nyaya", "Short, cited guides to your rights in India: arrest, FIR, bail, tenants, consumers, workplace and more. In English and Hindi."],
