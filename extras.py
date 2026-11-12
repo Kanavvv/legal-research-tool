@@ -29,6 +29,8 @@ from pydantic import BaseModel
 
 import features
 import safety
+import wa_more
+from wa_more import MediaError
 from features import _stream_answer, _sources_and_context, _need_db, _now
 from guard import log_event, rate_limit, check_budget, record_usage, cache_get, cache_set, _hash
 from plans import optional_user, required_user, use_quota
@@ -365,8 +367,13 @@ _THUMB_DOWN = re.compile(r"^\s*(👎|❌)[\U0001F3FB-\U0001F3FF]?\s*$")
 WA_HELP = (
     "Namaste! I'm Nyaya. Ask me any question about Indian law, in English or Hindi, and I'll answer "
     "from real judgments and Acts.\n\nExample: _Can my landlord keep my deposit?_\n\n"
+    "📄 Got a legal notice or document? Send a photo or PDF and I'll explain it.\n"
+    "🎙️ You can also send a voice note.\n"
+    "📚 Reply *daily* for one useful law a day.\n\n"
     "Longer answers with sources: https://asknyaya.in\nThis is research help, not legal advice."
 )
+WA_DAILY_ON = ("📚 Done! You'll get one useful law every morning. Reply *stop* anytime to turn it off.")
+WA_DAILY_OFF = "Okay, no more daily laws. Reply *daily* if you want them back."
 
 
 def _wa_send(to, text):
@@ -444,9 +451,14 @@ def _wa_feedback(sender_hash, helpful, reason=""):
         log_event("feedback_store_error", severity="WARNING", error=str(e)[:200])
 
 
-def _wa_answer(sender, text):
+def _wa_answer(sender, text, heard=False):
     sender_hash = _hash(sender)
     try:
+        cmd = None if heard else wa_more.daily_command(text)
+        if cmd:
+            _wa_daily_set(sender, sender_hash, cmd == "on", hindi=bool(re.search(r"[ऀ-ॿ]", text)))
+            _wa_send(sender, WA_DAILY_ON if cmd == "on" else WA_DAILY_OFF)
+            return
         # 👍 / 👎 on the last answer, and the "what was wrong?" reply after a 👎
         if _THUMB_UP.match(text):
             _wa_feedback(sender_hash, True)
@@ -463,7 +475,9 @@ def _wa_answer(sender, text):
             _wa_send(sender, "Got it, thank you. That helps us fix it. 🙏")
             return
         emergency = safety.emergency_text(safety.emergency_lines(text))
-        if _wa_is_greeting(text):
+        if heard:
+            emergency = f"🎙️ _I heard:_ \"{text[:300]}\"\n\n" + emergency
+        if _wa_is_greeting(text) and not heard:
             _wa_send(sender, WA_HELP)
             return
         if not _wa_allowed(sender_hash):
@@ -499,6 +513,166 @@ def _wa_answer(sender, text):
     except Exception:
         log_event("whatsapp_error", severity="ERROR", traceback=traceback.format_exc()[-2000:])
         _wa_send(sender, "Sorry, something went wrong. Please try again.")
+
+
+# ---------------- photos, PDFs and voice notes ----------------
+
+def _wa_document(sender, media_id, mime, caption=""):
+    sender_hash = _hash(sender)
+    try:
+        if not _wa_allowed(sender_hash):
+            _wa_send(sender, "You've reached today's limit on WhatsApp. Try again tomorrow, or use https://asknyaya.in/documents")
+            return
+        check_budget()
+        data, mime = wa_more.download_media(media_id, WA_TOKEN)
+        text, scanned = wa_more.document_text(data, mime, features)
+        text = text.strip()
+        if len(text) < 60:
+            _wa_send(sender, "I couldn't find readable text in that. Send a clearer, well-lit photo of the whole page.")
+            return
+        caption = (caption or "").strip()[:500]
+        hindi = bool(re.search(r"[ऀ-ॿ]", caption))
+        context, _ = _sources_and_context(f"{caption}\n{text[:2000]}"[:1000], top_k=4)
+        content = (f"<document>\n{text[:20000]}\n</document>\n"
+                   + ("(Read from a photo.)\n" if scanned else "")
+                   + (f"\nTheir question about it: {caption}\n" if caption else "")
+                   + f"\nCase and statute excerpts:\n\n{context}")
+        system = wa_more.DOC_SYSTEM + (" Reply in simple Hindi (Devanagari)." if hindi else "")
+        model = features._helpers["model"]
+        started = time.time()
+        msg = features._client.messages.create(model=model, max_tokens=700, system=system,
+                                               messages=[{"role": "user", "content": content}])
+        record_usage("whatsapp_document", model, msg.usage, started, user=None, scanned=scanned)
+        reply = "".join(b.text for b in msg.content if hasattr(b, "text")).strip()
+        log_event("whatsapp_document", chars=len(text), scanned=scanned, kind=mime[:30])
+        # Follow-ups ("when is the deadline?") get the start of the document as context
+        _wa_remember(sender_hash, f"(I sent a document. It begins: {text[:450]}) {caption}", reply)
+        _wa_send(sender, reply + "\n\nAsk me anything about it, or reply 👍 / 👎")
+    except MediaError as e:
+        _wa_send(sender, str(e))
+    except HTTPException:
+        _wa_send(sender, "Nyaya is busy right now. Please try again in a little while.")
+    except Exception:
+        log_event("whatsapp_error", severity="ERROR", kind="document", traceback=traceback.format_exc()[-2000:])
+        _wa_send(sender, "Sorry, I couldn't read that. Please try a clearer photo, or type your question.")
+
+
+def _wa_voice(sender, media_id, mime):
+    try:
+        data, mime = wa_more.download_media(media_id, WA_TOKEN)
+        started = time.time()
+        text = wa_more.transcribe_voice(data, mime)
+        log_event("whatsapp_voice", bytes=len(data), chars=len(text), latency_ms=int((time.time() - started) * 1000))
+    except MediaError as e:
+        _wa_send(sender, str(e))
+        return
+    except Exception:
+        log_event("whatsapp_error", severity="ERROR", kind="voice", traceback=traceback.format_exc()[-2000:])
+        _wa_send(sender, "Sorry, I couldn't listen to that one. Please type your question.")
+        return
+    _wa_answer(sender, text, heard=True)
+
+
+# ---------------- law of the day ----------------
+
+def _wa_daily_set(sender, sender_hash, on, hindi=False):
+    db = features._db
+    if db is None:
+        return
+    ref = db.collection("wa_daily").document(sender_hash)
+    if on:
+        ref.set({"to": sender, "lang": "hi" if hindi else "en", "created": _now(), "last_in": _now()})
+    else:
+        ref.delete()
+    log_event("whatsapp_daily", on=on)
+
+
+def _wa_touch(sender_hash):
+    """Remembers when a subscriber last wrote: within 24 hours a plain message is free, after that
+    WhatsApp only allows an approved template."""
+    db = features._db
+    if db is None:
+        return
+    try:
+        db.collection("wa_daily").document(sender_hash).update({"last_in": _now()})
+    except Exception:
+        pass  # not a subscriber
+
+
+def _daily_tip(day, lang):
+    key = f"wa_tip|{day.isoformat()}|{lang}"
+    tip = cache_get(key)
+    if tip:
+        return tip
+    topic = wa_more.topic_for(day)
+    context, _ = _sources_and_context(topic, top_k=4)
+    system = wa_more.TIP_SYSTEM + (" Write it in simple Hindi (Devanagari)." if lang == "hi" else "")
+    model = features._helpers["model"]
+    started = time.time()
+    msg = features._client.messages.create(
+        model=model, max_tokens=300, system=system,
+        messages=[{"role": "user", "content": f"Topic: {topic}\n\nExcerpts:\n\n{context}"}])
+    record_usage("whatsapp_daily", model, msg.usage, started, user=None)
+    tip = wa_more.clean_tip("".join(b.text for b in msg.content if hasattr(b, "text")))
+    cache_set(key, tip, days=3)
+    return tip
+
+
+def _wa_send_template(to, lang, tip):
+    try:
+        r = requests.post(
+            f"https://graph.facebook.com/v21.0/{WA_PHONE_ID}/messages",
+            headers={"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"},
+            json={"messaging_product": "whatsapp", "to": to, "type": "template",
+                  "template": {"name": wa_more.DAILY_TEMPLATE, "language": {"code": lang},
+                               "components": [{"type": "body", "parameters": [{"type": "text", "text": tip}]}]}},
+            timeout=20,
+        )
+        if r.status_code >= 300:
+            log_event("whatsapp_send_failed", severity="WARNING", kind="template", status=r.status_code, body=r.text[:300])
+            return False
+        return True
+    except requests.RequestException as e:
+        log_event("whatsapp_send_failed", severity="WARNING", kind="template", error=str(e)[:200])
+        return False
+
+
+DAILY_INVOKER = os.environ.get("WHATSAPP_DAILY_INVOKER", "")  # service account Cloud Scheduler signs in as
+DAILY_AUDIENCE = os.environ.get("WHATSAPP_DAILY_AUDIENCE", "https://api.asknyaya.in/whatsapp/daily")
+
+
+@router.post("/whatsapp/daily")
+def wa_daily(req: Request):
+    """Called once a morning by Cloud Scheduler with a Google-signed token."""
+    if not (WA_ON and DAILY_INVOKER):
+        raise HTTPException(status_code=404)
+    from google.auth.transport import requests as g_requests
+    from google.oauth2 import id_token
+    token = req.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    try:
+        claims = id_token.verify_oauth2_token(token, g_requests.Request(), audience=DAILY_AUDIENCE)
+    except Exception:
+        raise HTTPException(status_code=403)
+    if claims.get("email") != DAILY_INVOKER or not claims.get("email_verified"):
+        raise HTTPException(status_code=403)
+    db = _need_db()
+    day = wa_more.today_ist()
+    subs = [d.to_dict() for d in db.collection("wa_daily").stream()]
+    tips, sent, free, failed = {}, 0, 0, 0
+    for s in subs:
+        lang = s.get("lang", "en")
+        if lang not in tips:
+            tips[lang] = _daily_tip(day, lang)
+        last = s.get("last_in")
+        if last and _now() - last < datetime.timedelta(hours=23):
+            _wa_send(s["to"], f"📚 *Law of the day*\n\n{tips[lang]}\n\nReply *stop* to turn these off.")
+            free += 1
+        elif _wa_send_template(s["to"], lang, tips[lang]):
+            sent += 1
+        else:
+            failed += 1
+    log_event("whatsapp_daily_sent", subscribers=len(subs), template=sent, free=free, failed=failed)
+    return {"subscribers": len(subs), "template": sent, "free": free, "failed": failed}
 
 
 @router.get("/whatsapp/webhook")
@@ -538,12 +712,21 @@ async def wa_receive(req: Request):
                     continue
                 cache_set(key, 1, days=1)
                 sender = m.get("from", "")
-                if m.get("type") == "text" and sender:
+                if sender:
+                    await run_in_threadpool(_wa_touch, _hash(sender))
+                kind = m.get("type")
+                if kind in ("image", "document") and sender:
+                    media = m.get(kind) or {}
+                    await run_in_threadpool(_wa_document, sender, media.get("id", ""), media.get("mime_type", ""), media.get("caption", ""))
+                elif kind == "audio" and sender:
+                    media = m.get("audio") or {}
+                    await run_in_threadpool(_wa_voice, sender, media.get("id", ""), media.get("mime_type", ""))
+                elif m.get("type") == "text" and sender:
                     await run_in_threadpool(_wa_answer, sender, m["text"].get("body", ""))
                 elif m.get("type") == "reaction" and sender:
                     emoji = (m.get("reaction") or {}).get("emoji") or ""
                     if _THUMB_UP.match(emoji) or _THUMB_DOWN.match(emoji):
                         await run_in_threadpool(_wa_answer, sender, emoji)
                 elif sender:
-                    await run_in_threadpool(_wa_send, sender, "I can read text messages only, for now. Type your question.")
+                    await run_in_threadpool(_wa_send, sender, "I can read text, photos, PDFs and voice notes. Type your question, or send the document.")
     return {"ok": True}
