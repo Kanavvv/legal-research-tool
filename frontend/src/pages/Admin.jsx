@@ -115,6 +115,7 @@ const ROUTE_NAMES = {
   ask: "Ask (website)", whatsapp: "WhatsApp answers", whatsapp_document: "WhatsApp documents", whatsapp_daily: "Law of the day",
   document: "Document review", document_ocr: "Reading scans", argument: "Argument builder", compare: "Compare cases",
   brief: "Case briefs", moot: "Moot practice", draft: "Drafts", digest: "Weekly digest", on_this_day: "On this day",
+  check: "Is this legal?", notice: "Notice decoder", assist_rti: "RTI help", assist_consumer: "Complaint help",
 };
 
 /* ---------- tabs ---------- */

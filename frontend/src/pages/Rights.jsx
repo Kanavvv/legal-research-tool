@@ -5,20 +5,12 @@ import { RIGHTS, findGuide } from "../data/rights";
 import { ACTS, sectionLabel, sectionPath } from "../lawCodes";
 import { setPageMeta } from "../ui/meta";
 import NotFound from "./NotFound";
+import LangSwitch from "../ui/LangSwitch";
 
 const UI = {
   en: { title: "Know your", em: "rights.", lede: "Short guides to the rights people most often need, each point tied to the section it comes from. Research help, not legal advice.", ask: "Ask Nyaya about your situation", all: "All guides", help: "Getting help", template: "Use the free template", listen: "Read aloud", stop: "Stop" },
   hi: { title: "अपने", em: "अधिकार जानें।", lede: "उन अधिकारों पर छोटी गाइड जिनकी लोगों को सबसे ज़्यादा ज़रूरत पड़ती है, हर बात उस धारा से जुड़ी जहाँ से वह आती है। यह शोध सहायता है, क़ानूनी सलाह नहीं।", ask: "अपनी स्थिति के बारे में Nyaya से पूछें", all: "सभी गाइड", help: "मदद कहाँ मिलेगी", template: "मुफ़्त टेम्पलेट इस्तेमाल करें", listen: "पढ़कर सुनाएँ", stop: "रोकें" },
 };
-
-function LangSwitch({ lang, onChange }) {
-  return (
-    <div className="segmented" role="group" aria-label="Language">
-      <button type="button" aria-pressed={lang === "en"} onClick={() => onChange("en")}>English</button>
-      <button type="button" aria-pressed={lang === "hi"} onClick={() => onChange("hi")} lang="hi">हिन्दी</button>
-    </div>
-  );
-}
 
 function Guide({ g, lang, t }) {
   const navigate = useNavigate();

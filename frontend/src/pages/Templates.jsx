@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { API_URL, apiFetch, responseError } from "../api";
 import { Link, useParams } from "react-router-dom";
 import { TEMPLATES, findTemplate } from "../data/templates";
 import { setPageMeta } from "../ui/meta";
@@ -28,6 +29,60 @@ function Field({ f, value, onChange }) {
       ) : (
         <input id={id} type={f.type || "text"} value={value || ""} placeholder={f.placeholder} onChange={(e) => onChange(e.target.value)} />
       )}
+    </div>
+  );
+}
+
+// "Help me fill this": describe the problem and Nyaya suggests the key fields.
+const ASSIST = {
+  "rti-application": {
+    kind: "rti", ph: "e.g. I applied for a property tax refund in March 2024 at the MCD South Zone office and have heard nothing since.",
+    map: (o) => ({ pio: o.pio, questions: o.questions, period: o.period }),
+  },
+  "consumer-complaint": {
+    kind: "consumer", ph: "e.g. I bought a fridge from XYZ Electronics in June for Rs 32,000. It stopped cooling in August and they refuse to repair it under warranty.",
+    map: (o) => ({ opp: o.opposite_party, product: o.product, facts: [o.facts, o.deficiency].filter(Boolean).join("\n"), relief: o.relief }),
+  },
+};
+
+function Assist({ cfg, onFill }) {
+  const [open, setOpen] = useState(false);
+  const [problem, setProblem] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [tips, setTips] = useState([]);
+
+  async function run() {
+    if (problem.trim().length < 15) { setError("Describe the problem in a sentence or two."); return; }
+    setBusy(true); setError("");
+    try {
+      const res = await apiFetch(`${API_URL}/assist`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: cfg.kind, problem: problem.trim() }),
+      });
+      if (!res.ok) throw await responseError(res);
+      const out = await res.json();
+      const fill = Object.fromEntries(Object.entries(cfg.map(out)).filter(([, v]) => v && String(v).trim()));
+      onFill(fill);
+      setTips([...(out.commission ? [out.commission] : []), ...(out.tips || [])]);
+    } catch (e) {
+      setError(e.userMessage || "Couldn't help with that right now. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) return <button type="button" className="btn btn--lime btn--sm tpl-assist-open" onClick={() => setOpen(true)}>Help me fill this</button>;
+  return (
+    <div className="tpl-assist">
+      <label htmlFor="tpl-assist-q">What happened? Nyaya will suggest the key parts. You check and edit them.</label>
+      <textarea id="tpl-assist-q" rows={3} maxLength={1500} value={problem} placeholder={cfg.ph} onChange={(e) => setProblem(e.target.value)} />
+      <div className="doc-submit">
+        <button type="button" className="btn btn--lime btn--sm" onClick={run} disabled={busy}>{busy ? "Working…" : "Suggest"}</button>
+        <p className="mono muted">Only this description is sent to Nyaya.</p>
+      </div>
+      {error && <div className="alert" role="alert">{error}</div>}
+      {tips.length > 0 && <ul className="tpl-assist-tips">{tips.map((x) => <li key={x}>{x}</li>)}</ul>}
     </div>
   );
 }
@@ -69,9 +124,10 @@ function Filler({ tpl }) {
   return (
     <div className="tpl-layout">
       <form className="card tpl-form" onSubmit={(e) => e.preventDefault()}>
+        {ASSIST[tpl.slug] && <Assist cfg={ASSIST[tpl.slug]} onFill={(fill) => setValues((prev) => ({ ...prev, ...fill }))} />}
         {tpl.fields.map((f) => <Field key={f.id} f={f} value={values[f.id]} onChange={set(f.id)} />)}
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => setValues({})}>Clear the form</button>
-        <p className="mono muted tpl-private">Saved only in this browser. Nothing you type is sent to Nyaya.</p>
+        <p className="mono muted tpl-private">Saved only in this browser. What you type in the form is never sent to Nyaya.</p>
       </form>
       <section className="tpl-preview" aria-label="Your document">
         <div className="answer-actions">

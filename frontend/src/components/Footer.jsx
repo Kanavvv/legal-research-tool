@@ -124,6 +124,10 @@ export default function Footer() {
         </div>
         <div>
           <p className="mono muted">for everyone</p>
+          <Link to="/now">Something just happened?</Link>
+          <Link to="/notice">Got a notice?</Link>
+          <Link to="/is-it-legal">Is this legal?</Link>
+          <Link to="/deadlines">Deadline calculator</Link>
           <Link to="/rights">Know your rights</Link>
           <Link to="/templates">Free templates</Link>
           <Link to="/lawyers">Find a lawyer</Link>

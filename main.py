@@ -945,3 +945,5 @@ extras.init(get_case_by_id)
 app.include_router(extras.router)
 import admin  # noqa: E402  (needs extras and features set up first)
 app.include_router(admin.router)
+import tools  # noqa: E402
+app.include_router(tools.router)

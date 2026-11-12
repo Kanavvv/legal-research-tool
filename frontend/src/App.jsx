@@ -34,6 +34,11 @@ const Lawyers = lazy(() => import("./pages/Lawyers"));
 const Digest = lazy(() => import("./pages/Digest"));
 const Tools = lazy(() => import("./pages/Tools"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Now = lazy(() => import("./pages/Now"));
+const Deadlines = lazy(() => import("./pages/Deadlines"));
+const IsItLegal = lazy(() => import("./pages/IsItLegal"));
+const Notice = lazy(() => import("./pages/Notice"));
+const Hub = lazy(() => import("./pages/Hub"));
 
 const SITE = "https://asknyaya.in";
 const DEFAULT_DESC = "Ask a question about Indian law in plain English. Nyaya reads real Supreme Court and High Court judgments and central Acts, and cites every answer.";
@@ -58,6 +63,11 @@ const META = {
   "/lawyers/join": ["List yourself as an advocate · Nyaya", "Advocates can add a free listing to Nyaya's directory."],
   "/digest": ["This week in the Supreme Court · Nyaya", "A short weekly digest of new Supreme Court judgments, in plain words."],
   "/tools": ["All tools · Nyaya", "Every Nyaya tool in one place: ask, convert, compare, argue, draft, and more."],
+  "/now": ["Something just happened? What to do now · Nyaya", "Step-by-step help for online fraud, arrest, a refused FIR, cheque bounce, road accidents, legal notices, domestic violence and more. English and Hindi."],
+  "/deadlines": ["Legal deadline calculator: cheque bounce, consumer, RTI, appeals · Nyaya", "Work out the last day to send a cheque-bounce notice, file a consumer complaint, appeal an RTI, claim for an accident and more, from the law that sets it."],
+  "/is-it-legal": ["Is this legal? Quick answers on Indian law · Nyaya", "Describe a situation and get a straight answer from Indian law, with the sections and judgments behind it."],
+  "/notice": ["Got a legal notice? Free notice decoder · Nyaya", "Upload a photo of a legal notice, summons, FIR or court order and get what it means, how urgent it is and what to do next. Free."],
+  "/help": ["Help with everyday law: tenants, consumers, RTI, women's rights · Nyaya", "Everything on one problem in one place: what to do now, your rights, deadlines and free templates."],
   "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 
@@ -85,7 +95,7 @@ function ScrollManager() {
       setMeta('link[rel="canonical"]', "href", SITE + pathname);
       return;
     }
-    if (/^\/(law|rights|templates)\/./.test(pathname)) {
+    if (/^\/(law|rights|templates|now|help)\/./.test(pathname)) {
       // These pages set their own title and description once their content loads
       document.head.querySelector('meta[name="robots"]')?.remove();
       setMeta('meta[property="og:url"]', "content", SITE + pathname);
@@ -154,6 +164,13 @@ export default function App() {
                 <Route path="/digest" element={<Digest />} />
                 <Route path="/tools" element={<Tools />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/now" element={<Now />} />
+                <Route path="/now/:slug" element={<Now />} />
+                <Route path="/deadlines" element={<Deadlines />} />
+                <Route path="/is-it-legal" element={<IsItLegal />} />
+                <Route path="/notice" element={<Notice />} />
+                <Route path="/help" element={<Hub />} />
+                <Route path="/help/:slug" element={<Hub />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
