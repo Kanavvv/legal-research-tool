@@ -17,7 +17,9 @@ OUT = "frontend/public/sitemap.xml"
 PAGES = [("/", "1.0"), ("/convert", "0.9"), ("/rights", "0.9"), ("/templates", "0.9"), ("/students", "0.8"),
          ("/statutes", "0.8"), ("/compare", "0.7"), ("/argument-builder", "0.7"), ("/documents", "0.8"),
          ("/drafts", "0.7"), ("/digest", "0.7"), ("/lawyers", "0.6"), ("/tools", "0.6"), ("/pricing", "0.6"),
-         ("/about", "0.6"), ("/privacy", "0.3"), ("/terms", "0.3")]
+         ("/about", "0.6"), ("/privacy", "0.3"), ("/terms", "0.3"),
+         ("/now", "0.9"), ("/notice", "0.9"), ("/is-it-legal", "0.9"), ("/deadlines", "0.8"), ("/help", "0.8"),
+         ("/trending", "0.8"), ("/answers", "0.9"), ("/explained", "0.8"), ("/cases", "0.7")]
 
 
 def slugs(path, pattern):
@@ -29,6 +31,8 @@ def main():
     urls = list(PAGES)
     urls += [(f"/rights/{s}", "0.8") for s in slugs("frontend/src/data/rights.js", r'slug: "([a-z-]+)"')]
     urls += [(f"/templates/{s}", "0.8") for s in slugs("frontend/src/data/templates.js", r'slug: "([a-z-]+)"')]
+    urls += [(f"/now/{s}", "0.9") for s in slugs("frontend/src/data/guides.js", r'^\s+slug: "([a-z-]+)"'.replace("^", "(?m)^"))]
+    urls += [(f"/help/{s}", "0.8") for s in slugs("frontend/src/data/hubs.js", r'^\s+slug: "([a-z-]+)"'.replace("^", "(?m)^"))]
     acts = set(slugs("frontend/src/lawCodes.js", r'^\s+"?([a-z-]+)"?: \{ short:'.replace("^", "(?m)^")))
     sections = []
     for path in glob.glob("corpus_statutes/text/*_s*.txt"):

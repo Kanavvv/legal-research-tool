@@ -236,6 +236,7 @@ SETTINGS_DEFAULTS = {
 # a short message, and the site hides or pauses its page.
 FEATURES = {
     "ask": "Ask Nyaya (the main question box)",
+    "triage": "What happened? (home page)",
     "check": "Is this legal?",
     "notice": "Notice decoder",
     "assist": "Template help (RTI, consumer)",

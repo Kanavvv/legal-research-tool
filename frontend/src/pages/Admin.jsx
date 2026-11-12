@@ -10,6 +10,8 @@ import Ideas from "./admin/Ideas";
 import LinkPhone from "./admin/LinkPhone";
 import SystemMap from "./admin/Map";
 import TrendingAdmin from "./admin/TrendingAdmin";
+import LibraryAdmin from "./admin/LibraryAdmin";
+import ExplainersAdmin from "./admin/ExplainersAdmin";
 import Visitors from "./admin/Visitors";
 import Money from "./admin/Money";
 import { ALL_SECTIONS, SECTIONS } from "./admin/nav";
@@ -26,7 +28,7 @@ function WhatsAppView(p) {
 }
 
 const VIEWS = {
-  overview: Overview, live: Feed, visitors: Visitors, money: Money, trending: TrendingAdmin, catalog: Catalog, features: Features, ideas: Ideas, map: SystemMap,
+  overview: Overview, live: Feed, visitors: Visitors, money: Money, trending: TrendingAdmin, library: LibraryAdmin, explainers: ExplainersAdmin, catalog: Catalog, features: Features, ideas: Ideas, map: SystemMap,
   questions: Questions, feedback: Feedback, users: Users, lawyers: Lawyers, whatsapp: WhatsAppView,
   issues: Issues, errors: Errors, settings: Settings,
 };
@@ -36,6 +38,8 @@ const ICONS = {
   live: "M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14",
   visitors: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
   trending: "M3 17l6-6 4 4 8-8M15 7h6v6",
+  library: "M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM4 17a2 2 0 0 1 2-2h12M9 7h6",
+  explainers: "M4 5h16v14H4zM8 9h8M8 13h8M8 17h5",
   catalog: "M4 5h4v4H4zM10 7h10M4 15h4v4H4zM10 17h10",
   money: "M12 3v18M17 7.5c0-1.9-2.2-3.5-5-3.5S7 5.6 7 7.5 9.2 11 12 11.5s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5",
   features: "M4 7h10M18 7h2M4 17h2M10 17h10M14 7a2 2 0 1 0 4 0a2 2 0 1 0-4 0M6 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0",

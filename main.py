@@ -139,7 +139,7 @@ class AskRequest(BaseModel):
     doc_type: str | None = None
     level: str | None = "standard"
     history: list[Turn] = []   # earlier turns of this conversation, oldest first
-    lang: str = "en"           # "en" or "hi": the language the answer is written in
+    lang: str = "en"           # "en" or a code in LANGUAGES: the language the answer is written in
 
 
 MAX_TURNS = 3
@@ -157,20 +157,41 @@ CRIMINAL_LAW_NOTE = (
     "touches criminal law, say which code applies and, where the excerpts show it, give the matching "
     "section in the other code."
 )
-HINDI_NOTE = (
-    " Write the whole answer in simple, clear Hindi (Devanagari script), as a person would speak it, "
-    "not stiff officialese. Keep case names, citations, Act names with section numbers, and the "
-    "[Source N] markers exactly as given, in English."
-)
+# Answer languages. English is the default; the rest are written for plain reading.
+LANGUAGES = {
+    "hi": ("Hindi", "Devanagari"),
+    "mr": ("Marathi", "Devanagari"),
+    "bn": ("Bengali", "Bengali"),
+    "ta": ("Tamil", "Tamil"),
+    "te": ("Telugu", "Telugu"),
+    "kn": ("Kannada", "Kannada"),
+    "gu": ("Gujarati", "Gujarati"),
+}
+
+
+def language_note(lang):
+    """The instruction that makes Claude write an answer in one of LANGUAGES."""
+    if lang not in LANGUAGES:
+        return ""
+    name, script = LANGUAGES[lang]
+    return (
+        f" Write the whole answer in simple, clear {name} ({script} script), as a person would speak it, "
+        "not stiff officialese. Keep case names, citations, Act names with section numbers, and the "
+        "[Source N] markers exactly as given, in English."
+    )
+
+
+HINDI_NOTE = language_note("hi")
 
 
 def answer_notes(lang="en"):
-    """Extra instructions every answer prompt gets: the 2024 criminal-law switch, and Hindi if asked."""
-    return CRIMINAL_LAW_NOTE + (HINDI_NOTE if lang == "hi" else "")
+    """Extra instructions every answer prompt gets: the 2024 criminal-law switch, and the answer language."""
+    return CRIMINAL_LAW_NOTE + language_note(lang)
 
 
 def clean_lang(lang):
-    return "hi" if (lang or "").lower().startswith("hi") else "en"
+    code = (lang or "").lower()[:2]
+    return code if code in LANGUAGES else "en"
 
 
 CITE_REF = re.compile(r"\[Source\s+(\d+)\]", re.IGNORECASE)
@@ -402,7 +423,7 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
         try:
             with client.messages.stream(
                 model=ANSWER_MODEL,
-                max_tokens=900,
+                max_tokens=900 if lang == "en" else 1600,  # Indian scripts take more tokens per word
                 system=system_prompt,
                 messages=messages,
             ) as stream:
@@ -941,7 +962,7 @@ def get_favorites(uid: str = Depends(require_user)):
 # ---------------- plans, payments and the newer features ----------------
 features.init(db, client, search, check_citations=check_citations,
               group_by_case=group_by_case, model=ANSWER_MODEL,
-              answer_notes=answer_notes, clean_lang=clean_lang)
+              answer_notes=answer_notes, clean_lang=clean_lang, languages=LANGUAGES)
 app.include_router(plans.router)
 app.include_router(features.router)
 extras.init(get_case_by_id)
@@ -954,3 +975,7 @@ import growth  # noqa: E402
 app.include_router(growth.router)
 import tools  # noqa: E402
 app.include_router(tools.router)
+import library  # noqa: E402
+app.include_router(library.router)
+import cases  # noqa: E402
+app.include_router(cases.router)

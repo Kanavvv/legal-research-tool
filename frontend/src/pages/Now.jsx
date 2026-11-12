@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getLang, setLang } from "../api";
+import { pageLang, setLang } from "../api";
 import { GUIDES, HELPLINES, WHEN, findGuideNow } from "../data/guides";
 import { ACTS, sectionLabel, sectionPath } from "../lawCodes";
 import LangSwitch from "../ui/LangSwitch";
@@ -111,7 +111,7 @@ function Guide({ g, lang, t }) {
 
 export default function Now() {
   const { slug } = useParams();
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const g = slug ? findGuideNow(slug) : null;
 

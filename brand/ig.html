@@ -25,8 +25,9 @@ p{font-size:42px;line-height:1.38;margin:0 0 28px;color:inherit}
 table{border-collapse:collapse;width:100%;font-size:46px}
 td{padding:34px 0;border-bottom:2px solid rgba(244,237,224,.14);vertical-align:top}
 td.o{font-family:"Geist Mono",monospace;color:var(--mute);width:30%}
-td.n{font-family:"Geist Mono",monospace;color:var(--coral);width:30%}
+td.n{font-family:"Geist Mono",monospace;color:var(--coral);width:30%;white-space:nowrap;padding-right:28px}
 td.w{width:40%}
+table.sm{font-size:40px}table.sm td{padding:26px 0}table.sm td.n{padding-right:28px}
 .num{font-family:"Instrument Serif",serif;font-size:190px;line-height:.8;color:var(--coral);margin-bottom:26px}
 .hi{font-family:"Tiro Devanagari Hindi",serif}
 .big-cta{font-family:"Instrument Serif",serif;font-size:110px;line-height:1}
@@ -35,6 +36,12 @@ td.w{width:40%}
 .cover-ig span{font-family:"Instrument Serif",serif;font-size:300px;line-height:1;letter-spacing:-.03em}
 .cover-ig span.hi{font-family:"Tiro Devanagari Hindi",serif;font-size:330px}
 .reel{width:1080px;height:1920px;padding:150px 92px}
+.s.hi h1,.s.hi h2,.s.hi p,.s.hi .kick,.s.hi .big-cta,.s.hi .pill{font-family:"Tiro Devanagari Hindi",serif;letter-spacing:0}
+.s.hi .kick{font-size:36px}.s.hi h1{font-size:124px;line-height:1.12}.s.hi h2{line-height:1.2}
+h2.q{font-size:68px;line-height:1.08}
+.rule{height:2px;background:currentColor;opacity:.18;margin:10px 0 40px}
+.opts p{margin:0 0 18px}
+.story p{font-size:52px}
 </style></head><body><div id="root"></div>
 <script>
 const FOOT=(n,t)=>`<div class="foot"><span class="brand"><img src="mark-rounded.svg">Nyaya</span><span>${n}/${t}</span></div>`;
@@ -91,11 +98,110 @@ const POSTS={
   {cls:"",html:`<div class="kick">Who qualifies</div><h2>The law names them</h2><p>· Women and children<br>· SC/ST members<br>· People with disabilities<br>· Victims of trafficking or begar<br>· Victims of disasters or ethnic violence<br>· Industrial workers<br>· People in custody<br>· Anyone below the income limit</p>`},
   {cls:"",html:`<div class="kick">How to ask</div><h2>Call <em>15100</em></h2><p>That's NALSA's national legal aid helpline. Or walk into the Legal Services Authority at your district court.</p>`},
   END()],
+ converter2:[
+  {cls:"",html:`<div class="kick">IPC → BNS · part 2</div><div class="grow"></div><h1>10 more<br>sections that<br><em>moved.</em></h1><div class="grow"></div><p class="mut">Part 1 (420, 302, 498A and more) is pinned on our profile.</p>`},
+  {cls:"",html:`<h2>Old IPC → new <em>BNS</em></h2><table class="sm">
+   <tr><td class="o">IPC 34</td><td class="n">BNS 3(5)</td><td class="w">Common intention</td></tr>
+   <tr><td class="o">IPC 120B</td><td class="n">BNS 61(2)</td><td class="w">Criminal conspiracy</td></tr>
+   <tr><td class="o">IPC 323</td><td class="n">BNS 115(2)</td><td class="w">Voluntarily causing hurt</td></tr>
+   <tr><td class="o">IPC 324</td><td class="n">BNS 118(1)</td><td class="w">Hurt by dangerous weapons</td></tr>
+   <tr><td class="o">IPC 304A</td><td class="n">BNS 106(1)</td><td class="w">Death by negligence</td></tr></table>`},
+  {cls:"",html:`<h2>Old IPC → new <em>BNS</em></h2><table class="sm">
+   <tr><td class="o">IPC 354D</td><td class="n">BNS 78</td><td class="w">Stalking</td></tr>
+   <tr><td class="o">IPC 509</td><td class="n">BNS 79</td><td class="w">Insulting a woman's modesty</td></tr>
+   <tr><td class="o">IPC 500</td><td class="n">BNS 356(2)</td><td class="w">Defamation</td></tr>
+   <tr><td class="o">IPC 363</td><td class="n">BNS 137(2)</td><td class="w">Kidnapping</td></tr>
+   <tr><td class="o">IPC 447</td><td class="n">BNS 329(3)</td><td class="w">Criminal trespass</td></tr></table>`},
+  {cls:"light",html:`<div class="kick">Not just renumbered</div><h2>Some of it is new.</h2><p><b>Hit and run:</b> causing death by rash and negligent driving and escaping without reporting it is a separate offence.</p><div class="cite" style="margin-top:0;margin-bottom:44px">BNS s.106(2)</div><p><b>Community service</b> is now on the list of punishments.</p><div class="cite" style="margin-top:0">BNS s.4(f)</div>`},
+  END()],
+ consumer:[
+  {cls:"",html:`<div class="kick">Your rights · consumer</div><div class="grow"></div><h1>Sold a dud?<br>Take it to the<br><em>Commission.</em></h1><div class="grow"></div><p class="mut">Consumer Protection Act, 2019. You can file without a lawyer.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>Up to ₹50 lakh: District</h2><p>Claims up to ₹50 lakh go to the District Commission (the limit set in 2021). Bigger claims go to the State or National Commission.</p><div class="cite">Consumer Protection Act s.34</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>File where you live</h2><p>You can file where you live or work, not only where the seller is.</p><div class="cite">Consumer Protection Act s.34</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>File online</h2><p>Complaints can be filed electronically, on the e-Daakhil portal.</p><div class="cite">Consumer Protection Act s.35</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>Within 2 years</h2><p>File within two years of the problem arising.</p><div class="cite">Consumer Protection Act s.69</div>`},
+  {cls:"",html:`<div class="num">5</div><h2>What you can get</h2><p>The Commission can order a replacement, a refund, compensation and costs.</p><div class="cite">Consumer Protection Act s.39</div>`},
+  {cls:"light",html:`<div class="kick">Before you file</div><h2>Try 1915 first</h2><p>Call the National Consumer Helpline. If that doesn't fix it, Nyaya has a free consumer complaint template.</p><div class="cite">asknyaya.in/templates</div>`},
+  END()],
+ cheque:[
+  {cls:"",html:`<div class="kick">Your rights · cheque bounce</div><div class="grow"></div><h1>Cheque<br>bounced?<br><em>Watch the clock.</em></h1><div class="grow"></div><p class="mut">Negotiable Instruments Act, 1881. Miss a deadline and the case can fail.</p>`},
+  {cls:"",html:`<div class="num">30</div><h2>days to send notice</h2><p>Send a written demand notice to the person who gave the cheque within 30 days of the bank's return memo.</p><div class="cite">NI Act s.138</div>`},
+  {cls:"",html:`<div class="num">15</div><h2>days for them to pay</h2><p>They then have 15 days from receiving the notice to pay.</p><div class="cite">NI Act s.138</div>`},
+  {cls:"",html:`<div class="num">1</div><h2>month to file</h2><p>Not paid? File a complaint before the Magistrate within one month after those 15 days end.</p><div class="cite">NI Act s.142</div>`},
+  {cls:"",html:`<div class="kick">If convicted</div><h2>Up to <em>2 years</em></h2><p>Jail up to two years, or a fine up to twice the cheque amount, or both.</p><div class="cite">NI Act s.138</div>`},
+  {cls:"",html:`<div class="kick">While the case runs</div><h2>Up to <em>20%</em>, now</h2><p>The court can order the drawer to pay up to 20% of the cheque amount as interim compensation.</p><div class="cite">NI Act s.143A</div>`},
+  {cls:"light",html:`<div class="kick">Keep these safe</div><h2>Your paper trail</h2><p>· The cheque<br>· The bank's return memo<br>· A copy of your notice<br>· Proof of posting</p><div class="cite">Free notice template: asknyaya.in/templates</div>`},
+  END()],
+ tenant:[
+  {cls:"",html:`<div class="kick">Your rights · renting</div><div class="grow"></div><h1>Renting?<br>5 things<br><em>to know.</em></h1><div class="grow"></div><p class="mut">Rent law is mostly state law, so details vary. These points hold across India.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>Why 11 months</h2><p>A lease for a year or more must be in writing and registered. That is why many agreements are for 11 months.</p><div class="cite">Transfer of Property Act s.107</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>15 days' notice</h2><p>Without a written term, a monthly tenancy ends with 15 days' notice.</p><div class="cite">Transfer of Property Act s.106</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>No lock-outs</h2><p>A landlord must go through the court or rent authority to evict you. Changing locks, removing your things or cutting water and power is not the lawful route.</p><div class="cite">Your state's rent law sets the details</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>Get receipts</h2><p>Get a receipt for every rent payment and for the security deposit.</p>`},
+  {cls:"",html:`<div class="num">5</div><h2>Your side of it</h2><p>Pay rent on time, keep the property in reasonable shape, and don't sublet without permission.</p><div class="cite">Transfer of Property Act s.108</div>`},
+  END()],
+ bailrules:[
+  {cls:"",html:`<div class="kick">Your rights · bail</div><div class="grow"></div><h1>Bail is<br>the rule.<br><em>Jail, the exception.</em></h1><div class="grow"></div><p class="mut">4 bail rules in the BNSS, which replaced the CrPC.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>Bailable? It's your right.</h2><p>For a bailable offence, the police or court must release you once you give bail or a bond.</p><div class="cite">BNSS s.478</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>Non-bailable? The court decides.</h2><p>It looks at the offence, the evidence, and whether you might flee or tamper with evidence.</p><div class="cite">BNSS s.480</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>“Default” bail</h2><p>If the police don't file the chargesheet within 60 or 90 days (depending on the offence), you can claim bail.</p><div class="cite">BNSS s.187</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>Half the maximum</h2><p>An undertrial held for half the maximum sentence must be released on bond; a first-time offender, after one-third. Not for offences punishable with death or life imprisonment.</p><div class="cite">BNSS s.479</div>`},
+  {cls:"light",html:`<div class="kick">Can't afford a lawyer?</div><h2>Call 15100</h2><p>Free legal aid covers bail applications too. Anyone in custody qualifies.</p><div class="cite">Legal Services Authorities Act, 1987</div>`},
+  END()],
+ firhindi:[
+  {cls:"hi",html:`<div class="kick">आपके अधिकार · FIR</div><div class="grow"></div><h1>पुलिस FIR<br>नहीं लिख रही?<br><em>यह करें।</em></h1><div class="grow"></div><p class="mut">BNSS के तहत, जिसने CrPC की जगह ली।</p>`},
+  {cls:"hi",html:`<div class="num">1</div><h2>कोई भी थाना</h2><p>आप किसी भी थाने में रिपोर्ट कर सकते हैं, चाहे अपराध कहीं भी हुआ हो ("ज़ीरो FIR")। फिर उसे सही थाने भेजा जाता है।</p><div class="cite">BNSS s.173(1)</div>`},
+  {cls:"hi",html:`<div class="num">2</div><h2>मौखिक या ऑनलाइन</h2><p>आप जानकारी मौखिक रूप से या इलेक्ट्रॉनिक तरीक़े से दे सकते हैं। इलेक्ट्रॉनिक रिपोर्ट पर तीन दिन के भीतर आपके हस्ताक्षर ज़रूरी हैं।</p><div class="cite">BNSS s.173(1)</div>`},
+  {cls:"hi",html:`<div class="num">3</div><h2>मुफ़्त कॉपी</h2><p>आपको FIR की कॉपी मुफ़्त मिलती है। हस्ताक्षर करने से पहले उसे पढ़ लें।</p><div class="cite">BNSS s.173(2)</div>`},
+  {cls:"hi",html:`<div class="num">4</div><h2>मना करें, तो SP</h2><p>अगर थाना मना करे, तो शिकायत लिखकर डाक से पुलिस अधीक्षक (SP) को भेजें।</p><div class="cite">BNSS s.173(4)</div>`},
+  {cls:"hi",html:`<div class="num">5</div><h2>फिर मजिस्ट्रेट</h2><p>इससे भी काम न बने, तो मजिस्ट्रेट को अर्ज़ी दें, जो पुलिस को जाँच का आदेश दे सकते हैं।</p><div class="cite">BNSS s.175(3)</div>`},
+  {cls:"coral hi",html:`<div class="kick">अपना सवाल पूछें</div><div class="grow"></div><div class="big-cta">Nyaya से पूछें।<br>धारा भी,<br>फ़ैसला भी।</div><div class="pill">asknyaya.in · लिंक बायो में</div><div class="grow"></div><p style="font-size:32px;opacity:.75">यह शोध सहायता है, क़ानूनी सलाह नहीं। अपने मामले के लिए वकील से बात करें।</p>`}],
+ myths:[
+  {cls:"",html:`<div class="kick">Myth vs law</div><div class="grow"></div><h1>5 things<br>people get<br><em>wrong.</em></h1><div class="grow"></div><p class="mut">Each one checked against the section.</p>`},
+  {cls:"",html:`<div class="kick">Myth 1</div><h2 class="q">“You can only file an FIR where it happened.”</h2><div class="rule"></div><div class="kick">The law</div><p>Any police station, wherever the offence happened. It's then sent to the right station.</p><div class="cite">BNSS s.173(1)</div>`},
+  {cls:"",html:`<div class="kick">Myth 2</div><h2 class="q">“You have to pay for a copy of the FIR.”</h2><div class="rule"></div><div class="kick">The law</div><p>The copy is given free of cost, to the informant or the victim.</p><div class="cite">BNSS s.173(2)</div>`},
+  {cls:"",html:`<div class="kick">Myth 3</div><h2 class="q">“Bail is always up to the judge.”</h2><div class="rule"></div><div class="kick">The law</div><p>For a bailable offence, bail is your right once you give bail or a bond.</p><div class="cite">BNSS s.478</div>`},
+  {cls:"",html:`<div class="kick">Myth 4</div><h2 class="q">“Police can hold you as long as they like.”</h2><div class="rule"></div><div class="kick">The law</div><p>You must be taken before a Magistrate within 24 hours, not counting travel time. Longer needs the Magistrate's order.</p><div class="cite">BNSS s.58 · Art. 22(2)</div>`},
+  {cls:"",html:`<div class="kick">Myth 5</div><h2 class="q">“The landlord can just change the locks.”</h2><div class="rule"></div><div class="kick">The law</div><p>Eviction goes through the court or rent authority. Lock-outs and cutting water or power are not the lawful route.</p><div class="cite">Your state's rent law sets the details</div>`},
+  END()],
+ quiz:[
+  {cls:"",html:`<div class="kick">Student mode · quiz</div><div class="grow"></div><h1>Law quiz.<br>Can you get<br><em>4 out of 4?</em></h1><div class="grow"></div><p class="mut">Answer in your head, then swipe for the answer.</p>`},
+  {cls:"",html:`<div class="kick">Question 1 · New codes</div><h2 class="q">A “zero FIR” means an FIR that:</h2><div class="opts"><p>A. Has no accused named</p><p>B. Can be filed at any police station, wherever the offence happened</p><p>C. Is filed with zero fee</p><p>D. Is closed without investigation</p></div>`},
+  {cls:"light",html:`<div class="kick">Answer 1</div><h2>B. Any police station</h2><p>Information can be given irrespective of where the offence happened. The FIR then goes to the station with jurisdiction.</p><div class="cite">BNSS s.173(1)</div>`},
+  {cls:"",html:`<div class="kick">Question 2 · Landmark cases</div><h2 class="q">The basic structure doctrine was laid down in:</h2><div class="opts"><p>A. Golaknath v. State of Punjab</p><p>B. Kesavananda Bharati v. State of Kerala</p><p>C. Minerva Mills v. Union of India</p><p>D. Indira Gandhi v. Raj Narain</p></div>`},
+  {cls:"light",html:`<div class="kick">Answer 2</div><h2>B. Kesavananda Bharati</h2><p>1973: Parliament can amend the Constitution, but not its basic structure.</p><div class="cite">Amending power: Constitution Art. 368</div>`},
+  {cls:"",html:`<div class="kick">Question 3 · Procedure</div><h2 class="q">A first-time offender held as an undertrial must be released on bond after serving:</h2><div class="opts"><p>A. One-half of the maximum sentence</p><p>B. One-third of the maximum sentence</p><p>C. One-quarter</p><p>D. Two-thirds</p></div>`},
+  {cls:"light",html:`<div class="kick">Answer 3</div><h2>B. One-third</h2><p>One-third for first-time offenders, one-half for others. Not for offences punishable with death or life imprisonment.</p><div class="cite">BNSS s.479</div>`},
+  {cls:"",html:`<div class="kick">Question 4 · Constitution</div><h2 class="q">Which Article did Dr Ambedkar call the "heart and soul" of the Constitution?</h2><div class="opts"><p>A. Article 14</p><p>B. Article 19</p><p>C. Article 21</p><p>D. Article 32</p></div>`},
+  {cls:"light",html:`<div class="kick">Answer 4</div><h2>D. Article 32</h2><p>The right to move the Supreme Court to enforce fundamental rights.</p><div class="cite">Constitution Art. 32</div>`},
+  {cls:"coral",html:`<div class="kick">35 questions in all</div><div class="grow"></div><div class="big-cta">Student mode<br>on Nyaya.</div><p style="margin-top:40px">Quiz, case briefs and a moot bench that argues back. Free.</p><div class="pill">asknyaya.in/students</div><div class="grow"></div><p style="font-size:30px;opacity:.75">For study and research, not legal advice.</p>`}],
+ dv:[
+  {cls:"",html:`<div class="kick">Your rights · at home</div><div class="grow"></div><h1>Abuse at home<br>isn't only<br><em>physical.</em></h1><div class="grow"></div><p class="mut">The law protects women against physical, sexual, verbal, emotional and economic abuse.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>Cruelty is a crime</h2><p>Cruelty by a husband or his relatives, including harassment for dowry, is a crime. (This was IPC s.498A.)</p><div class="cite">BNS s.85</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>Orders you can ask for</h2><p>Under the Domestic Violence Act, you can ask a Magistrate for a protection order, a residence order, money for expenses and custody of children.</p><div class="cite">Protection of Women from Domestic Violence Act, 2005</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>The right to stay</h2><p>You have a right to live in the shared household, whether or not you own it.</p><div class="cite">Protection of Women from Domestic Violence Act, 2005</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>Someone to help you file</h2><p>A Protection Officer in your district can help you file and find shelter, medical help and legal aid.</p>`},
+  {cls:"light",html:`<div class="kick">Get help now</div><h2>112 · 181 · 15100</h2><p>In danger now: call <b>112</b>.<br>Women's helpline: <b>181</b>.<br>Free legal aid: <b>15100</b>.</p>`},
+  END()],
+};
+const STORIES={
+ start1:{kick:"Start here · 1/3",t:`Ask in plain<br>words. <em>English<br>or हिन्दी.</em>`,p:`Type or tap the mic. Nyaya answers and cites the section and the judgment.`},
+ start2:{kick:"Start here · 2/3",t:`Tap a source.<br><em>Read the<br>judgment.</em>`,p:`Every [Source] tag opens the actual text, so you can check it yourself.`},
+ start3:{kick:"Start here · 3/3",t:`Free tools,<br><em>all in<br>one place.</em>`,p:`IPC → BNS converter · rights guides · templates · student mode`},
 };
 const REELS={
  intro:{kick:"Watch",t:`I asked an AI<br>a legal question.<br><em>It showed me<br>the judgment.</em>`},
  landlord:{kick:"Asked live",t:`Can my landlord<br>evict me<br><em>without notice?</em>`},
  hindi:{kick:"हिन्दी में",t:`<span class="hi">धारा 498A<br>अब कौन सी<br><em>धारा है?</em></span>`},
+ convert:{kick:"10 seconds",t:`Type an IPC<br>section.<br><em>Get the BNS one.</em>`},
+ templates:{kick:"Free template",t:`A consumer<br>complaint,<br><em>drafted in<br>2 minutes.</em>`},
+ brief:{kick:"Law students",t:`Any judgment.<br><em>A full case<br>brief.</em>`},
+ voice:{kick:"बोलकर पूछिए",t:`<span class="hi">टाइप मत करो।<br><em>बोलकर<br>पूछो।</em></span>`},
+ cheque:{kick:"Cheque bounced?",t:`The notice,<br><em>ready to<br>send.</em>`},
+ moot:{kick:"Moot prep",t:`A bench that<br><em>argues<br>back.</em>`},
+ rightshi:{kick:"हिन्दी में",t:`<span class="hi">अपने अधिकार,<br><em>पढ़कर<br>सुनिए।</em></span>`},
+ lawyers:{kick:"For advocates",t:`List your<br>practice.<br><em>Free.</em>`},
+ tour:{kick:"Everything, once",t:`One site.<br><em>Six free<br>tools.</em>`},
 };
 const HL={start:"Start",bns:"BNS",rights:"Rights",landmarks:"1978",hindi:"हिं"};
 const q=new URLSearchParams(location.search), root=document.getElementById("root");
@@ -103,6 +209,7 @@ const mark=`<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fi
 if(q.get("post")){const slides=POSTS[q.get("post")];const i=+q.get("i");const s=slides[i];
   root.innerHTML=`<div class="s ${s.cls}">${s.html}${FOOT(i+1,slides.length)}</div>`;}
 else if(q.get("reel")){const r=REELS[q.get("reel")];root.innerHTML=`<div class="s reel"><div class="kick">${r.kick}</div><div class="grow"></div><h1 style="font-size:150px">${r.t}</h1><div class="grow"></div><p class="mut">asknyaya.in</p><div class="foot"><span class="brand"><img src="mark-rounded.svg">Nyaya</span><span>▶</span></div></div>`}
+else if(q.get("story")){const r=STORIES[q.get("story")];root.innerHTML=`<div class="s reel story"><div class="kick">${r.kick}</div><div class="grow"></div><h1 style="font-size:140px">${r.t}</h1><p style="margin-top:56px">${r.p}</p><div class="grow"></div><p class="mut">asknyaya.in</p><div class="foot"><span class="brand"><img src="mark-rounded.svg">Nyaya</span><span></span></div></div>`}
 else if(q.get("hl")){root.innerHTML=`<div class="cover-ig"><span${q.get("hl")==="hindi"?' class="hi"':''}>${HL[q.get("hl")]}</span></div>`}
-else if(q.get("list")){document.title=JSON.stringify({posts:Object.fromEntries(Object.entries(POSTS).map(([k,v])=>[k,v.length])),reels:Object.keys(REELS),hl:Object.keys(HL)})}
+else if(q.get("list")){document.title=JSON.stringify({posts:Object.fromEntries(Object.entries(POSTS).map(([k,v])=>[k,v.length])),reels:Object.keys(REELS),stories:Object.keys(STORIES),hl:Object.keys(HL)})}
 </script></body></html>

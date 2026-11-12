@@ -634,3 +634,74 @@ a.site-banner:hover { background: #A8321F; }
 
 /* ---------- Share buttons ---------- */
 .btn--wa { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ---------- Answer languages: English / Hindi plus a menu of more ---------- */
+.lang-pick { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lang-more {
+  min-height: 36px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer;
+  background: rgba(244, 237, 224, 0.07); color: var(--ink-60); border: 1px solid rgba(244, 237, 224, 0.14);
+}
+.lang-more--on { background: var(--cream); color: var(--navy); }
+.lang-more option { color: #14213D; background: #F4EDE0; }
+
+/* ---------- Home: "Something happened" / "I have a legal question" ---------- */
+.home-mode { align-self: start; }
+.home-mode button { min-height: 36px; padding: 0 16px; font-size: 14px; }
+.situation { display: grid; gap: 14px; max-width: 600px; }
+.situation-tools { margin-top: 12px; }
+.ask-row--tall { border-radius: 26px; align-items: flex-end; }
+.ask-row--tall textarea {
+  flex: 1; min-width: 0; resize: none; background: none; border: 0; outline: none; color: var(--cream);
+  font: inherit; font-size: 17px; line-height: 1.45; padding: 12px 0; min-height: 52px; max-height: 180px; field-sizing: content;
+}
+.ask-row--tall textarea::placeholder { color: rgba(244, 237, 224, 0.62); }
+.plan { display: grid; gap: 12px; padding: 20px; animation: rise 0.35s var(--ease-out) both; }
+.plan .helplines { margin: 0; }
+.plan-urgency { margin: 0; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-60); }
+.plan-urgency--emergency, .plan-urgency--urgent { color: var(--coral-2); }
+.plan-summary { margin: 0; font-size: 17px; line-height: 1.5; color: var(--cream); }
+.plan .zone-title { margin: 4px 0 0; }
+.plan-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.plan-link {
+  display: grid; gap: 2px; padding: 10px 14px; border-radius: var(--r-sm); text-decoration: none; color: var(--cream);
+  background: rgba(244, 237, 224, 0.06); border: 1px solid rgba(244, 237, 224, 0.12);
+  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+.plan-link:hover, .plan-link:focus-visible { border-color: rgba(255, 107, 91, 0.6); background: rgba(244, 237, 224, 0.1); }
+.plan-link .mono { font-size: 11px; }
+.plan-fine { margin: 0; font-size: 12px; }
+@media (max-width: 520px) {
+  .home-mode button { padding: 0 10px; font-size: 13px; }
+  .plan { padding: 16px; }
+}
+.wa-daily { display: inline-block; margin-top: 8px; font-size: 12.5px; color: var(--ink-60); text-decoration: none; }
+.wa-daily:hover, .wa-daily:focus-visible { color: var(--cream); text-decoration: underline; text-underline-offset: 3px; }
+.wa-alt { margin: 6px 0 0; font-size: 14px; }
+
+/* ---------- Moot: sample problems, options, voice, scorecard share ---------- */
+.moot-samples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+.moot-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.moot-mic { display: flex; align-items: center; gap: 10px; margin-top: 6px; position: relative; }
+.moot-mic .mic { position: static; }
+.moot-share { display: grid; gap: 10px; padding: 16px 18px; }
+.moot-share p { margin: 0; }
+
+/* ---------- Answer library, explainers, my cases ---------- */
+.answers-search-row { display: flex; gap: 8px; align-items: center; }
+.answers-search-row .field-input { flex: 1; min-width: 0; }
+.answers-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.answers-item { display: grid; gap: 4px; padding: 16px 18px; text-decoration: none; color: var(--cream); transition: border-color 0.2s var(--ease); }
+.answers-item:hover, .answers-item:focus-visible { border-color: rgba(255, 107, 91, 0.55); }
+.answers-q { font-size: 17px; font-weight: 500; line-height: 1.35; margin: 0; }
+.answers-snip { font-size: 14px; line-height: 1.5; }
+.explainer-faq { padding: 14px 18px; margin-bottom: 8px; }
+.explainer-faq summary { cursor: pointer; font-weight: 500; }
+.explainer-faq p { margin: 10px 0 0; line-height: 1.55; }
+.case-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.case-hint { margin: 0; font-size: 13px; }
+.case-summary { padding: 14px 16px; }
+.case-summary p { margin: 0 0 4px; }
+.case-card { display: grid; gap: 6px; padding: 18px; }
+.case-card p { margin: 0; }
+.case-card--soon { border-color: rgba(255, 107, 91, 0.6); }
+.case-notes { white-space: pre-line; font-size: 14px; color: var(--ink-80); }

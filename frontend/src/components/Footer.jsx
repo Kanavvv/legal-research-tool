@@ -125,6 +125,9 @@ export default function Footer() {
         <div>
           <p className="mono muted">for everyone</p>
           <Link to="/trending">What India is asking</Link>
+          <Link to="/answers">Questions people asked</Link>
+          <Link to="/explained">In the news, explained</Link>
+          <Link to="/cases">My cases: hearing reminders</Link>
           <Link to="/now">Something just happened?</Link>
           <Link to="/notice">Got a notice?</Link>
           <Link to="/is-it-legal">Is this legal?</Link>

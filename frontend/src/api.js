@@ -56,10 +56,32 @@ export function linkCitations(md) {
   return md.replace(/\[Source (\d+)\]/g, "[Source $1](#src-$1)");
 }
 
-// Answer language. One choice for the whole site, kept in this browser.
+// Answer languages. One choice for the whole site, kept in this browser.
+// Guides and other written pages exist in English and Hindi; the rest fall back to English
+// there, while answers from Claude come in any of these.
+export const LANGS = [
+  { code: "en", name: "English", speech: "en-IN" },
+  { code: "hi", name: "हिन्दी", en: "Hindi", speech: "hi-IN" },
+  { code: "mr", name: "मराठी", en: "Marathi", speech: "mr-IN" },
+  { code: "bn", name: "বাংলা", en: "Bengali", speech: "bn-IN" },
+  { code: "ta", name: "தமிழ்", en: "Tamil", speech: "ta-IN" },
+  { code: "te", name: "తెలుగు", en: "Telugu", speech: "te-IN" },
+  { code: "kn", name: "ಕನ್ನಡ", en: "Kannada", speech: "kn-IN" },
+  { code: "gu", name: "ગુજરાતી", en: "Gujarati", speech: "gu-IN" },
+];
 const LANG_KEY = "nyaya_lang";
 export function getLang() {
-  try { return localStorage.getItem(LANG_KEY) === "hi" ? "hi" : "en"; } catch { return "en"; }
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    return LANGS.some((l) => l.code === v) ? v : "en";
+  } catch { return "en"; }
+}
+export function speechLang(code = getLang()) {
+  return (LANGS.find((l) => l.code === code) || LANGS[0]).speech;
+}
+// For pages written only in English and Hindi.
+export function pageLang() {
+  return getLang() === "hi" ? "hi" : "en";
 }
 export function setLang(lang) {
   try { localStorage.setItem(LANG_KEY, lang); } catch { /* storage off */ }

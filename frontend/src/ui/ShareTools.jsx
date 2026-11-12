@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trackEvent } from "./track";
+import { WHATSAPP_URL } from "../config";
 
 // "Send on WhatsApp" and "Save as picture" for any answer.
 // Pass `url` when the page already has a link, or `getLink` (async) to make one on demand.
@@ -10,7 +11,9 @@ export default function ShareTools({ question, answer, sources = 0, url, getLink
 
   function waHref(link) {
     const lead = text || `${question.trim().slice(0, 200)}\n\nI asked Nyaya. Here's the answer, with the law behind it:`;
-    return `https://wa.me/?text=${encodeURIComponent(`${lead}\n${link}`)}`;
+    // The forward carries Nyaya's own number, so whoever receives it can ask their own question.
+    const invite = `\n\nAsk your own question free on WhatsApp: ${WHATSAPP_URL}`;
+    return `https://wa.me/?text=${encodeURIComponent(`${lead}\n${link}${invite}`)}`;
   }
 
   function withRef(link) {

@@ -36,6 +36,9 @@ const Deadlines = lazy(() => import("./pages/Deadlines"));
 const IsItLegal = lazy(() => import("./pages/IsItLegal"));
 const Notice = lazy(() => import("./pages/Notice"));
 const Hub = lazy(() => import("./pages/Hub"));
+const Answers = lazy(() => import("./pages/Answers"));
+const Explained = lazy(() => import("./pages/Explained"));
+const Cases = lazy(() => import("./pages/Cases"));
 
 const SITE = "https://asknyaya.in";
 const DEFAULT_DESC = "Ask a question about Indian law in plain English. Nyaya reads real Supreme Court and High Court judgments and central Acts, and cites every answer.";
@@ -66,6 +69,9 @@ const META = {
   "/is-it-legal": ["Is this legal? Quick answers on Indian law · Nyaya", "Describe a situation and get a straight answer from Indian law, with the sections and judgments behind it."],
   "/notice": ["Got a legal notice? Free notice decoder · Nyaya", "Upload a photo of a legal notice, summons, FIR or court order and get what it means, how urgent it is and what to do next. Free."],
   "/help": ["Help with everyday law: tenants, consumers, RTI, women's rights · Nyaya", "Everything on one problem in one place: what to do now, your rights, deadlines and free templates."],
+  "/answers": ["Questions people asked about Indian law, answered with sources · Nyaya", "Real questions about Indian law: tenants, cheques, FIRs, consumers, family and more, each answered from judgments and Acts with the sources shown."],
+  "/explained": ["Legal news explained: what it means for you · Nyaya", "When a judgment or new rule makes headlines, what it actually says and what it means for you, from the law itself."],
+  "/cases": ["My cases: hearing reminders and court orders explained · Nyaya", "Keep your court cases with the next hearing date, get email reminders before each hearing, and upload an order to have it explained in plain words. Free."],
   "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 
@@ -93,7 +99,7 @@ function ScrollManager() {
       setMeta('link[rel="canonical"]', "href", SITE + pathname);
       return;
     }
-    if (/^\/(law|rights|templates|now|help)\/./.test(pathname)) {
+    if (/^\/(law|rights|templates|now|help|explained)\/./.test(pathname)) {
       // These pages set their own title and description once their content loads
       document.head.querySelector('meta[name="robots"]')?.remove();
       setMeta('meta[property="og:url"]', "content", SITE + pathname);
@@ -167,6 +173,10 @@ export default function App() {
                   <Route path="/notice" element={<FeatureGate name="notice"><Notice /></FeatureGate>} />
                   <Route path="/help" element={<Hub />} />
                   <Route path="/help/:slug" element={<Hub />} />
+                  <Route path="/answers" element={<Answers />} />
+                  <Route path="/explained" element={<Explained />} />
+                  <Route path="/explained/:slug" element={<Explained />} />
+                  <Route path="/cases" element={<Cases />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

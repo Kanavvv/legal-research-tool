@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { API_URL, apiFetch, getLang, responseError, setLang } from "../api";
+import { API_URL, apiFetch, getLang, pageLang, responseError, setLang } from "../api";
 import LangSwitch from "../ui/LangSwitch";
 import MicButton from "../ui/MicButton";
 import SourceList from "../ui/SourceList";
@@ -45,7 +45,7 @@ const EXAMPLES = {
 };
 
 export default function IsItLegal() {
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -62,7 +62,7 @@ export default function IsItLegal() {
     try {
       const res = await apiFetch(`${API_URL}/check`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ situation: q, lang }),
+        body: JSON.stringify({ situation: q, lang: getLang() }),
       });
       if (!res.ok) throw await responseError(res);
       setOut(await res.json());

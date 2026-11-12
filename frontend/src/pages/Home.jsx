@@ -20,8 +20,9 @@ import SaveToFolder from "../ui/SaveToFolder";
 import MicButton from "../ui/MicButton";
 import SpeakButton from "../ui/SpeakButton";
 import ShareTools from "../ui/ShareTools";
+import SituationBox from "../ui/SituationBox";
 import { trackEvent } from "../ui/track";
-import { PRO_ON, WHATSAPP_URL } from "../config";
+import { PRO_ON, WHATSAPP_URL, WA_DAILY } from "../config";
 import { oldLawRefs } from "../codeMap";
 import { sectionPath } from "../lawCodes";
 import { courtWeight } from "../ui/courtWeight";
@@ -43,6 +44,11 @@ const QUESTION_POOL = [
 ];
 
 const HISTORY_KEY = "nyaya-search-history";
+const MODE_KEY = "nyaya-home-mode";
+
+function readMode() {
+  try { return localStorage.getItem(MODE_KEY) === "ask" ? "ask" : "story"; } catch { return "story"; }
+}
 
 
 function relevance(sources) {
@@ -70,6 +76,7 @@ export default function Home() {
   const location = useLocation();
   const { user } = useAuth();
 
+  const [mode, setModeState] = useState(readMode); // story: "What happened?" | ask: a legal question
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [phase, setPhase] = useState("idle"); // idle | running | writing | done | error
@@ -279,6 +286,17 @@ export default function Home() {
     runSearch(q);
   }
 
+  function setMode(m) {
+    setModeState(m);
+    try { localStorage.setItem(MODE_KEY, m); } catch { /* storage off */ }
+  }
+
+  function askFromStory(q) {
+    setMode("ask");
+    setQuestion(q);
+    runSearch(q);
+  }
+
   function surprise() {
     runSearch(QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)]);
   }
@@ -445,11 +463,23 @@ export default function Home() {
             <span className="line"><span style={{ "--d": 3 }}><em>receipts.</em></span></span>
           </h1>
           <p className="hero-lede enter" style={{ "--d": 4 }}>
-            Ask in plain English or Hindi, typed or spoken. Nyaya reads the judgments and the Acts, and every line of the
-            answer points back to the passage it came from. No login, no jargon you didn't ask for.
+            Tell Nyaya what happened, or ask a legal question, in English, Hindi or six more Indian languages. It reads the
+            judgments and the Acts, and every line of the answer points back to the passage it came from. No login.
           </p>
 
-          <form className="ask enter" style={{ "--d": 5 }} onSubmit={handleSubmit} role="search">
+          <div className="segmented home-mode enter" style={{ "--d": 5 }} role="group" aria-label="How do you want to start?">
+            <button type="button" aria-pressed={mode === "story"} onClick={() => setMode("story")}>Something happened</button>
+            <button type="button" aria-pressed={mode === "ask"} onClick={() => setMode("ask")}>I have a legal question</button>
+          </div>
+
+          {mode === "story" && (
+            <div className="enter" style={{ "--d": 5 }}>
+              <SituationBox onAsk={askFromStory} />
+              <div className="ask-tools situation-tools"><LangToggle /></div>
+            </div>
+          )}
+
+          {mode === "ask" && <form className="ask enter" style={{ "--d": 5 }} onSubmit={handleSubmit} role="search">
             <label className="sr-only" htmlFor="home-question">Your legal question</label>
             <div className="ask-row">
               <input
@@ -515,12 +545,15 @@ export default function Home() {
                 </div>
               </div>
             )}
-          </form>
+          </form>}
 
           <p className="hero-fine mono enter" style={{ "--d": 6 }}>free / no sign-up / research help, not legal advice</p>
           <a className="wa-cta enter" style={{ "--d": 7 }} href={WHATSAPP_URL} target="_blank" rel="noreferrer">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3a.5.5 0 0 0 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>
             Ask on WhatsApp instead
+          </a>
+          <a className="wa-daily mono enter" style={{ "--d": 7 }} href={WA_DAILY} target="_blank" rel="noreferrer" onClick={() => trackEvent("wa_daily_join")}>
+            or get one useful law a day on WhatsApp →
           </a>
         </div>
 

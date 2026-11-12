@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { getLang } from "../api";
+import { getLang, speechLang } from "../api";
 
 const Recognition = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 // Speak the question instead of typing it. Uses the browser's own speech
-// recognition (Chrome, Edge, Safari), in Hindi or Indian English to match the
+// recognition (Chrome, Edge, Safari), in the chosen Indian language to match the
 // answer language. Hidden where the browser has none.
 export default function MicButton({ onText, onFinal }) {
   const [listening, setListening] = useState(false);
@@ -18,7 +18,7 @@ export default function MicButton({ onText, onFinal }) {
     if (listening) { rec.current?.stop(); return; }
     setError("");
     const r = new Recognition();
-    r.lang = getLang() === "hi" ? "hi-IN" : "en-IN";
+    r.lang = speechLang();
     r.interimResults = true;
     r.maxAlternatives = 1;
     let finalText = "";
