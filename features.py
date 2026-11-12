@@ -30,6 +30,7 @@ from pydantic import BaseModel
 
 import guard
 from guard import log_event, rate_limit, check_budget, record_usage
+import plans
 from plans import optional_user, required_user, use_quota, get_plan
 
 router = APIRouter()
@@ -284,7 +285,9 @@ def list_alerts(claims=Depends(required_user)):
 def add_alert(body: AlertRequest, claims=Depends(required_user)):
     plan, _ = get_plan(claims["uid"])
     if plan != "pro":
-        raise HTTPException(status_code=402, detail="Case alerts are part of Nyaya Pro (Rs 199 for 30 days).")
+        raise HTTPException(status_code=402, detail=(
+            "Case alerts are part of Nyaya Pro (Rs 199 for 30 days)." if plans.PRO_ENABLED
+            else "Case alerts are coming back in a few days."))
     topic = body.topic.strip()[:200]
     if len(topic) < 3:
         raise HTTPException(status_code=400, detail="Describe the topic in a few words.")

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_URL, apiFetch, responseError } from "../api";
 import { exportToWord } from "../exportToWord";
+import { PRO_ON } from "../config";
 
 const USAGE_LABELS = { ask: "questions", compare: "comparisons", argument: "briefs", document: "documents", draft: "drafts" };
 
@@ -95,7 +96,7 @@ export default function DeskExtras() {
                 </li>
               ))}
             </ul>
-            {!isPro && <Link to="/pricing" className="btn btn--lime btn--sm">Get Pro, ₹{me.price_inr} for 30 days</Link>}
+            {!isPro && PRO_ON && <Link to="/pricing" className="btn btn--lime btn--sm">Get Pro, ₹{me.price_inr} for 30 days</Link>}
           </>
         )}
       </section>
@@ -163,7 +164,7 @@ export default function DeskExtras() {
             <button type="submit" className="btn btn--lime btn--sm" disabled={topic.trim().length < 3}>Follow</button>
           </form>
         ) : (
-          <p><Link to="/pricing" className="text-link">Alerts are part of Nyaya Pro.</Link></p>
+          PRO_ON ? <p><Link to="/pricing" className="text-link">Alerts are part of Nyaya Pro.</Link></p> : <p className="muted">Case alerts are coming back in a few days.</p>
         )}
         {alertMsg && <p className="folder-status" role="alert">{alertMsg}</p>}
       </section>

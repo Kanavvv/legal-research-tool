@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { API_URL, apiFetch, responseError } from "../api";
+import { PRO_ON, WHATSAPP_URL } from "../config";
 
 const FREE = ["10 questions a day", "5 case comparisons a day", "5 argument briefs a day", "Follow-up questions", "Save answers to folders", "Share links"];
 const PRO = ["200 questions a day", "50 comparisons and 50 briefs a day", "Explain any notice, agreement, FIR or order, even from a photo", "Drafts: legal notice replies, RTI applications, consumer complaints", "Weekly email alerts on up to 5 topics", "Everything in Free"];
@@ -18,6 +19,14 @@ function loadCheckout() {
 }
 
 export default function Pricing() {
+  if (!PRO_ON) {
+    return <Paused title={<>Nyaya is <em>free</em> for now.</>}
+      lede="Nyaya Pro is paused for a few days while we set up payments. Asking questions, the IPC to BNS converter, rights guides, templates and student tools are all free to use." />;
+  }
+  return <PricingFull />;
+}
+
+function PricingFull() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
@@ -115,6 +124,23 @@ export default function Pricing() {
       <p className="plan-terms muted">
         Pro is a 30-day pass for one person. See the <Link to="/terms">terms</Link>, including refunds, and the <Link to="/privacy">privacy policy</Link>.
       </p>
+    </main>
+  );
+}
+
+
+function Paused({ title, lede }) {
+  return (
+    <main id="main" className="station">
+      <header className="station-head">
+        <h1 className="station-title">{title}</h1>
+        <p className="station-lede">{lede}</p>
+      </header>
+      <div className="answer-actions">
+        <Link to="/" className="btn btn--lime btn--sm">Ask a question</Link>
+        <Link to="/templates" className="btn btn--ghost btn--sm">Free templates</Link>
+        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="btn btn--ghost btn--sm">Ask on WhatsApp</a>
+      </div>
     </main>
   );
 }

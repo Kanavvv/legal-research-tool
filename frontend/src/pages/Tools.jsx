@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { PRO_ON } from "../config";
 
 const GROUPS = [
   {
@@ -17,7 +18,7 @@ const GROUPS = [
     items: [
       { to: "/rights", name: "Know your rights", sub: "Arrest, FIR, bail, tenants, consumers and more. English and Hindi." },
       { to: "/templates", name: "Free templates", sub: "RTI, consumer complaint, cheque-bounce notice, rent agreement." },
-      { to: "/documents", name: "Explain a document", sub: "Upload a notice or FIR, even a phone photo, and get it in plain words. Pro." },
+      PRO_ON && { to: "/documents", name: "Explain a document", sub: "Upload a notice or FIR, even a phone photo, and get it in plain words. Pro." },
       { to: "/lawyers", name: "Find a lawyer", sub: "Advocates who listed themselves, by city and practice." },
     ],
   },
@@ -41,7 +42,7 @@ export default function Tools() {
         <section key={g.title} className="tools-group">
           <h2 className="zone-title">{g.title}</h2>
           <ul className="tile-grid">
-            {g.items.map((t) => (
+            {g.items.filter(Boolean).map((t) => (
               <li key={t.to}>
                 <Link to={t.to} className="card tile">
                   <span className="tile-title">{t.name}</span>

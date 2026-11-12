@@ -6,6 +6,7 @@ import LangToggle from "../components/LangToggle";
 import ResultView from "../ui/ResultView";
 import SaveToFolder from "../ui/SaveToFolder";
 import { exportToWord } from "../exportToWord";
+import { PRO_ON, WHATSAPP_URL } from "../config";
 
 const KINDS = [
   { id: "notice_reply", label: "Reply to a legal notice", hint: "Who sent the notice, when, what it claims, and your side of it." },
@@ -32,6 +33,14 @@ async function shrinkImage(file) {
 }
 
 export default function Documents() {
+  if (!PRO_ON) {
+    return <Paused title={<>Your <em>paperwork</em>, read and drafted.</>}
+      lede="Document review and drafts are coming back in a few days. Meanwhile, ask your question in plain words, or start from a free template." />;
+  }
+  return <DocumentsFull />;
+}
+
+function DocumentsFull() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,7 +167,7 @@ export default function Documents() {
         {error && (
           <div className="alert" role="alert">
             {error}
-            {upgrade && <> <Link to="/pricing" className="alert-link">See Nyaya Pro</Link></>}
+            {upgrade && PRO_ON && <> <Link to="/pricing" className="alert-link">See Nyaya Pro</Link></>}
           </div>
         )}
         <div className="doc-submit">
@@ -197,6 +206,23 @@ export default function Documents() {
           </>
         )}
       </section>
+    </main>
+  );
+}
+
+
+function Paused({ title, lede }) {
+  return (
+    <main id="main" className="station">
+      <header className="station-head">
+        <h1 className="station-title">{title}</h1>
+        <p className="station-lede">{lede}</p>
+      </header>
+      <div className="answer-actions">
+        <Link to="/" className="btn btn--lime btn--sm">Ask a question</Link>
+        <Link to="/templates" className="btn btn--ghost btn--sm">Free templates</Link>
+        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="btn btn--ghost btn--sm">Ask on WhatsApp</a>
+      </div>
     </main>
   );
 }
