@@ -85,6 +85,7 @@ LIMITS = {
     "argument": (5, 300),
     "search": (60, 1500),
     "share": (10, 100),
+    "notice": (3, 20),
 }
 
 _mem_counts = {}

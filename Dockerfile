@@ -19,5 +19,6 @@ COPY extras.py .
 COPY safety.py .
 COPY wa_more.py .
 COPY admin.py .
+COPY tools.py .
 
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

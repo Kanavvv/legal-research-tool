@@ -31,12 +31,12 @@ import guard
 from guard import log_event
 
 PLANS = {
-    "free": {"ask": 10, "compare": 5, "argument": 5, "document": 0, "draft": 0, "alerts": 0},
-    "pro": {"ask": 200, "compare": 50, "argument": 50, "document": 20, "draft": 20, "alerts": 5},
+    "free": {"ask": 10, "compare": 5, "argument": 5, "document": 0, "draft": 0, "alerts": 0, "notice": 3},
+    "pro": {"ask": 200, "compare": 50, "argument": 50, "document": 20, "draft": 20, "alerts": 5, "notice": 30},
 }
 FEATURE_NAMES = {
     "ask": "questions", "compare": "comparisons", "argument": "argument briefs",
-    "document": "document reviews", "draft": "drafts", "alerts": "case alerts",
+    "document": "document reviews", "draft": "drafts", "alerts": "case alerts", "notice": "notice checks",
 }
 PRO_PRICE_PAISE = int(os.environ.get("PRO_PRICE_PAISE", "19900"))
 PRO_DAYS = 30
