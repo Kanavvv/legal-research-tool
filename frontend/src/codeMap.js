@@ -26,3 +26,40 @@ export function backward(code, num) {
 
 export const isOldCode = (code) => Boolean(MAP[code]);
 export const isNewCode = (code) => Boolean(REVERSE[code]);
+
+// Old-code section references in a piece of text ("Section 420 IPC", "s. 438 CrPC",
+// "Sections 498A and 406 of the Indian Penal Code", "IPC 302"), with what replaced
+// each one on 1 July 2024. Skips a reference when the text already names its new section.
+const OLD_CODES = [
+  ["ipc", "IPC|I\\.P\\.C\\.?|Indian Penal Code|Penal Code"],
+  ["crpc", "CrPC|Cr\\.?\\s?P\\.?\\s?C\\.?|Code of Criminal Procedure"],
+  ["iea", "Indian Evidence Act|Evidence Act"],
+];
+const NUM = "\\d{1,3}[A-Z]{0,2}(?:\\s?\\(\\d+\\))?";
+const NUMS = `${NUM}(?:\\s*(?:,|and|&|/|or)\\s*${NUM})*`;
+const NEW_SHORT = { bns: "BNS", bnss: "BNSS", bsa: "BSA" };
+
+export function oldLawRefs(text) {
+  if (!text) return [];
+  const found = new Map();
+  for (const [code, names] of OLD_CODES) {
+    const patterns = [
+      new RegExp(`(?:sections?|secs?\\.?|ss?\\.)\\s*(${NUMS})\\s*(?:of\\s+(?:the\\s+)?)?(?:${names})`, "gi"),
+      new RegExp(`(?:${names})\\s*(?:sections?|secs?\\.?|ss?\\.)?\\s*(${NUMS})`, "gi"),
+    ];
+    for (const re of patterns) {
+      for (const m of text.matchAll(re)) {
+        for (const raw of m[1].split(/\s*(?:,|and|&|\/|or)\s*/i)) {
+          const num = raw.replace(/\s?\(\d+\)/, "").toUpperCase();
+          const row = forward(code, num);
+          if (!row || row.status === "none" || found.has(`${code}${num}`)) continue;
+          const to = NEW_SHORT[row.to];
+          const already = new RegExp(`\\b${row.new}\\b[^.\\n]{0,25}${to}\\b|\\b${to}\\b[^.\\n]{0,25}\\b${row.new}\\b`, "i");
+          if (already.test(text)) continue;
+          found.set(`${code}${num}`, row);
+        }
+      }
+    }
+  }
+  return [...found.values()].slice(0, 6);
+}

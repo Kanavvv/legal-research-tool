@@ -20,6 +20,9 @@ import SaveToFolder from "../ui/SaveToFolder";
 import MicButton from "../ui/MicButton";
 import SpeakButton from "../ui/SpeakButton";
 import { PRO_ON, WHATSAPP_URL } from "../config";
+import { oldLawRefs } from "../codeMap";
+import { sectionPath } from "../lawCodes";
+import { courtWeight } from "../ui/courtWeight";
 
 
 const QUESTION_POOL = [
@@ -82,6 +85,9 @@ export default function Home() {
   const [copyStatus, setCopyStatus] = useState("");
   const [citationCopied, setCitationCopied] = useState(null);
   const [feedbackGiven, setFeedbackGiven] = useState(null);
+  const [feedbackReason, setFeedbackReason] = useState("");
+  const [reasonSent, setReasonSent] = useState(false);
+  const [emergency, setEmergency] = useState([]);
 
   const [showSettings, setShowSettings] = useState(false);
   const [filterYear, setFilterYear] = useState("");
@@ -148,6 +154,9 @@ export default function Home() {
     setAnswer("");
     setSources([]);
     setFeedbackGiven(null);
+    setFeedbackReason("");
+    setReasonSent(false);
+    setEmergency([]);
     setCopyStatus("");
     setHighlight(null);
     setTimings({});
@@ -210,7 +219,9 @@ export default function Home() {
       };
 
       const handle = (msg) => {
-        if (msg.type === "sources") {
+        if (msg.type === "emergency") {
+          setEmergency(msg.lines || []);
+        } else if (msg.type === "sources") {
           timers.current.forEach(clearTimeout);
           const seen = new Set();
           const unique = (msg.sources || []).filter((s) => !seen.has(s.case_id) && seen.add(s.case_id));
@@ -370,16 +381,19 @@ export default function Home() {
     exportToWord({ title: asked, markdown: answer, sources });
   }
 
-  async function sendFeedback(value) {
+  async function sendFeedback(value, reason = "") {
     setFeedbackGiven(value);
+    if (reason) setReasonSent(true);
     try {
       await fetch(`${API_URL}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: asked, helpful: value }),
+        body: JSON.stringify({ question: asked, helpful: value, reason, answer: answer.slice(0, 4000), route: "ask" }),
       });
     } catch { /* non-critical */ }
   }
+
+  const oldRefs = useMemo(() => (phase === "done" ? oldLawRefs(answer) : []), [phase, answer]);
 
   function jumpToSource(n) {
     const el = document.getElementById(`src-${n}`);
@@ -562,6 +576,19 @@ export default function Home() {
                     <span className="mono">answer</span>
                     <span className={`pipe-status pipe-status--${pipeStatus}`}><span className="dot" aria-hidden="true" />{phase === "done" ? "complete" : phase === "writing" ? "writing" : "searching"}</span>
                   </div>
+                  {emergency.length > 0 && (
+                    <div className="helplines" role="alert">
+                      <p className="helplines-head">If you or someone else needs help right now</p>
+                      <ul>
+                        {emergency.map((e) => (
+                          <li key={e.number}>
+                            <a className="helpline-num" href={`tel:${e.number}`}>{e.number}</a>
+                            <span><strong>{e.name}</strong> {e.note}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {!answer && (
                     <div className="skeleton" aria-hidden="true"><span /><span /><span /><span /></div>
                   )}
@@ -594,6 +621,44 @@ export default function Home() {
                         <button type="button" aria-pressed={feedbackGiven === true} onClick={() => sendFeedback(true)}>Yes</button>
                         <button type="button" aria-pressed={feedbackGiven === false} onClick={() => sendFeedback(false)}>No</button>
                       </div>
+                      {feedbackGiven === false && !reasonSent && (
+                        <form
+                          className="feedback-reason"
+                          onSubmit={(e) => { e.preventDefault(); if (feedbackReason.trim()) sendFeedback(false, feedbackReason.trim()); }}
+                        >
+                          <label htmlFor="fb-reason" className="mono muted">what was wrong or missing? (optional)</label>
+                          <textarea
+                            id="fb-reason"
+                            rows={2}
+                            maxLength={1000}
+                            value={feedbackReason}
+                            onChange={(e) => setFeedbackReason(e.target.value)}
+                            placeholder="Wrong section, outdated law, didn't answer my question..."
+                          />
+                          <button type="submit" className="btn btn--ghost btn--sm" disabled={!feedbackReason.trim()}>Send</button>
+                        </form>
+                      )}
+                      {reasonSent && <p className="mono muted feedback-thanks" role="status">Thank you. We read every one of these.</p>}
+                    </div>
+                  )}
+                  {oldRefs.length > 0 && (
+                    <div className="oldlaw" role="note">
+                      <p className="oldlaw-head">
+                        Criminal law changed on 1 July 2024. For offences from that date, these sections are now:
+                      </p>
+                      <ul>
+                        {oldRefs.map((r) => (
+                          <li key={`${r.from}${r.num}`}>
+                            <Link to={sectionPath(r.to, r.new)}>
+                              <span className="oldlaw-old">{r.from === "iea" ? "Evidence Act" : r.from.toUpperCase().replace("CRPC", "CrPC")} {r.num}</span>
+                              <span aria-hidden="true"> → </span>
+                              <span className="sr-only"> is now </span>
+                              <span className="oldlaw-new">{r.to.toUpperCase()} {r.new}</span>
+                              {r.status === "close" && <span className="muted"> (closest match)</span>}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   {phase === "done" && check && (check.cited.length > 0 || check.invalid.length > 0 || check.unverified.length > 0) && (
@@ -652,6 +717,11 @@ export default function Home() {
                             {[s.doc_type === "statute" ? "Act" : s.court, s.year].filter(Boolean).join(" · ")}
                           </span>
                         </div>
+                        {courtWeight(s) && (
+                          <p className={`court-weight court-weight--${courtWeight(s).level}`} title={courtWeight(s).long}>
+                            {courtWeight(s).short}
+                          </p>
+                        )}
                         {(s.cited_by_count > 0 || s.overruled_hint) && (
                           <p className="source-graph mono">
                             {s.cited_by_count > 0 && <span>cited by {s.cited_by_count} later {s.cited_by_count === 1 ? "judgment" : "judgments"}</span>}

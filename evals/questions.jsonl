@@ -1,0 +1,50 @@
+{"id": "cheque-bounce", "q": "My cheque bounced. What law applies and what is the time limit to send a notice?", "lang": "en", "expect": [["138"], ["Negotiable Instruments", "NI Act"], ["30 days", "thirty days"]], "reviewed": false}
+{"id": "anticipatory-bail", "q": "How do I get anticipatory bail?", "lang": "en", "expect": [["482", "438"], ["Sessions Court", "High Court"]], "reviewed": false}
+{"id": "dowry-cruelty", "q": "What is the punishment for cruelty by husband for dowry?", "lang": "en", "expect": [["85", "498A"], ["three years", "3 years"]], "reviewed": false}
+{"id": "cheating", "q": "Which section covers cheating and what is the punishment?", "lang": "en", "expect": [["318", "420"]], "reviewed": false}
+{"id": "murder", "q": "What is the punishment for murder in India now?", "lang": "en", "expect": [["103", "302"], ["death", "life imprisonment", "imprisonment for life"]], "reviewed": false}
+{"id": "fir-refused", "q": "The police are refusing to register my FIR. What can I do?", "lang": "en", "expect": [["173", "154"], ["Superintendent", "Magistrate", "SP"]], "reviewed": false}
+{"id": "zero-fir", "q": "Can I file an FIR at any police station even if the crime happened elsewhere?", "lang": "en", "expect": [["Zero FIR", "zero FIR"], ["173"]], "reviewed": false}
+{"id": "arrest-grounds", "q": "Do the police have to tell me why I am being arrested?", "lang": "en", "expect": [["grounds"], ["Article 22", "47", "50"]], "reviewed": false}
+{"id": "produce-24h", "q": "How long can police keep an arrested person before taking them to a magistrate?", "lang": "en", "expect": [["24 hours", "twenty-four hours"]], "reviewed": false}
+{"id": "consumer-forum", "q": "Where do I file a consumer complaint for a ₹2 lakh defective phone?", "lang": "en", "expect": [["District Commission", "District Consumer"]], "reviewed": false}
+{"id": "consumer-limitation", "q": "What is the time limit to file a consumer complaint?", "lang": "en", "expect": [["two years", "2 years"]], "reviewed": false}
+{"id": "rti-time", "q": "How long does a government office have to reply to an RTI application?", "lang": "en", "expect": [["30 days", "thirty days"]], "reviewed": false}
+{"id": "rti-fee", "q": "What is the fee for filing an RTI application with the central government?", "lang": "en", "expect": [["10", "ten"]], "reviewed": false}
+{"id": "rti-appeal", "q": "My RTI was not answered. How do I appeal?", "lang": "en", "expect": [["first appeal", "First Appellate"], ["Information Commission"]], "reviewed": false}
+{"id": "mutual-divorce", "q": "How does divorce by mutual consent work for Hindus?", "lang": "en", "expect": [["13B", "13-B"], ["six months", "6 months"]], "reviewed": false}
+{"id": "maintenance-wife", "q": "Can a wife claim maintenance from her husband?", "lang": "en", "expect": [["144", "125"]], "reviewed": false}
+{"id": "dv-act", "q": "What protection does the Domestic Violence Act give a woman?", "lang": "en", "expect": [["protection order", "Protection Order"], ["residence", "Residence"]], "reviewed": false}
+{"id": "posh", "q": "How do I complain about sexual harassment at my workplace?", "lang": "en", "expect": [["Internal Committee", "Internal Complaints Committee", "ICC"], ["three months", "3 months"]], "reviewed": false}
+{"id": "legal-aid", "q": "Can I get a free lawyer if I can't afford one?", "lang": "en", "expect": [["Legal Services", "NALSA", "legal aid"], ["39A", "Article 39A", "12"]], "reviewed": false}
+{"id": "art21", "q": "What does Article 21 of the Constitution protect?", "lang": "en", "expect": [["life", "personal liberty"]], "reviewed": false}
+{"id": "art32", "q": "Can I go directly to the Supreme Court if my fundamental rights are violated?", "lang": "en", "expect": [["32"], ["writ"]], "reviewed": false}
+{"id": "non-bailable-bail", "q": "How is bail granted in a non-bailable offence?", "lang": "en", "expect": [["480", "437", "483", "439"]], "reviewed": false}
+{"id": "default-bail", "q": "What is default bail if the police don't file a chargesheet?", "lang": "en", "expect": [["187", "167"], ["60", "90"]], "reviewed": false}
+{"id": "defamation", "q": "Is defamation a crime in India?", "lang": "en", "expect": [["356", "499", "500"]], "reviewed": false}
+{"id": "sedition", "q": "Does sedition still exist under the new criminal laws?", "lang": "en", "expect": [["152"]], "reviewed": false}
+{"id": "stalking", "q": "What is the law against stalking?", "lang": "en", "expect": [["78", "354D"]], "reviewed": false}
+{"id": "theft", "q": "Which section deals with theft under BNS?", "lang": "en", "expect": [["303"]], "reviewed": false}
+{"id": "electronic-evidence", "q": "Do WhatsApp chats need a certificate to be used as evidence?", "lang": "en", "expect": [["63", "65B"], ["certificate"]], "reviewed": false}
+{"id": "police-confession", "q": "Is a confession made to the police valid in court?", "lang": "en", "expect": [["23", "25"]], "reviewed": false}
+{"id": "dying-declaration", "q": "Is a dying declaration admissible as evidence?", "lang": "en", "expect": [["26", "32"]], "reviewed": false}
+{"id": "limitation-money", "q": "How many years do I have to file a suit to recover money lent?", "lang": "en", "expect": [["three years", "3 years"], ["Limitation Act"]], "reviewed": false}
+{"id": "adverse-possession", "q": "Someone has occupied my land for years. Can they claim adverse possession?", "lang": "en", "expect": [["12 years", "twelve years"]], "reviewed": false}
+{"id": "arbitration-challenge", "q": "How do I challenge an arbitration award?", "lang": "en", "expect": [["34"], ["three months", "3 months"]], "reviewed": false}
+{"id": "daughter-coparcener", "q": "Do daughters have an equal share in ancestral Hindu property?", "lang": "en", "expect": [["Vineeta Sharma"], ["2005"]], "reviewed": false}
+{"id": "triple-talaq", "q": "Is triple talaq valid in India?", "lang": "en", "expect": [["Shayara Bano", "2019", "Muslim Women"]], "reviewed": false}
+{"id": "privacy", "q": "Is privacy a fundamental right in India?", "lang": "en", "expect": [["Puttaswamy"]], "reviewed": false}
+{"id": "basic-structure", "q": "What is the basic structure doctrine?", "lang": "en", "expect": [["Kesavananda"]], "reviewed": false}
+{"id": "vishaka", "q": "Which case laid down guidelines on sexual harassment at work before POSH?", "lang": "en", "expect": [["Vishaka"]], "reviewed": false}
+{"id": "arrest-guidelines", "q": "What are the D.K. Basu guidelines on arrest?", "lang": "en", "expect": [["D.K. Basu", "DK Basu", "D. K. Basu"]], "reviewed": false}
+{"id": "arnesh-kumar", "q": "Can the police arrest automatically in a 498A complaint?", "lang": "en", "expect": [["Arnesh Kumar"]], "reviewed": false}
+{"id": "sec66a", "q": "Is Section 66A of the IT Act still valid?", "lang": "en", "expect": [["Shreya Singhal"], ["struck down", "unconstitutional"]], "reviewed": false}
+{"id": "accident-claim", "q": "How do I claim compensation after a road accident?", "lang": "en", "expect": [["Motor Accident", "MACT", "Claims Tribunal"], ["166", "Motor Vehicles"]], "reviewed": false}
+{"id": "cyber-fraud", "q": "Money was debited from my account after I clicked a link. What should I do?", "lang": "en", "expect": [["1930"], ["cybercrime.gov.in"]], "reviewed": false}
+{"id": "lalita-kumari", "q": "Is it mandatory for police to register an FIR for a cognizable offence?", "lang": "en", "expect": [["Lalita Kumari"]], "reviewed": false}
+{"id": "euthanasia", "q": "Is passive euthanasia legal in India?", "lang": "en", "expect": [["Common Cause", "Aruna"]], "reviewed": false}
+{"id": "bail-not-jail", "q": "Is bail the rule and jail the exception?", "lang": "en", "expect": [["bail"], ["Article 21", "liberty"]], "reviewed": false}
+{"id": "tenant-eviction", "q": "Can my landlord evict me without notice?", "lang": "en", "expect": [["notice"], ["Rent", "Transfer of Property", "106"]], "reviewed": false}
+{"id": "hi-cheque", "q": "चेक बाउंस होने पर क्या करें?", "lang": "hi", "expect": [["138"]], "reviewed": false}
+{"id": "hi-bail", "q": "अग्रिम जमानत कैसे मिलती है?", "lang": "hi", "expect": [["482", "438"]], "reviewed": false}
+{"id": "hi-fir", "q": "पुलिस FIR दर्ज नहीं कर रही, क्या करूं?", "lang": "hi", "expect": [["173", "154"]], "reviewed": false}
