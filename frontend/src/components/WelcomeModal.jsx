@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "../firebase";
+import { signInWithGoogle, signInErrorMessage } from "../firebase";
 import { useAuth } from "../AuthContext";
 
 const SEEN_KEY = "nyaya-welcome-seen";
@@ -73,10 +72,12 @@ export default function WelcomeModal() {
   async function handleGoogle() {
     setSigningIn(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      dismiss();
-    } catch {
+      if (await signInWithGoogle()) dismiss();
+    } catch (err) {
+      console.error("sign-in failed", err?.code, err?.message);
       setSigningIn(false);
+      // Show the reason on the full sign-in page rather than failing silently
+      if (signInErrorMessage(err)) { dismiss(); navigate("/account", { state: { signInError: signInErrorMessage(err) } }); }
     }
   }
 

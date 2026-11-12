@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DeskExtras from "../ui/DeskExtras";
 import {
-  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { auth, googleProvider } from "../firebase";
+import { auth, signInWithGoogle, signInErrorMessage } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { authFetch } from "../authFetch";
 import { API_URL } from "../api";
@@ -22,7 +21,7 @@ export default function Account() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(location.state?.signInError || "");
   const [loading, setLoading] = useState(false);
 
   const [history, setHistory] = useState(null); // null = loading
@@ -55,8 +54,7 @@ export default function Account() {
     setError("");
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      navigate(next);
+      if (await signInWithGoogle()) navigate(next);
     } catch (err) {
       setError(readableError(err));
     } finally {
@@ -86,14 +84,8 @@ export default function Account() {
   }
 
   function readableError(err) {
-    const code = err.code || "";
-    if (code.includes("wrong-password") || code.includes("invalid-credential")) return "Incorrect email or password.";
-    if (code.includes("user-not-found")) return "No account found with that email.";
-    if (code.includes("email-already-in-use")) return "An account with that email already exists.";
-    if (code.includes("weak-password")) return "Password should be at least 6 characters.";
-    if (code.includes("invalid-email")) return "That doesn't look like a valid email.";
-    if (code.includes("popup-closed-by-user")) return "";
-    return "Something went wrong. Please try again.";
+    console.error("sign-in failed", err?.code, err?.message);
+    return signInErrorMessage(err);
   }
 
   if (user) {
