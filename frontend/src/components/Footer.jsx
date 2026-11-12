@@ -119,9 +119,18 @@ export default function Footer() {
           <Link to="/statutes">Statutes</Link>
           <Link to="/documents">Documents</Link>
           <Link to="/drafts">Drafts</Link>
+          <Link to="/convert">IPC ↔ BNS</Link>
+        </div>
+        <div>
+          <p className="mono muted">for everyone</p>
+          <Link to="/rights">Know your rights</Link>
+          <Link to="/templates">Free templates</Link>
+          <Link to="/lawyers">Find a lawyer</Link>
+          <Link to="/digest">Weekly digest</Link>
         </div>
         <div>
           <p className="mono muted">learn</p>
+          <Link to="/students">Student mode</Link>
           <Link to="/#games">Games</Link>
           <Link to="/about">How it works</Link>
         </div>
@@ -129,6 +138,7 @@ export default function Footer() {
           <p className="mono muted">you</p>
           <Link to="/account">Sign in / My desk</Link>
           <Link to="/pricing">Pricing</Link>
+          <Link to="/lawyers/join">Advocates: list free</Link>
         </div>
         <div>
           <p className="mono muted">legal</p>

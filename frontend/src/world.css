@@ -473,3 +473,13 @@ a.tool:hover { border-color: rgba(255, 107, 91, 0.5); }
   .tile:hover { transform: none; }
 }
 @media (max-width: 1440px) { .nav-end .status-chip { display: none; } }
+.reader { scroll-margin-top: 90px; }
+/* The ask row must never be wider than the phone: the input gives way, not the button */
+.ask-row input { flex: 1 1 0; width: 0; min-width: 0; }
+@media (max-width: 420px) {
+  .ask-row { padding-left: 16px; gap: 6px; }
+  .ask-row .btn { padding: 0 16px; }
+  .ask-row .btn-arrow { display: none; }
+}
+.pipe-log ul { grid-template-columns: minmax(0, 1fr); }
+html, body { overflow-x: clip; }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Sonar from "../ui/Sonar";
 import { prefersReducedMotion } from "../ui/motion";
 import { API_URL } from "../api";
@@ -14,6 +14,8 @@ export default function StatuteBrowser() {
   const [error, setError] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const sectionRef = useRef(null);
+  const readerRef = useRef(null);
+  const jumpToReader = useRef(false);
 
   // The chosen Act and section live in the URL, so a section can be linked to directly
   const actName = searchParams.get("act");
@@ -56,8 +58,17 @@ export default function StatuteBrowser() {
     }
   }, [shownSection]);
 
+  // Picking an Act takes you straight to its contents instead of leaving them below the fold
+  useEffect(() => {
+    if (act && jumpToReader.current && readerRef.current) {
+      jumpToReader.current = false;
+      readerRef.current.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    }
+  }, [act]);
+
   function chooseAct(name) {
     setFilter("");
+    jumpToReader.current = true;
     setSearchParams({ act: name });
   }
 
@@ -109,7 +120,7 @@ export default function StatuteBrowser() {
       )}
 
       {act && (
-        <div className={shownSection || loadingSection ? "reader reader--open" : "reader"}>
+        <div ref={readerRef} className={shownSection || loadingSection ? "reader reader--open" : "reader"}>
           <section className="contents" aria-labelledby="contents-title">
             <h2 id="contents-title" className="zone-title">Contents of {act.name}</h2>
             <label className="sr-only" htmlFor="contents-filter">Filter {act.name} contents</label>
@@ -156,8 +167,11 @@ export default function StatuteBrowser() {
                       Next: {act.unit} {next.number}
                     </button>
                   )}
+                  <Link to={`/law/${shownSection.case_id.replace(/_s([^_]+)$/, "/$1")}`} className="text-link">This section's own page</Link>
                   {shownSection.source_url && shownSection.source_url !== "nan" && (
-                    <a href={shownSection.source_url} target="_blank" rel="noreferrer" className="text-link">Read on India Code</a>
+                    <a href={shownSection.source_url} target="_blank" rel="noreferrer" className="text-link">
+                      {shownSection.source_url.includes("indiacode") ? "Read on India Code" : "Read the official text"}
+                    </a>
                   )}
                 </div>
               </article>

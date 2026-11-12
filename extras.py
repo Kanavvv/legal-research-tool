@@ -251,7 +251,7 @@ def my_listing(claims=Depends(required_user)):
 
 
 @router.post("/lawyers")
-def save_listing(body: LawyerListing, req: Request, claims=Depends(required_user)):
+def save_listing(body: LawyerListing, req: Request, background: BackgroundTasks, claims=Depends(required_user)):
     rate_limit(req, "share")
     if not body.consent:
         raise HTTPException(status_code=400, detail="Please confirm the declaration.")
@@ -275,7 +275,29 @@ def save_listing(body: LawyerListing, req: Request, claims=Depends(required_user
     data.update(status="pending", uid=claims["uid"], account_email=claims.get("email", ""), updated=_now())
     _need_db().collection("lawyers").document(claims["uid"]).set(data)
     log_event("lawyer_listing", uid_hash=_hash(claims["uid"]))
+    background.add_task(_notify_admins, data)
     return {"status": "pending"}
+
+
+def _notify_admins(data):
+    """Emails the admins that a listing is waiting. Never blocks or fails the save."""
+    key = os.environ.get("RESEND_API_KEY", "")
+    if not key or not ADMIN_EMAILS:
+        return
+    sender = os.environ.get("ALERTS_FROM_ADDRESS", os.environ.get("DIGEST_FROM_ADDRESS", "Nyaya <digest@asknyaya.in>"))
+    esc = lambda x: str(x or "").replace("&", "&amp;").replace("<", "&lt;")
+    html = (f"<p>A new or edited advocate listing is waiting for review on Nyaya.</p>"
+            f"<p><strong>{esc(data['name'])}</strong><br>{esc(data['enrolment_no'])}, {esc(data['bar_council'])}<br>"
+            f"{esc(data['city'])}, {esc(data['state'])}<br>{esc(', '.join(data['practice_areas']))}</p>"
+            f'<p>Check the enrolment with the Bar Council, then approve or reject it at '
+            f'<a href="https://asknyaya.in/lawyers">asknyaya.in/lawyers</a> (sign in as admin).</p>')
+    try:
+        requests.post("https://api.resend.com/emails",
+                      headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                      json={"from": sender, "to": sorted(ADMIN_EMAILS), "subject": f"Listing to review: {data['name']}", "html": html},
+                      timeout=10)
+    except requests.RequestException:
+        log_event("lawyer_notify_failed", severity="WARNING")
 
 
 @router.delete("/lawyers/me")

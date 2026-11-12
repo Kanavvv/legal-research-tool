@@ -671,7 +671,7 @@ a.tool:hover .tool-go::after { width: 28px; }
 .foot-status { max-width: var(--max); margin: 0 auto; padding: 32px var(--gutter); list-style: none; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; color: var(--ink-60); border-bottom: 1px solid var(--line); }
 .foot-status li { display: inline-flex; align-items: center; gap: 8px; }
 .foot-status .dot { width: 5px; height: 5px; }
-.foot-cols { max-width: var(--max); margin: 0 auto; padding: 36px var(--gutter); display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.foot-cols { max-width: var(--max); margin: 0 auto; padding: 36px var(--gutter); display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
 .foot-cols > div { display: grid; gap: 4px; align-content: start; }
 .foot-cols .mono { margin-bottom: 8px; }
 .foot-cols a { font-size: 14px; color: var(--ink-80); text-decoration: none; padding: 4px 0; justify-self: start; }
