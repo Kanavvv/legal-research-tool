@@ -326,3 +326,128 @@ def content_sitemap(req: Request):
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + body + "</urlset>")
         _put("sitemap", xml, 3600)
     return Response(content=xml, media_type="application/xml", headers={"Cache-Control": "public, max-age=3600"})
+
+
+# ---------------- full HTML for search engines ----------------
+# asknyaya.in/a/<id> and /explained/<slug> are rewritten here by vercel.json. Each answer
+# comes back as the site's own page shell with its title, description, canonical link,
+# structured data and text filled in, so it is readable without JavaScript; the app then
+# loads over it as usual.
+
+import html as _html
+import requests as _requests
+from fastapi.responses import HTMLResponse
+
+SHELL_URL = "https://asknyaya.in/app.html"
+
+
+def _shell():
+    hit = _get("shell")
+    if hit:
+        return hit
+    r = _requests.get(SHELL_URL, timeout=10)
+    r.raise_for_status()
+    _put("shell", r.text, 600)
+    return r.text
+
+
+def _md_html(md):
+    """Enough markdown for answers: headings, lists, bold, paragraphs. Escaped first."""
+    out, items, kind = [], [], None
+
+    def flush():
+        nonlocal items, kind
+        if items:
+            out.append(f"<{kind}>" + "".join(f"<li>{i}</li>" for i in items) + f"</{kind}>")
+        items, kind = [], None
+
+    for line in (md or "").splitlines():
+        t = _html.escape(re.sub(r"\[Source (\d+)\]", r"[\1]", line.strip()))
+        t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
+        m = re.match(r"^(#{1,4})\s+(.*)", t)
+        li = re.match(r"^(?:[-*]|\d+[.)])\s+(.*)", t)
+        if m:
+            flush(); out.append(f"<h2>{m.group(2)}</h2>")
+        elif li:
+            k = "ol" if re.match(r"^\d", t) else "ul"
+            if kind and kind != k:
+                flush()
+            kind = k; items.append(li.group(1))
+        elif t:
+            flush(); out.append(f"<p>{t}</p>")
+        else:
+            flush()
+    flush()
+    return "".join(out)
+
+
+def _fill(shell, path, title, desc, body, ld, index=True):
+    e = lambda s: _html.escape(s or "", quote=True)
+    h = shell
+    h = re.sub(r"<title>[^<]*</title>", f"<title>{e(title)}</title>", h, count=1)
+    for pat, val in ((r'(<meta name="description" content=")[^"]*"', desc), (r'(<meta property="og:title" content=")[^"]*"', title),
+                     (r'(<meta property="og:description" content=")[^"]*"', desc),
+                     (r'(<meta property="og:url" content=")[^"]*"', "https://asknyaya.in" + path),
+                     (r'(<link rel="canonical" href=")[^"]*"', "https://asknyaya.in" + path)):
+        h = re.sub(pat, lambda m: m.group(1) + e(val) + '"', h, count=1)
+    extra = '<script type="application/ld+json">' + json.dumps(ld).replace("<", "\\u003c") + "</script>"
+    if not index:
+        extra += '<meta name="robots" content="noindex" />'
+    h = h.replace("</head>", extra + "</head>", 1)
+    page = (f'<main class="prerender">{body}<p><a href="/">Ask Nyaya your own question, free</a> · '
+            '<a href="/answers">More answered questions</a> · Research help, not legal advice.</p></main>')
+    return h.replace('<div id="root"></div>', f'<div id="root">{page}</div>', 1)
+
+
+def _sources_html(sources):
+    rows = [f"<li>{_html.escape(s.get('title') or '')}{' (' + _html.escape(s.get('citation')) + ')' if s.get('citation') else ''}</li>"
+            for s in (sources or [])]
+    return f"<h2>Sources</h2><ol>{''.join(rows)}</ol>" if rows else ""
+
+
+@router.get("/seo/a/{share_id}", response_class=HTMLResponse)
+def seo_answer(share_id: str, req: Request):
+    rate_limit(req, "search", shared=False)
+    shell = _shell()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{6,20}", share_id):
+        return HTMLResponse(shell, status_code=404)
+    snap = _need_db().collection("shares").document(share_id).get()
+    if not snap.exists:
+        return HTMLResponse(shell, status_code=404)
+    d = snap.to_dict()
+    q, answer, public = d.get("question", ""), d.get("answer", ""), bool(d.get("public"))
+    created = _iso(d.get("created"))
+    desc = _snippet(answer, 155)
+    ld = {"@context": "https://schema.org", "@type": "QAPage", "mainEntity": {
+        "@type": "Question", "name": q, "answerCount": 1, "dateCreated": created,
+        "acceptedAnswer": {"@type": "Answer", "text": _snippet(answer, 4000), "dateCreated": created,
+                           "url": f"https://asknyaya.in/a/{share_id}",
+                           "author": {"@type": "Organization", "name": "Nyaya", "url": "https://asknyaya.in"}}}}
+    body = f"<h1>{_html.escape(q)}</h1>{_md_html(answer)}{_sources_html(d.get('sources'))}"
+    out = _fill(shell, f"/a/{share_id}", f"{q[:70]} · Nyaya", desc, body, ld, index=public)
+    return HTMLResponse(out, headers={"Cache-Control": "public, max-age=600"})
+
+
+@router.get("/seo/explained/{slug}", response_class=HTMLResponse)
+def seo_explainer(slug: str, req: Request):
+    rate_limit(req, "search", shared=False)
+    shell = _shell()
+    if not re.fullmatch(r"[a-z0-9-]{1,80}", slug):
+        return HTMLResponse(shell, status_code=404)
+    snap = _need_db().collection("explainers").document(slug).get()
+    if not snap.exists or not snap.to_dict().get("published"):
+        return HTMLResponse(shell, status_code=404)
+    x = snap.to_dict()
+    faq = x.get("faq") or []
+    graph = [{"@type": "Article", "headline": x["title"], "description": x.get("dek", ""),
+              "datePublished": _iso(x.get("published_at") or x.get("created")), "dateModified": _iso(x.get("updated")),
+              "publisher": {"@type": "Organization", "name": "Nyaya", "url": "https://asknyaya.in"}}]
+    if faq:
+        graph.append({"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": f["q"],
+                      "acceptedAnswer": {"@type": "Answer", "text": f["a"]}} for f in faq]})
+    body = (f"<h1>{_html.escape(x['title'])}</h1><p>{_html.escape(x.get('dek', ''))}</p>{_md_html(x.get('body'))}"
+            + "".join(f"<h2>{_html.escape(f['q'])}</h2><p>{_html.escape(f['a'])}</p>" for f in faq)
+            + _sources_html(x.get("sources")))
+    out = _fill(shell, f"/explained/{slug}", f"{x['title']} · Nyaya", x.get("dek") or x["title"], body,
+                {"@context": "https://schema.org", "@graph": graph})
+    return HTMLResponse(out, headers={"Cache-Control": "public, max-age=600"})

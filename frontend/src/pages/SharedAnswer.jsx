@@ -10,24 +10,15 @@ export default function SharedAnswer() {
   const [error, setError] = useState("");
   const [more, setMore] = useState([]);
 
-  // Listed answers: structured data for search, and links to other answers so people and crawlers keep going
+  // Listed answers link to other answers, so people and crawlers keep going.
+  // (Structured data comes with the page itself: see /seo/a/<id> in library.py.)
   useEffect(() => {
     if (!data?.public) return undefined;
-    const plain = data.answer.replace(/\[Source \d+\]/g, "").replace(/[#*_>`]/g, "").trim();
-    const el = document.createElement("script");
-    el.type = "application/ld+json";
-    el.text = JSON.stringify({
-      "@context": "https://schema.org", "@type": "QAPage",
-      mainEntity: { "@type": "Question", name: data.question, answerCount: 1, dateCreated: data.created,
-        acceptedAnswer: { "@type": "Answer", text: plain.slice(0, 5000), dateCreated: data.created, url: window.location.href.split("?")[0],
-          author: { "@type": "Organization", name: "Nyaya", url: "https://asknyaya.in" } } },
-    });
-    document.head.appendChild(el);
     let live = true;
     fetch(`${API_URL}/answers?limit=12`).then((r) => (r.ok ? r.json() : null))
       .then((d) => live && d && setMore((d.answers || []).filter((a) => a.id !== id).slice(0, 6)))
       .catch(() => {});
-    return () => { live = false; el.remove(); };
+    return () => { live = false; };
   }, [data, id]);
 
   useEffect(() => {
