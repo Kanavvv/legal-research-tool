@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { PRO_ON } from "../config";
+import { useSiteConfig } from "../ui/siteConfig";
+
+const FEATURE_OF = { "/is-it-legal": "check", "/notice": "notice", "/compare": "compare", "/argument-builder": "argument" };
 
 const GROUPS = [
   {
@@ -38,6 +41,7 @@ const GROUPS = [
 ];
 
 export default function Tools() {
+  const off = useSiteConfig()?.features_off || [];
   return (
     <main id="main" className="station">
       <header className="station-head">
@@ -47,7 +51,7 @@ export default function Tools() {
         <section key={g.title} className="tools-group">
           <h2 className="zone-title">{g.title}</h2>
           <ul className="tile-grid">
-            {g.items.filter(Boolean).map((t) => (
+            {g.items.filter((t) => t && !off.includes(FEATURE_OF[t.to])).map((t) => (
               <li key={t.to}>
                 <Link to={t.to} className="card tile">
                   <span className="tile-title">{t.name}</span>

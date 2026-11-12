@@ -261,6 +261,7 @@ def search_endpoint(q: str, req: Request):
 
 @app.post("/ask")
 def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("ask")
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
@@ -459,6 +460,7 @@ class CompareRequest(BaseModel):
 
 @app.post("/compare")
 def compare_endpoint(request: CompareRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("compare")
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
@@ -515,6 +517,7 @@ def compare_endpoint(request: CompareRequest, req: Request, claims=Depends(optio
 @app.post("/argument")
 def argument_endpoint(request: ArgumentRequest, req: Request, claims=Depends(optional_user)):
     """Builds a two-sided argument brief: supporting precedents AND counterarguments to address."""
+    guard.require_feature("argument")
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
@@ -945,5 +948,7 @@ extras.init(get_case_by_id)
 app.include_router(extras.router)
 import admin  # noqa: E402  (needs extras and features set up first)
 app.include_router(admin.router)
+import control  # noqa: E402
+app.include_router(control.router)
 import tools  # noqa: E402
 app.include_router(tools.router)

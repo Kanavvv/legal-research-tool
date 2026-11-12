@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_URL, apiFetch, responseError } from "../api";
+import { useFeatureOn } from "../ui/siteConfig";
 import { Link, useParams } from "react-router-dom";
 import { TEMPLATES, findTemplate } from "../data/templates";
 import { setPageMeta } from "../ui/meta";
@@ -96,6 +97,7 @@ function Filler({ tpl }) {
     try { localStorage.setItem(STORE + tpl.slug, JSON.stringify(values)); } catch { /* storage off */ }
   }, [tpl.slug, values]);
 
+  const assistOn = useFeatureOn("assist");
   const set = (id) => (val) => setValues((prev) => ({ ...prev, [id]: val }));
 
   async function copy() {
@@ -124,7 +126,7 @@ function Filler({ tpl }) {
   return (
     <div className="tpl-layout">
       <form className="card tpl-form" onSubmit={(e) => e.preventDefault()}>
-        {ASSIST[tpl.slug] && <Assist cfg={ASSIST[tpl.slug]} onFill={(fill) => setValues((prev) => ({ ...prev, ...fill }))} />}
+        {assistOn && ASSIST[tpl.slug] && <Assist cfg={ASSIST[tpl.slug]} onFill={(fill) => setValues((prev) => ({ ...prev, ...fill }))} />}
         {tpl.fields.map((f) => <Field key={f.id} f={f} value={values[f.id]} onChange={set(f.id)} />)}
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => setValues({})}>Clear the form</button>
         <p className="mono muted tpl-private">Saved only in this browser. What you type in the form is never sent to Nyaya.</p>

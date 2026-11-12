@@ -14,6 +14,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 import features
+import guard
 import safety
 from guard import cache_get, cache_set, check_budget, log_event, log_question, rate_limit, record_usage
 from plans import optional_user, use_quota
@@ -75,6 +76,7 @@ class CheckRequest(BaseModel):
 
 @router.post("/check")
 def is_it_legal(body: CheckRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("check")
     situation = body.situation.strip()
     if not 8 <= len(situation) <= 800:
         raise HTTPException(status_code=400, detail="Describe the situation in 8 to 800 characters.")
@@ -129,6 +131,7 @@ NOTICE_SYSTEM = (
 @router.post("/notice")
 async def decode_notice(req: Request, file: UploadFile | None = File(None), text: str = Form(""),
                         lang: str = Form("en"), claims=Depends(optional_user)):
+    guard.require_feature("notice")
     rate_limit(req, "notice")
     lang = features._helpers["clean_lang"](lang)
     uid = (claims or {}).get("uid")
@@ -208,6 +211,7 @@ class AssistRequest(BaseModel):
 
 @router.post("/assist")
 def template_assist(body: AssistRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("assist")
     if body.kind not in ASSIST:
         raise HTTPException(status_code=400, detail="Unknown template.")
     problem = body.problem.strip()
