@@ -137,6 +137,7 @@ class AskRequest(BaseModel):
     doc_type: str | None = None
     level: str | None = "standard"
     history: list[Turn] = []   # earlier turns of this conversation, oldest first
+    lang: str = "en"           # "en" or "hi": the language the answer is written in
 
 
 MAX_TURNS = 3
@@ -145,6 +146,30 @@ FOLLOW_UP_NOTE = (
     "understand what is being asked, but cite only the case excerpts provided with "
     "the latest question, numbered as given."
 )
+
+CRIMINAL_LAW_NOTE = (
+    " Indian criminal law changed on 1 July 2024: the Bharatiya Nyaya Sanhita (BNS) replaced the "
+    "Indian Penal Code, the Bharatiya Nagarik Suraksha Sanhita (BNSS) replaced the Code of Criminal "
+    "Procedure, and the Bharatiya Sakshya Adhiniyam (BSA) replaced the Indian Evidence Act. The old "
+    "codes still govern offences committed, and proceedings begun, before that date. When a question "
+    "touches criminal law, say which code applies and, where the excerpts show it, give the matching "
+    "section in the other code."
+)
+HINDI_NOTE = (
+    " Write the whole answer in simple, clear Hindi (Devanagari script), as a person would speak it, "
+    "not stiff officialese. Keep case names, citations, Act names with section numbers, and the "
+    "[Source N] markers exactly as given, in English."
+)
+
+
+def answer_notes(lang="en"):
+    """Extra instructions every answer prompt gets: the 2024 criminal-law switch, and Hindi if asked."""
+    return CRIMINAL_LAW_NOTE + (HINDI_NOTE if lang == "hi" else "")
+
+
+def clean_lang(lang):
+    return "hi" if (lang or "").lower().startswith("hi") else "en"
+
 
 CITE_REF = re.compile(r"\[Source\s+(\d+)\]", re.IGNORECASE)
 NAMED_CASE = re.compile(
@@ -241,9 +266,10 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
     rate_limit(req, "ask")
     use_quota(req, "ask", claims)
 
+    lang = clean_lang(request.lang)
     history = [t for t in request.history if t.question.strip()][-MAX_TURNS:]
     history_key = hashlib.sha256(json.dumps([[t.question, t.answer[:200]] for t in history]).encode()).hexdigest()[:16] if history else ""
-    cache_key = f"ask|{question.lower()}|{request.year}|{request.court}|{request.doc_type}|{request.level}|{history_key}"
+    cache_key = f"ask|{question.lower()}|{request.year}|{request.court}|{request.doc_type}|{request.level}|{history_key}|{lang}"
     cached = cache_get(cache_key)
 
     def stream_cached(payload):
@@ -350,6 +376,7 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
         messages.append({"role": "user", "content": f"Question: {t.question[:1000]}"})
         messages.append({"role": "assistant", "content": t.answer[:2500] or "(no answer)"})
     messages.append({"role": "user", "content": user_content})
+    system_prompt += answer_notes(lang)
     if history:
         system_prompt += FOLLOW_UP_NOTE
 
@@ -388,6 +415,7 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
 
 class ArgumentRequest(BaseModel):
     position: str
+    lang: str = "en"
 
 
 @app.get("/case-search")
@@ -412,6 +440,7 @@ def case_search(q: str, req: Request):
 class CompareRequest(BaseModel):
     case_id_a: str
     case_id_b: str
+    lang: str = "en"
 
 
 @app.post("/compare")
@@ -437,7 +466,7 @@ def compare_endpoint(request: CompareRequest, req: Request, claims=Depends(optio
         "refer to the cases by name, not as 'Case A'/'Case B'. This is for educational research, "
         "not legal advice. If the two cases turn out to be on completely unrelated topics, say so "
         "plainly rather than forcing a comparison that doesn't make sense."
-    )
+    ) + answer_notes(clean_lang(request.lang))
     user_content = (
         f"CASE 1: {case_a['title']} ({case_a['citation']})\n{case_a['text'][:6000]}\n\n"
         f"---\n\nCASE 2: {case_b['title']} ({case_b['citation']})\n{case_b['text'][:6000]}"
@@ -482,7 +511,7 @@ def argument_endpoint(request: ArgumentRequest, req: Request, claims=Depends(opt
     rate_limit(req, "argument")
     use_quota(req, "argument", claims)
 
-    cache_key = f"argument|{position.lower()}"
+    cache_key = f"argument|{position.lower()}|{clean_lang(request.lang)}"
     cached = cache_get(cache_key)
     if cached is not None:
         log_event("cache_hit", route="argument")
@@ -512,7 +541,7 @@ def argument_endpoint(request: ArgumentRequest, req: Request, claims=Depends(opt
         "If the excerpts don't clearly support one side or the other, say so honestly rather than "
         "forcing an argument. This is for educational moot court/debate practice, not real legal advice, "
         "and must never be presented to an actual court or client as a real legal opinion."
-    )
+    ) + answer_notes(clean_lang(request.lang))
 
     started = time.time()
     try:
@@ -876,6 +905,7 @@ def get_favorites(uid: str = Depends(require_user)):
 
 # ---------------- plans, payments and the newer features ----------------
 features.init(db, client, search, check_citations=check_citations,
-              group_by_case=group_by_case, model=ANSWER_MODEL)
+              group_by_case=group_by_case, model=ANSWER_MODEL,
+              answer_notes=answer_notes, clean_lang=clean_lang)
 app.include_router(plans.router)
 app.include_router(features.router)

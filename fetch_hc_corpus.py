@@ -31,7 +31,8 @@ COURT_NAME = os.environ.get("HC_NAME", "Bombay High Court")
 NUM_PER_BENCH = int(os.environ.get("NUM_PER_BENCH", "400"))
 
 OUTPUT_DIR = "corpus_hc"
-MANIFEST_PATH = f"{OUTPUT_DIR}/manifest.csv"
+# Each court can write its own manifest so several courts can be fetched at once without overwriting each other
+MANIFEST_PATH = os.environ.get("HC_MANIFEST", f"{OUTPUT_DIR}/manifest.csv")
 os.makedirs(f"{OUTPUT_DIR}/text", exist_ok=True)
 
 ns = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}

@@ -3,7 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sonar from "../ui/Sonar";
 import SourceList from "../ui/SourceList";
-import { API_URL, apiFetch, responseError } from "../api";
+import { API_URL, apiFetch, responseError, getLang } from "../api";
+import LangToggle from "../components/LangToggle";
 
 
 const LOADING_MESSAGES = [
@@ -116,7 +117,7 @@ export default function CompareCases() {
       const res = await apiFetch(`${API_URL}/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ case_id_a: caseA.case_id, case_id_b: caseB.case_id }),
+        body: JSON.stringify({ case_id_a: caseA.case_id, case_id_b: caseB.case_id, lang: getLang() }),
       });
       if (!res.ok) throw await responseError(res);
 
@@ -196,6 +197,7 @@ export default function CompareCases() {
           <button type="button" className="primary-btn" onClick={runCompare} disabled={!caseA || !caseB || loading || isStreaming}>
             {loading || isStreaming ? "Comparing…" : "Compare"}
           </button>
+          <LangToggle />
           {(!caseA || !caseB) && <p className="muted">Choose both judgments to start.</p>}
         </div>
       </div>

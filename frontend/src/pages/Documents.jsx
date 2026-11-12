@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import { API_URL, apiFetch, readStream, responseError } from "../api";
+import { API_URL, apiFetch, readStream, responseError, getLang } from "../api";
+import LangToggle from "../components/LangToggle";
 import ResultView from "../ui/ResultView";
 import SaveToFolder from "../ui/SaveToFolder";
 import { exportToWord } from "../exportToWord";
@@ -72,6 +73,7 @@ export default function Documents() {
         const form = new FormData();
         form.append("file", upload);
         form.append("question", question.trim());
+        form.append("lang", getLang());
         setPhase("writing");
         res = await apiFetch(`${API_URL}/document`, { method: "POST", body: form });
       } else {
@@ -81,7 +83,7 @@ export default function Documents() {
         res = await apiFetch(`${API_URL}/draft`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind, details: details.trim() }),
+          body: JSON.stringify({ kind, details: details.trim(), lang: getLang() }),
         });
       }
       if (!res.ok) throw await responseError(res);
@@ -163,6 +165,7 @@ export default function Documents() {
           <button type="submit" className="btn btn--lime" disabled={busy}>
             {busy ? "Working…" : !user ? "Sign in to continue" : mode === "review" ? "Explain this document" : "Write the draft"}
           </button>
+          <LangToggle />
           <p className="mono muted">Not legal advice. Have a lawyer check anything with real stakes.</p>
         </div>
       </form>

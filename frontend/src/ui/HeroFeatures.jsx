@@ -13,9 +13,9 @@ const I = {
 };
 
 const ITEMS = [
-  ["court", "Supreme Court", "judgments"],
-  ["bench", "Bombay & Delhi HCs", "2023 judgments"],
-  ["act", "Central Acts", "read by section"],
+  ["court", "Supreme Court", "landmarks since 1950"],
+  ["bench", "Six High Courts", "Delhi, Bombay, Madras and more"],
+  ["act", "BNS, BNSS, BSA", "and the old IPC, CrPC"],
   ["cite", "Every claim", "cited to its source"],
   ["free", "Free to use", "no sign-up needed"],
 ];

@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://asknyaya.in/sitemap.xml
+Sitemap: https://asknyaya.in/sitemap-shares.xml
