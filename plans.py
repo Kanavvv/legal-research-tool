@@ -110,6 +110,8 @@ def use_quota(req: Request, feature: str, claims=None):
     """Counts one use of a feature against today's plan limit (IST days).
     402 when the feature needs Pro, 429 when today's allowance is used up."""
     uid = claims.get("uid") if claims else None
+    if uid and uid in (guard.get_settings().get("blocked_uids") or []):
+        raise HTTPException(status_code=403, detail="This account can't use Nyaya. Write to kanavkedia060@gmail.com if you think this is a mistake.")
     plan, _ = get_plan(uid)
     limit = PLANS[plan][feature]
     name = FEATURE_NAMES[feature]

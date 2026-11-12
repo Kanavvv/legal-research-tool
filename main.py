@@ -289,6 +289,8 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
             yield json.dumps(payload["check"]) + "\n"
         yield json.dumps({"type": "done"}) + "\n"
 
+    guard.log_question("ask", question, lang=lang, cached=cached is not None, cache_key=cache_key,
+                       follow_up=bool(history), emergency=[e["key"] for e in emergency])
     if cached is not None:
         log_event("cache_hit", route="ask")
         return StreamingResponse(stream_cached(cached), media_type="application/x-ndjson")
@@ -941,3 +943,5 @@ app.include_router(plans.router)
 app.include_router(features.router)
 extras.init(get_case_by_id)
 app.include_router(extras.router)
+import admin  # noqa: E402  (needs extras and features set up first)
+app.include_router(admin.router)

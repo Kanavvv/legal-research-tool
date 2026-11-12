@@ -520,3 +520,9 @@ html, body { overflow-x: clip; }
   background: color-mix(in srgb, #25D366 10%, transparent); transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out); }
 .wa-cta svg { color: #25D366; }
 .wa-cta:hover, .wa-cta:focus-visible { background: color-mix(in srgb, #25D366 18%, transparent); border-color: #25D366; }
+
+/* Site banner set from the admin settings */
+.site-banner { position: relative; z-index: 60; display: block; text-align: center; padding: 9px 16px; font-size: 14px;
+  background: #C8402F; color: #FFF8EE; text-decoration: none; }
+a.site-banner:hover { background: #A8321F; }
+

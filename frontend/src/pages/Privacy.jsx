@@ -13,7 +13,8 @@ export default function Privacy() {
       <h2>1. Information We Collect</h2>
       <p><strong>Questions.</strong> When you ask a question, compare cases or build an argument, the text is sent to our
       backend and to Anthropic's Claude API to write the answer. Answers to common questions are cached for up to 14 days
-      so repeat questions are faster; the cache holds the question and answer text, not who asked.</p>
+      so repeat questions are faster; the cache holds the question and answer text, not who asked. We also keep the text of
+      questions, without who asked, for 30 days to see what people need and to improve answers.</p>
       <p><strong>Accounts.</strong> If you sign in, Google Firebase stores your email address and name. Your recent questions,
       saved cases, folders and case alerts are stored against your account so they appear on your desk.</p>
       <p><strong>Uploaded documents.</strong> A document you upload for review is read once to write the explanation, sent to
