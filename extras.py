@@ -389,10 +389,24 @@ def _wa_allowed(sender_hash):
     return True
 
 
+WA_GREETINGS = {
+    "hi", "hii", "hey", "hello", "helo", "hlo", "hy", "hola", "yo", "help", "start", "menu",
+    "namaste", "namaskar", "hi nyaya", "hello nyaya", "hey nyaya", "good morning", "good evening",
+    "नमस्ते", "नमस्कार", "हेलो", "हाय",
+}
+
+
+def _wa_is_greeting(text):
+    """Greetings, typos of them, and near-empty messages get the welcome, not a Claude call."""
+    t = re.sub(r"[^a-z\u0900-\u097f ]", "", text.lower())  # drop punctuation, emoji, digits
+    t = re.sub(r"(.)\1{2,}", r"\1\1", " ".join(t.split()))  # "hiiiii" -> "hii"
+    return len(t.replace(" ", "")) <= 2 or t in WA_GREETINGS
+
+
 def _wa_answer(sender, text):
     sender_hash = _hash(sender)
     try:
-        if text.strip().lower() in ("hi", "hello", "help", "start", "namaste", "नमस्ते"):
+        if _wa_is_greeting(text):
             _wa_send(sender, WA_HELP)
             return
         if not _wa_allowed(sender_hash):
