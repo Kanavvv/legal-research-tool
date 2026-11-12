@@ -35,6 +35,7 @@ from guard import cache_get, cache_set, rate_limit, check_budget, record_usage, 
 
 import plans
 import features
+import extras
 from plans import optional_user, use_quota
 
 from search import search, get_case_by_id, search_by_title, search_titles_fast, list_statutes, get_statute_section
@@ -909,3 +910,5 @@ features.init(db, client, search, check_citations=check_citations,
               answer_notes=answer_notes, clean_lang=clean_lang)
 app.include_router(plans.router)
 app.include_router(features.router)
+extras.init(get_case_by_id)
+app.include_router(extras.router)

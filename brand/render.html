@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500&family=Geist+Mono&display=swap" rel="stylesheet">
+<style>html,body{margin:0;padding:0;overflow:hidden}body{width:100vw;height:100vh}img{display:block;width:100vw;height:100vh}
+.og{width:1200px;height:630px;background:#14213D;color:#F4EDE0;font-family:Geist,sans-serif;display:flex;flex-direction:column;justify-content:space-between;padding:70px 80px;box-sizing:border-box;position:relative;overflow:hidden}
+.og::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 2px,transparent 2px 22px);pointer-events:none}
+.og .top{display:flex;align-items:center;gap:18px;font-family:"Instrument Serif",serif;font-size:46px}
+.og .top img{width:64px;height:64px}
+.og h1{font-family:"Instrument Serif",serif;font-weight:400;font-size:96px;line-height:.98;margin:0;letter-spacing:-.02em}
+.og h1 em{color:#FF6B5B}
+.og .foot{font-family:"Geist Mono",monospace;font-size:24px;color:#b9b3a8;display:flex;justify-content:space-between}
+</style></head><body></body>
+<script>
+const p=new URLSearchParams(location.search);const kind=p.get("k");
+if(kind==="og"){document.body.innerHTML=`<div class="og"><div class="top"><img src="mark-rounded.svg">Nyaya</div><h1>Indian law,<br>answered with <em>receipts.</em></h1><div class="foot"><span>Supreme Court · High Courts · BNS · English & हिन्दी</span><span>asknyaya.in</span></div></div>`}
+else{document.body.innerHTML=`<img src="${kind}.svg">`}
+</script></html>

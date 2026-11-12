@@ -1,0 +1,108 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#14213D;--cream:#F4EDE0;--coral:#FF6B5B;--mute:#b9b3a8}
+html,body{margin:0;padding:0;overflow:hidden}
+.s{width:1080px;height:1350px;box-sizing:border-box;padding:96px 92px 180px;background:var(--navy);color:var(--cream);font-family:Geist,sans-serif;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.s::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 2px,transparent 2px 26px);pointer-events:none}
+.s.light{background:var(--cream);color:var(--navy)}.s.light::before{background:repeating-linear-gradient(90deg,rgba(20,33,61,.035) 0 2px,transparent 2px 26px)}
+.s.coral{background:var(--coral);color:var(--navy)}.s.coral::before{display:none}
+.kick{font-family:"Geist Mono",monospace;font-size:30px;letter-spacing:.14em;text-transform:uppercase;color:var(--coral);margin-bottom:34px}
+.light .kick,.coral .kick{color:var(--navy);opacity:.7}
+h1{font-family:"Instrument Serif",serif;font-weight:400;font-size:132px;line-height:.95;letter-spacing:-.02em;margin:0}
+h1 em{color:var(--coral)}.coral h1 em{color:var(--cream)}
+h2{font-family:"Instrument Serif",serif;font-weight:400;font-size:86px;line-height:1;margin:0 0 40px;letter-spacing:-.01em}
+h2 em{color:var(--coral)}
+p{font-size:42px;line-height:1.38;margin:0 0 28px;color:inherit}
+.mut{color:var(--mute)}.light .mut{color:#5b6478}
+.cite{font-family:"Geist Mono",monospace;font-size:30px;color:var(--coral);margin-top:auto}
+.light .cite{color:#c4473a}
+.foot{position:absolute;left:92px;right:92px;bottom:60px;display:flex;justify-content:space-between;align-items:center;font-family:"Geist Mono",monospace;font-size:26px;opacity:.75}
+.brand{display:flex;align-items:center;gap:14px;font-family:"Instrument Serif",serif;font-size:40px;opacity:1}
+.brand img{width:48px;height:48px}
+.grow{flex:1}
+table{border-collapse:collapse;width:100%;font-size:46px}
+td{padding:34px 0;border-bottom:2px solid rgba(244,237,224,.14);vertical-align:top}
+td.o{font-family:"Geist Mono",monospace;color:var(--mute);width:30%}
+td.n{font-family:"Geist Mono",monospace;color:var(--coral);width:30%}
+td.w{width:40%}
+.num{font-family:"Instrument Serif",serif;font-size:190px;line-height:.8;color:var(--coral);margin-bottom:26px}
+.hi{font-family:"Tiro Devanagari Hindi",serif}
+.big-cta{font-family:"Instrument Serif",serif;font-size:110px;line-height:1}
+.pill{display:inline-block;border:2px solid currentColor;border-radius:99px;padding:14px 30px;font-family:"Geist Mono",monospace;font-size:30px;margin-top:40px}
+.cover-ig{width:1080px;height:1080px;display:flex;align-items:center;justify-content:center;background:var(--coral);color:var(--navy)}
+.cover-ig span{font-family:"Instrument Serif",serif;font-size:300px;line-height:1;letter-spacing:-.03em}
+.cover-ig span.hi{font-family:"Tiro Devanagari Hindi",serif;font-size:330px}
+.reel{width:1080px;height:1920px;padding:150px 92px}
+</style></head><body><div id="root"></div>
+<script>
+const FOOT=(n,t)=>`<div class="foot"><span class="brand"><img src="mark-rounded.svg">Nyaya</span><span>${n}/${t}</span></div>`;
+const END=(tone="coral")=>({cls:tone,html:`<div class="kick">Ask your own question</div><div class="grow"></div><div class="big-cta">Ask Nyaya.<br>Get the section<br>and the judgment.</div><div class="pill">asknyaya.in · link in bio</div><div class="grow"></div><p style="font-size:30px;opacity:.75">Research help, not legal advice. For your own case, talk to a lawyer.</p>`});
+const POSTS={
+ converter:[
+  {cls:"",html:`<div class="kick">Criminal law changed · 1 July 2024</div><div class="grow"></div><h1>IPC is gone.<br>Here's your<br><em>new section.</em></h1><div class="grow"></div><p class="mut">Swipe for the 10 most-searched sections, old → new.</p>`},
+  {cls:"",html:`<h2>Old IPC → new <em>BNS</em></h2><table>
+   <tr><td class="o">IPC 302</td><td class="n">BNS 103(1)</td><td class="w">Murder</td></tr>
+   <tr><td class="o">IPC 307</td><td class="n">BNS 109</td><td class="w">Attempt to murder</td></tr>
+   <tr><td class="o">IPC 376</td><td class="n">BNS 64</td><td class="w">Rape</td></tr>
+   <tr><td class="o">IPC 420</td><td class="n">BNS 318(4)</td><td class="w">Cheating</td></tr>
+   <tr><td class="o">IPC 379</td><td class="n">BNS 303(2)</td><td class="w">Theft</td></tr></table>`},
+  {cls:"",html:`<h2>Old IPC → new <em>BNS</em></h2><table>
+   <tr><td class="o">IPC 498A</td><td class="n">BNS 85</td><td class="w">Cruelty by husband or relatives</td></tr>
+   <tr><td class="o">IPC 304B</td><td class="n">BNS 80</td><td class="w">Dowry death</td></tr>
+   <tr><td class="o">IPC 354</td><td class="n">BNS 74</td><td class="w">Assault on a woman's modesty</td></tr>
+   <tr><td class="o">IPC 506</td><td class="n">BNS 351</td><td class="w">Criminal intimidation</td></tr>
+   <tr><td class="o">IPC 406</td><td class="n">BNS 316(2)</td><td class="w">Criminal breach of trust</td></tr></table>`},
+  {cls:"light",html:`<div class="kick">Which one applies?</div><h2>Old crime, old code.</h2><p>Offences committed <b>before 1 July 2024</b> are still tried under the IPC. Anything after that falls under the BNS.</p><p class="mut">The same switch happened for procedure (CrPC → BNSS) and evidence (Evidence Act → BSA).</p>`},
+  END()],
+ rights:[
+  {cls:"",html:`<div class="kick">If you're arrested</div><div class="grow"></div><h1>6 rights<br>the police<br>must <em>respect.</em></h1><div class="grow"></div><p class="mut">Under the BNSS, which replaced the CrPC in 2024.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>To know why</h2><p>The police must tell you the grounds of your arrest, and for a bailable offence, that you can get bail.</p><div class="cite">BNSS s.47 · Constitution Art. 22(1)</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>To tell someone</h2><p>The police must inform a relative or friend you name about the arrest and where you're being held.</p><div class="cite">BNSS s.48</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>To meet a lawyer</h2><p>You may meet an advocate of your choice during interrogation, though not for the whole of it.</p><div class="cite">BNSS s.38 · Art. 22(1)</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>To see a magistrate in 24 hours</h2><p>You must be produced before a magistrate within 24 hours of arrest, not counting travel time.</p><div class="cite">BNSS s.58 · Art. 22(2)</div>`},
+  {cls:"",html:`<div class="num">5</div><h2>To a medical exam</h2><p>You have the right to be examined by a medical officer after arrest.</p><div class="cite">BNSS s.53</div>`},
+  {cls:"",html:`<div class="num">6</div><h2>Women: not at night</h2><p>A woman should not be arrested after sunset or before sunrise except in exceptional cases, with a magistrate's prior permission.</p><div class="cite">BNSS s.43(5)</div>`},
+  END()],
+ maneka:[
+  {cls:"",html:`<div class="kick">Landmark judgment · 1978</div><div class="grow"></div><h1>The case that<br>made Article 21<br><em>mean something.</em></h1><div class="grow"></div><p class="mut">Maneka Gandhi v. Union of India, [1978] 2 S.C.R. 621</p>`},
+  {cls:"",html:`<div class="kick">What happened</div><h2>A passport, taken.</h2><p>The government impounded Maneka Gandhi's passport "in the public interest" and refused to tell her why.</p><p class="mut">She challenged it in the Supreme Court.</p>`},
+  {cls:"",html:`<div class="kick">The question</div><h2>Is any law enough?</h2><p>Article 21 says no one loses life or liberty "except according to procedure established by law". Could that be <i>any</i> procedure Parliament wrote down?</p>`},
+  {cls:"",html:`<div class="kick">What the court held</div><h2>No. It must be <em>fair.</em></h2><p>The procedure must be just, fair and reasonable, not arbitrary. And Articles 14, 19 and 21 have to be read together.</p>`},
+  {cls:"light",html:`<div class="kick">Why it still matters</div><h2>The root of modern rights</h2><p>Privacy, a speedy trial, legal aid, dignity in custody: much of what courts now protect under Article 21 grows from this case.</p><div class="cite">Cited in 171 judgments on Nyaya</div>`},
+  END()],
+ fir:[
+  {cls:"",html:`<div class="kick">Your rights · FIR</div><div class="grow"></div><h1>Police won't<br>file your FIR?<br><em>Do this.</em></h1><div class="grow"></div><p class="mut">Under the BNSS, which replaced the CrPC.</p>`},
+  {cls:"",html:`<div class="num">1</div><h2>Any police station</h2><p>For a cognizable offence, you can report it at any station, even outside the area where it happened (a "Zero FIR"). You can also report it electronically.</p><div class="cite">BNSS s.173(1)</div>`},
+  {cls:"",html:`<div class="num">2</div><h2>A free copy</h2><p>You are entitled to a copy of the FIR, free of cost.</p><div class="cite">BNSS s.173(2)</div>`},
+  {cls:"",html:`<div class="num">3</div><h2>Refused? Write to the SP.</h2><p>Send the details in writing, by post, to the Superintendent of Police. Keep the receipt.</p><div class="cite">BNSS s.173(4)</div>`},
+  {cls:"",html:`<div class="num">4</div><h2>Still nothing? The magistrate.</h2><p>Apply to the magistrate, with an affidavit, to order the police to investigate.</p><div class="cite">BNSS s.175(3)</div>`},
+  END()],
+ bail:[
+  {cls:"",html:`<div class="kick">Your rights · bail</div><div class="grow"></div><h1>Anticipatory<br>bail, in<br><em>60 seconds.</em></h1><div class="grow"></div><p class="mut">BNSS s.482 (earlier CrPC s.438)</p>`},
+  {cls:"",html:`<div class="kick">What it is</div><h2>Bail before arrest</h2><p>If you fear arrest for a non-bailable offence, you can ask the court in advance: if arrested, release me on bail.</p>`},
+  {cls:"",html:`<div class="kick">Where to apply</div><h2>Sessions Court or High Court</h2><p>Either court can grant it. People usually go to the Sessions Court first.</p><div class="cite">BNSS s.482(1)</div>`},
+  {cls:"",html:`<div class="kick">Conditions</div><h2>The court can set terms</h2><p>For example: be available for questioning, don't pressure witnesses, don't leave India without permission.</p><div class="cite">BNSS s.482(2)</div>`},
+  {cls:"light",html:`<div class="kick">How long it lasts</div><h2>No automatic expiry</h2><p>It need not be limited to a fixed period. Courts decide case by case.</p><div class="cite">Sushila Aggarwal v. State (NCT of Delhi), 2020</div>`},
+  END()],
+ legalaid:[
+  {cls:"",html:`<div class="kick">Free legal help</div><div class="grow"></div><h1>You may get<br>a lawyer<br><em>for free.</em></h1><div class="grow"></div><p class="mut">Legal Services Authorities Act, 1987, s.12</p>`},
+  {cls:"",html:`<div class="kick">Who qualifies</div><h2>The law names them</h2><p>· Women and children<br>· SC/ST members<br>· People with disabilities<br>· Victims of trafficking or begar<br>· Victims of disasters or ethnic violence<br>· Industrial workers<br>· People in custody<br>· Anyone below the income limit</p>`},
+  {cls:"",html:`<div class="kick">How to ask</div><h2>Call <em>15100</em></h2><p>That's NALSA's national legal aid helpline. Or walk into the Legal Services Authority at your district court.</p>`},
+  END()],
+};
+const REELS={
+ intro:{kick:"Watch",t:`I asked an AI<br>a legal question.<br><em>It showed me<br>the judgment.</em>`},
+ landlord:{kick:"Asked live",t:`Can my landlord<br>evict me<br><em>without notice?</em>`},
+ hindi:{kick:"हिन्दी में",t:`<span class="hi">धारा 498A<br>अब कौन सी<br><em>धारा है?</em></span>`},
+};
+const HL={start:"Start",bns:"BNS",rights:"Rights",landmarks:"1978",hindi:"हिं"};
+const q=new URLSearchParams(location.search), root=document.getElementById("root");
+const mark=`<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="50" fill="#FF6B5B"/><path d="M33 26h-8v48h8M67 26h8v48h-8" fill="none" stroke="#14213D" stroke-width="6.5" stroke-linecap="square"/><path d="M40 62V38l20 24V38" fill="none" stroke="#14213D" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+if(q.get("post")){const slides=POSTS[q.get("post")];const i=+q.get("i");const s=slides[i];
+  root.innerHTML=`<div class="s ${s.cls}">${s.html}${FOOT(i+1,slides.length)}</div>`;}
+else if(q.get("reel")){const r=REELS[q.get("reel")];root.innerHTML=`<div class="s reel"><div class="kick">${r.kick}</div><div class="grow"></div><h1 style="font-size:150px">${r.t}</h1><div class="grow"></div><p class="mut">asknyaya.in</p><div class="foot"><span class="brand"><img src="mark-rounded.svg">Nyaya</span><span>▶</span></div></div>`}
+else if(q.get("hl")){root.innerHTML=`<div class="cover-ig"><span${q.get("hl")==="hindi"?' class="hi"':''}>${HL[q.get("hl")]}</span></div>`}
+else if(q.get("list")){document.title=JSON.stringify({posts:Object.fromEntries(Object.entries(POSTS).map(([k,v])=>[k,v.length])),reels:Object.keys(REELS),hl:Object.keys(HL)})}
+</script></body></html>

@@ -15,5 +15,6 @@ COPY search.py .
 COPY guard.py .
 COPY plans.py .
 COPY features.py .
+COPY extras.py .
 
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

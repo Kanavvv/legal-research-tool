@@ -26,3 +26,5 @@ weekly_job/
 *.mp4
 .impeccable/
 indexed_case_ids_*.txt
+brand/
+build_code_map.py

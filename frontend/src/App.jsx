@@ -23,6 +23,14 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Documents = lazy(() => import("./pages/Documents"));
 const SharedAnswer = lazy(() => import("./pages/SharedAnswer"));
+const Convert = lazy(() => import("./pages/Convert"));
+const LawSection = lazy(() => import("./pages/LawSection"));
+const Rights = lazy(() => import("./pages/Rights"));
+const Templates = lazy(() => import("./pages/Templates"));
+const Students = lazy(() => import("./pages/Students"));
+const Lawyers = lazy(() => import("./pages/Lawyers"));
+const Digest = lazy(() => import("./pages/Digest"));
+const Tools = lazy(() => import("./pages/Tools"));
 
 const SITE = "https://asknyaya.in";
 const DEFAULT_DESC = "Ask a question about Indian law in plain English. Nyaya reads real Supreme Court and High Court judgments and central Acts, and cites every answer.";
@@ -37,6 +45,14 @@ const META = {
   "/terms": ["Terms of Use · Nyaya", "The terms for using Nyaya. Nyaya is a research aid, not legal advice."],
   "/pricing": ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro (Rs 199 for 30 days) adds 200 questions a day, document review, drafts and case alerts."],
   "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement, FIR or order, even a phone photo, and get it explained in plain words with the Indian law that applies."],
+  "/convert": ["IPC to BNS converter: old and new criminal law sections · Nyaya", "Convert IPC to BNS, CrPC to BNSS and Evidence Act to BSA sections, both ways, and read the old and new text side by side."],
+  "/rights": ["Know your rights: plain guides to Indian law · Nyaya", "Short, cited guides to your rights in India: arrest, FIR, bail, tenants, consumers, workplace and more. In English and Hindi."],
+  "/templates": ["Free legal templates: RTI, consumer complaint, cheque bounce notice · Nyaya", "Fill-in templates for an RTI application, consumer complaint, cheque-bounce notice and rent agreement. Free, no sign-in."],
+  "/students": ["Law student mode: case briefs, moot practice, quizzes · Nyaya", "Case briefs from real judgments, moot court practice with a questioning bench, and quizzes on the new criminal codes."],
+  "/lawyers": ["Find a lawyer · Nyaya", "A directory of advocates in India who listed themselves, by city and area of practice."],
+  "/lawyers/join": ["List yourself as an advocate · Nyaya", "Advocates can add a free listing to Nyaya's directory."],
+  "/digest": ["This week in the Supreme Court · Nyaya", "A short weekly digest of new Supreme Court judgments, in plain words."],
+  "/tools": ["All tools · Nyaya", "Every Nyaya tool in one place: ask, convert, compare, argue, draft, and more."],
   "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 
@@ -61,6 +77,13 @@ function ScrollManager() {
   useEffect(() => {
     if (pathname.startsWith("/a/")) {
       // Shared answers set their own title; keep them out of search results
+      setMeta('link[rel="canonical"]', "href", SITE + pathname);
+      return;
+    }
+    if (/^\/(law|rights|templates)\/./.test(pathname)) {
+      // These pages set their own title and description once their content loads
+      document.head.querySelector('meta[name="robots"]')?.remove();
+      setMeta('meta[property="og:url"]', "content", SITE + pathname);
       setMeta('link[rel="canonical"]', "href", SITE + pathname);
       return;
     }
@@ -113,6 +136,17 @@ export default function App() {
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/drafts" element={<Documents />} />
                 <Route path="/a/:id" element={<SharedAnswer />} />
+                <Route path="/convert" element={<Convert />} />
+                <Route path="/law/:act/:num" element={<LawSection />} />
+                <Route path="/rights" element={<Rights />} />
+                <Route path="/rights/:slug" element={<Rights />} />
+                <Route path="/templates" element={<Templates />} />
+                <Route path="/templates/:slug" element={<Templates />} />
+                <Route path="/students" element={<Students />} />
+                <Route path="/lawyers" element={<Lawyers />} />
+                <Route path="/lawyers/join" element={<Lawyers join />} />
+                <Route path="/digest" element={<Digest />} />
+                <Route path="/tools" element={<Tools />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

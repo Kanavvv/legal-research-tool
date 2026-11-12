@@ -175,6 +175,28 @@ def build_digest(new_judgments):
     return "".join(b.text for b in message.content if hasattr(b, "text"))
 
 
+def save_digest(html_body, new_judgments):
+    """Keeps a copy for the site's /digest page. A failure here never stops the email."""
+    if DRY_RUN:
+        print("[DRY RUN] Would save the digest for the site.")
+        return
+    try:
+        db = _firestore()
+        today = datetime.date.today().isoformat()
+        db.collection("digests").document(today).set({
+            "date": today,
+            "title": f"This week in the Supreme Court, {datetime.date.today().strftime('%d %b %Y')}",
+            "html": html_body,
+            "count": len(new_judgments),
+            "cases": [{"title": j["title"], "citation": j["citation"], "case_id": j["case_id"],
+                       "decision_date": j.get("decision_date"), "source_url": j.get("source_url", "")}
+                      for j in new_judgments[:DIGEST_MAX_ITEMS]],
+        })
+        print(f"Digest saved for the site ({today}).")
+    except Exception as e:
+        print(f"Saving the digest for the site failed: {e}")
+
+
 def send_digest(html_body):
     if DRY_RUN:
         print("\n[DRY RUN] Would send this digest:\n")
@@ -344,6 +366,7 @@ def main():
 
     print("Writing the digest...")
     html_body = build_digest(all_new)
+    save_digest(html_body, all_new)
     send_digest(html_body)
 
     try:

@@ -4,10 +4,11 @@ import { useAuth } from "../AuthContext";
 
 const LINKS = [
   { to: "/", label: "Ask", end: true },
-  { to: "/compare", label: "Compare" },
-  { to: "/argument-builder", label: "Argument" },
-  { to: "/statutes", label: "Statutes" },
+  { to: "/convert", label: "IPC → BNS" },
+  { to: "/rights", label: "Your rights" },
+  { to: "/students", label: "Students" },
   { to: "/documents", label: "Documents" },
+  { to: "/tools", label: "More" },
   { to: "/pricing", label: "Pro" },
 ];
 
@@ -15,7 +16,9 @@ export function Mark({ size = 28 }) {
   return (
     <svg className="mark" width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
       <rect width="28" height="28" rx="7" fill="currentColor" />
-      <path d="M8.5 20V8.5l11 11V8" fill="none" stroke="#14213D" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      {/* [N]: the answer, with its source in brackets */}
+      <path d="M8.4 5.9H5.9v16.2h2.5M19.6 5.9h2.5v16.2h-2.5" fill="none" stroke="#14213D" strokeWidth="2.1" strokeLinecap="square" />
+      <path d="M10.6 18.8V9.2l6.8 9.6V9.2" fill="none" stroke="#14213D" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

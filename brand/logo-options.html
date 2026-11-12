@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyaya logo options</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#14213D; --cream:#F4EDE0; --coral:#FF6B5B; --ink:#0B1426; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ink); color:var(--cream); font-family:Geist, system-ui, sans-serif; padding:40px 24px 80px; }
+  h1 { font-family:"Instrument Serif", serif; font-weight:400; font-size:44px; margin:0 0 6px; }
+  .lede { color:#b9b3a8; margin:0 0 36px; max-width:640px; line-height:1.5; }
+  .opt { border:1px solid #26324d; border-radius:20px; padding:28px; margin:0 0 28px; background:#101b33; }
+  .opt h2 { margin:0 0 4px; font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--coral); font-family:"Geist Mono", monospace; font-weight:400; }
+  .opt h3 { margin:0 0 6px; font-family:"Instrument Serif", serif; font-weight:400; font-size:30px; }
+  .opt p { margin:0 0 22px; color:#b9b3a8; max-width:620px; line-height:1.5; }
+  .row { display:flex; flex-wrap:wrap; gap:28px; align-items:center; }
+  .tile { display:flex; flex-direction:column; align-items:center; gap:8px; font:11px "Geist Mono", monospace; color:#7f8aa3; }
+  .ig { width:150px; height:150px; border-radius:50%; overflow:hidden; }
+  .app { width:96px; height:96px; border-radius:22px; overflow:hidden; }
+  .fav { width:32px; height:32px; border-radius:7px; overflow:hidden; }
+  .lockup { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:14px; }
+  .lockup.dark { background:var(--navy); }
+  .lockup.light { background:var(--cream); color:var(--navy); }
+  .lockup svg { width:40px; height:40px; }
+  .word { font-family:"Instrument Serif", serif; font-size:34px; line-height:1; }
+  .word em { color:var(--coral); }
+  svg { display:block; width:100%; height:100%; }
+</style>
+</head>
+<body>
+<h1>Nyaya: four logo directions</h1>
+<p class="lede">Each one is shown as an Instagram profile picture (circle crop), an app icon, a favicon at 32px, and next to the wordmark on dark and light. Pick one, or mix parts, and I'll refine it and export the files.</p>
+
+<!-- Symbols -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- A: Scales N -->
+    <symbol id="a" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#14213D"/>
+      <path d="M28 74V26l44 48V26" fill="none" stroke="#F4EDE0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="72" cy="26" r="7" fill="#FF6B5B"/>
+    </symbol>
+    <!-- B: Receipt bracket -->
+    <symbol id="b" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#FF6B5B"/>
+      <path d="M30 22H22v56h8M70 22h8v56h-8" fill="none" stroke="#14213D" stroke-width="7" stroke-linecap="square"/>
+      <path d="M38 66V34l24 32V34" fill="none" stroke="#14213D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- C: Devanagari न seal -->
+    <symbol id="c" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#14213D"/>
+      <circle cx="50" cy="50" r="36" fill="none" stroke="#FF6B5B" stroke-width="3"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#F4EDE0" stroke-opacity=".25" stroke-width="1"/>
+      <text x="50" y="67" text-anchor="middle" font-family="Tiro Devanagari Hindi, serif" font-size="48" fill="#F4EDE0">न</text>
+    </symbol>
+    <!-- D: Balance beam -->
+    <symbol id="d" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#F4EDE0"/>
+      <path d="M50 20v58M30 78h40" stroke="#14213D" stroke-width="6" stroke-linecap="round"/>
+      <path d="M20 34h60" stroke="#14213D" stroke-width="6" stroke-linecap="round"/>
+      <path d="M20 34l-8 20h16zM80 34l-8 20h16z" fill="#FF6B5B"/>
+      <circle cx="50" cy="20" r="6" fill="#14213D"/>
+    </symbol>
+  </defs>
+</svg>
+
+<section class="opt">
+  <h2>Option A</h2>
+  <h3>The N that stands for a ruling</h3>
+  <p>A single-stroke N, with a coral dot where the stroke ends, like the full stop on a judgment. It's the closest to what's on the site today, but sharper. It holds up best at tiny sizes.</p>
+  <div class="row">
+    <div class="tile"><div class="ig"><svg><use href="#a"/></svg></div>instagram</div>
+    <div class="tile"><div class="app"><svg><use href="#a"/></svg></div>app icon</div>
+    <div class="tile"><div class="fav"><svg><use href="#a"/></svg></div>32px</div>
+    <div class="lockup dark"><svg><use href="#a"/></svg><span class="word">Nyaya</span></div>
+    <div class="lockup light"><svg><use href="#a"/></svg><span class="word">Nyaya</span></div>
+  </div>
+</section>
+
+<section class="opt">
+  <h2>Option B</h2>
+  <h3>Answered, with receipts</h3>
+  <p>The N inside citation brackets: every answer comes with its source. The coral background makes it the boldest in an Instagram grid. It speaks to the product's core promise.</p>
+  <div class="row">
+    <div class="tile"><div class="ig"><svg><use href="#b"/></svg></div>instagram</div>
+    <div class="tile"><div class="app"><svg><use href="#b"/></svg></div>app icon</div>
+    <div class="tile"><div class="fav"><svg><use href="#b"/></svg></div>32px</div>
+    <div class="lockup dark"><svg><use href="#b"/></svg><span class="word">Nyaya</span></div>
+    <div class="lockup light"><svg><use href="#b"/></svg><span class="word">Nyaya</span></div>
+  </div>
+</section>
+
+<section class="opt">
+  <h2>Option C</h2>
+  <h3>न, the first letter of न्याय</h3>
+  <p>The Devanagari "na" inside a court-seal ring. It's unmistakably Indian and fits the new Hindi answers. It feels the most premium, but loses detail at 32px.</p>
+  <div class="row">
+    <div class="tile"><div class="ig"><svg><use href="#c"/></svg></div>instagram</div>
+    <div class="tile"><div class="app"><svg><use href="#c"/></svg></div>app icon</div>
+    <div class="tile"><div class="fav"><svg><use href="#c"/></svg></div>32px</div>
+    <div class="lockup dark"><svg><use href="#c"/></svg><span class="word">Nyaya</span></div>
+    <div class="lockup light"><svg><use href="#c"/></svg><span class="word">Nyaya</span></div>
+  </div>
+</section>
+
+<section class="opt">
+  <h2>Option D</h2>
+  <h3>Scales, simplified</h3>
+  <p>The scales of justice, cut down to a few strokes, on cream. It reads as "law" instantly, but many legal brands use scales, so it stands out least.</p>
+  <div class="row">
+    <div class="tile"><div class="ig"><svg><use href="#d"/></svg></div>instagram</div>
+    <div class="tile"><div class="app"><svg><use href="#d"/></svg></div>app icon</div>
+    <div class="tile"><div class="fav"><svg><use href="#d"/></svg></div>32px</div>
+    <div class="lockup dark"><svg><use href="#d"/></svg><span class="word">Nyaya</span></div>
+    <div class="lockup light"><svg><use href="#d"/></svg><span class="word">Nyaya</span></div>
+  </div>
+</section>
+</body>
+</html>

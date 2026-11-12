@@ -14,7 +14,7 @@ const LOADING_MESSAGES = [
   "Writing the comparison…",
 ];
 
-function CasePicker({ id, label, selected, onSelect, onClear }) {
+export function CasePicker({ id, label, selected, onSelect, onClear }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
