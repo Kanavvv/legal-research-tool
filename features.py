@@ -11,7 +11,9 @@ Documents are read in memory and never stored.
 """
 
 import datetime
+import hashlib
 import io
+from xml.sax.saxutils import escape as xml_escape
 import base64
 import json
 import os
@@ -22,7 +24,7 @@ import traceback
 import zipfile
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
@@ -80,7 +82,12 @@ def create_share(body: ShareRequest, req: Request, claims=Depends(optional_user)
         raise HTTPException(status_code=400, detail="That answer is too long to share.")
     db = _need_db()
     share_id = secrets.token_urlsafe(8)
+    # Whoever made the link can later list it on Google (or take it off); they
+    # prove it with this token, which only their browser has.
+    owner_token = secrets.token_urlsafe(16)
     db.collection("shares").document(share_id).set({
+        "owner_hash": hashlib.sha256(owner_token.encode()).hexdigest(),
+        "public": False,
         "question": body.question.strip(),
         "answer": body.answer,
         "sources": [s.model_dump() for s in body.sources],
@@ -89,7 +96,60 @@ def create_share(body: ShareRequest, req: Request, claims=Depends(optional_user)
         "views": 0,
     })
     log_event("share_created", share_id=share_id)
-    return {"id": share_id}
+    return {"id": share_id, "token": owner_token}
+
+
+class SharePublicRequest(BaseModel):
+    token: str
+    public: bool
+
+
+@router.post("/share/{share_id}/public")
+def set_share_public(share_id: str, body: SharePublicRequest, req: Request):
+    """Opt a shared answer in to (or out of) search engines. Off by default:
+    questions can be personal, so only the person who made the link decides."""
+    rate_limit(req, "share")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{6,20}", share_id):
+        raise HTTPException(status_code=404, detail="That shared answer doesn't exist.")
+    ref = _need_db().collection("shares").document(share_id)
+    snap = ref.get()
+    if not snap.exists:
+        raise HTTPException(status_code=404, detail="That shared answer doesn't exist.")
+    owner_hash = (snap.to_dict() or {}).get("owner_hash", "")
+    given = hashlib.sha256(body.token.encode()).hexdigest()
+    if not owner_hash or not secrets.compare_digest(owner_hash, given):
+        raise HTTPException(status_code=403, detail="Only the person who made this link can change that.")
+    ref.update({"public": body.public, "public_since": _now() if body.public else None})
+    guard._mem_cache.pop(f"share|{share_id}", None)
+    _sitemap_cache.clear()
+    log_event("share_public", share_id=share_id, public=body.public)
+    return {"id": share_id, "public": body.public}
+
+
+_sitemap_cache = {}   # {"at": epoch seconds, "xml": str}; per instance, one hour
+
+
+@router.get("/sitemap-shares.xml")
+def shares_sitemap(req: Request):
+    """Shared answers their makers chose to list publicly, for search engines."""
+    rate_limit(req, "search", shared=False)
+    xml = _sitemap_cache.get("xml") if time.time() - _sitemap_cache.get("at", 0) < 3600 else None
+    if xml is None:
+        rows = []
+        for snap in _need_db().collection("shares").where("public", "==", True).limit(5000).stream():
+            d = snap.to_dict() or {}
+            when = d.get("public_since") or d.get("created")
+            rows.append((when.isoformat()[:10] if when else "", snap.id))
+        rows.sort(reverse=True)
+        urls = "".join(
+            f"<url><loc>https://asknyaya.in/a/{xml_escape(sid)}</loc>" + (f"<lastmod>{day}</lastmod>" if day else "") + "</url>"
+            for day, sid in rows
+        )
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + "</urlset>")
+        _sitemap_cache.update(at=time.time(), xml=xml)
+    return Response(content=xml, media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600"})
 
 
 @router.get("/share/{share_id}")
@@ -105,6 +165,7 @@ def get_share(share_id: str, req: Request):
         raise HTTPException(status_code=404, detail="That shared answer doesn't exist.")
     d = snap.to_dict()
     out = {"id": share_id, "question": d["question"], "answer": d["answer"], "sources": d.get("sources", []),
+           "public": bool(d.get("public")),
            "created": d["created"].isoformat() if d.get("created") else None}
     guard.cache_set(f"share|{share_id}", out, shared=False)
     return out
@@ -250,7 +311,8 @@ def remove_alert(alert_id: str, claims=Depends(required_user)):
 
 # ---------------- shared streaming helper ----------------
 
-def _stream_answer(route, system_prompt, user_content, sources_payload, max_tokens=1500, user=None):
+def _stream_answer(route, system_prompt, user_content, sources_payload, max_tokens=1500, user=None, lang="en"):
+    system_prompt = system_prompt + _helpers["answer_notes"](lang)
     check_citations = _helpers["check_citations"]
     model = _helpers["model"]
 
@@ -376,7 +438,7 @@ DOC_SYSTEM = (
 
 
 @router.post("/document")
-async def analyze_document(req: Request, file: UploadFile = File(...), question: str = Form(""),
+async def analyze_document(req: Request, file: UploadFile = File(...), question: str = Form(""), lang: str = Form("en"),
                            claims=Depends(required_user)):
     rate_limit(req, "argument")
     use_quota(req, "document", claims)
@@ -417,7 +479,8 @@ async def analyze_document(req: Request, file: UploadFile = File(...), question:
     )
     log_event("document_review", chars=len(text), truncated=truncated, scanned=scanned,
               kind=(file.filename or "").rsplit(".", 1)[-1][:5])
-    return _stream_answer("document", DOC_SYSTEM, user_content, sources, max_tokens=2000, user=uid)
+    return _stream_answer("document", DOC_SYSTEM, user_content, sources, max_tokens=2000, user=uid,
+                          lang=_helpers["clean_lang"](lang))
 
 
 # ---------------- drafts ----------------
@@ -451,6 +514,7 @@ DRAFT_KINDS = {
 class DraftRequest(BaseModel):
     kind: str
     details: str
+    lang: str = "en"
 
 
 @router.post("/draft")
@@ -477,4 +541,5 @@ def create_draft(body: DraftRequest, req: Request, claims=Depends(required_user)
         "or check."
     )
     user_content = f"<facts>\n{details}\n</facts>\n\nCase and statute excerpts:\n\n{context}"
-    return _stream_answer("draft", system, user_content, sources, max_tokens=2500, user=claims["uid"])
+    return _stream_answer("draft", system, user_content, sources, max_tokens=2500, user=claims["uid"],
+                          lang=_helpers["clean_lang"](body.lang))

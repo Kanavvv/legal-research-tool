@@ -14,7 +14,8 @@ import Scales from "../ui/Scales";
 import HeroFeatures from "../ui/HeroFeatures";
 import { playSonar } from "../sound";
 import { pulseCurrents, smoothScrollTo } from "../ui/motion";
-import { API_URL, apiFetch, responseError, linkCitations } from "../api";
+import { API_URL, apiFetch, responseError, linkCitations, getLang } from "../api";
+import LangToggle from "../components/LangToggle";
 import SaveToFolder from "../ui/SaveToFolder";
 
 
@@ -89,6 +90,7 @@ export default function Home() {
   const [check, setCheck] = useState(null); // the server's citation check
   const [followUp, setFollowUp] = useState("");
   const [shareStatus, setShareStatus] = useState("");
+  const [shareLink, setShareLink] = useState(null); // { id, token, public }
   const [upgradeHint, setUpgradeHint] = useState(false);
 
   const timers = useRef([]);
@@ -168,6 +170,7 @@ export default function Home() {
           doc_type: filterDocType || null,
           level: readingLevel,
           history: turns.map((t) => ({ question: t.q, answer: t.a })),
+          lang: getLang(),
         }),
       });
       if (!res.ok) throw await responseError(res);
@@ -316,7 +319,8 @@ export default function Home() {
         body: JSON.stringify({ question: asked, answer, sources }),
       });
       if (!res.ok) throw await responseError(res);
-      const { id } = await res.json();
+      const { id, token } = await res.json();
+      setShareLink({ id, token, public: false });
       const url = `${window.location.origin}/a/${id}`;
       try {
         if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
@@ -329,6 +333,22 @@ export default function Home() {
       setShareStatus("Link copied");
     } catch (err) {
       setShareStatus(err?.userMessage ? "Try again later" : "Couldn't share");
+    }
+  }
+
+  async function setSharePublic(makePublic) {
+    if (!shareLink) return;
+    const prev = shareLink;
+    setShareLink({ ...prev, public: makePublic });
+    try {
+      const res = await apiFetch(`${API_URL}/share/${prev.id}/public`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: prev.token, public: makePublic }),
+      });
+      if (!res.ok) throw await responseError(res);
+    } catch {
+      setShareLink(prev);
     }
   }
 
@@ -431,6 +451,7 @@ export default function Home() {
                 <button type="button" aria-pressed={readingLevel === "standard"} onClick={() => setReadingLevel("standard")}>Standard</button>
                 <button type="button" aria-pressed={readingLevel === "simple"} onClick={() => setReadingLevel("simple")}>Explain simply</button>
               </div>
+              <LangToggle />
               <button type="button" className="btn btn--ghost btn--sm" aria-expanded={showSettings} aria-controls="ask-settings" onClick={() => setShowSettings((s) => !s)}>
                 Filters{settingsCount > 0 ? ` · ${settingsCount}` : ""}
               </button>
@@ -450,6 +471,10 @@ export default function Home() {
                     <option value="Supreme Court of India">Supreme Court of India</option>
                     <option value="Bombay High Court">Bombay High Court</option>
                     <option value="Delhi High Court">Delhi High Court</option>
+                    <option value="Madras High Court">Madras High Court</option>
+                    <option value="Karnataka High Court">Karnataka High Court</option>
+                    <option value="Allahabad High Court">Allahabad High Court</option>
+                    <option value="Calcutta High Court">Calcutta High Court</option>
                   </select>
                 </div>
                 <div className="field">
@@ -549,6 +574,12 @@ export default function Home() {
                       <button type="button" className="btn btn--ghost btn--sm" onClick={exportWord}>Export to Word</button>
                       <button type="button" className="btn btn--ghost btn--sm" onClick={shareAnswer}>{shareStatus || "Share link"}</button>
                       <SaveToFolder question={asked} answer={answer} sources={sources} />
+                      {shareLink && (
+                        <label className="share-public">
+                          <input type="checkbox" checked={shareLink.public} onChange={(e) => setSharePublic(e.target.checked)} />
+                          <span>Let Google list this answer. Your question becomes public, so leave this off if it names anyone.</span>
+                        </label>
+                      )}
                       <div className="feedback" role="group" aria-label="Was this useful?">
                         <span className="mono muted">useful?</span>
                         <button type="button" aria-pressed={feedbackGiven === true} onClick={() => sendFeedback(true)}>Yes</button>

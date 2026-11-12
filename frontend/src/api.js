@@ -55,3 +55,13 @@ export async function readStream(res, onEvent) {
 export function linkCitations(md) {
   return md.replace(/\[Source (\d+)\]/g, "[Source $1](#src-$1)");
 }
+
+// Answer language. One choice for the whole site, kept in this browser.
+const LANG_KEY = "nyaya_lang";
+export function getLang() {
+  try { return localStorage.getItem(LANG_KEY) === "hi" ? "hi" : "en"; } catch { return "en"; }
+}
+export function setLang(lang) {
+  try { localStorage.setItem(LANG_KEY, lang); } catch { /* storage off */ }
+  window.dispatchEvent(new CustomEvent("nyaya-lang", { detail: lang }));
+}

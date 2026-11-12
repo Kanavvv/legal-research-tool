@@ -5,7 +5,7 @@
 const NODES = [
   { id: "q", step: 0, x: 0, y: 40, title: "Question", sub: "plain English" },
   { id: "embed", step: 1, x: 26.5, y: 40, title: "Understand", sub: "by meaning" },
-  { id: "sc", step: 2, x: 53, y: 6, title: "Judgments", sub: "SC + Bombay, Delhi HC" },
+  { id: "sc", step: 2, x: 53, y: 6, title: "Judgments", sub: "SC + six High Courts" },
   { id: "acts", step: 2, x: 53, y: 74, title: "Acts", sub: "by section" },
   { id: "rerank", step: 3, x: 79.5, y: 40, title: "Re-rank", sub: "best matches" },
 ];

@@ -16,6 +16,17 @@ export default function SharedAnswer() {
         if (!live) return;
         setData(d);
         document.title = `${d.question.slice(0, 70)} · Nyaya`;
+        const desc = d.answer.replace(/[#*_>`[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 155);
+        document.head.querySelector('meta[name="description"]')?.setAttribute("content", desc);
+        document.head.querySelector('meta[property="og:title"]')?.setAttribute("content", d.question.slice(0, 90));
+        document.head.querySelector('meta[property="og:description"]')?.setAttribute("content", desc);
+        // Only answers their maker chose to list are indexed; the rest stay private.
+        let robots = document.head.querySelector('meta[name="robots"]');
+        if (d.public) robots?.remove();
+        else {
+          if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
+          robots.content = "noindex";
+        }
       })
       .catch(() => live && setError("This shared answer doesn't exist, or the link was copied incompletely."));
     return () => { live = false; };

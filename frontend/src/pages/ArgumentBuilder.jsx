@@ -3,7 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sonar from "../ui/Sonar";
 import SourceList from "../ui/SourceList";
-import { API_URL, apiFetch, responseError } from "../api";
+import { API_URL, apiFetch, responseError, getLang } from "../api";
+import LangToggle from "../components/LangToggle";
 
 
 const LOADING_MESSAGES = [
@@ -36,7 +37,7 @@ export default function ArgumentBuilder() {
       const res = await apiFetch(`${API_URL}/argument`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ position }),
+        body: JSON.stringify({ position, lang: getLang() }),
       });
       if (!res.ok) throw await responseError(res);
       const data = await res.json();
@@ -85,6 +86,7 @@ export default function ArgumentBuilder() {
           <button type="submit" className="primary-btn" disabled={loading || !position.trim()}>
             {loading ? "Building…" : "Build the brief"}
           </button>
+          <LangToggle />
           <p className="muted">{position.trim().split(/\s+/).filter(Boolean).length} words</p>
         </div>
       </form>

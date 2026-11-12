@@ -29,6 +29,7 @@ Requires QDRANT_URL and QDRANT_API_KEY environment variables.
 
 import math
 import pandas as pd
+import glob
 import os
 import time
 import uuid
@@ -44,12 +45,15 @@ CORPUS_MANIFESTS = [
     "corpus/manifest.csv",
     "corpus_statutes/manifest.csv",
     "corpus_hc/manifest.csv",
-]
+] + sorted(glob.glob("corpus/manifest_*.csv")) + sorted(glob.glob("corpus_statutes/manifest_*.csv")) + sorted(glob.glob("corpus_hc/manifest_*.csv"))
+# ONLY_MANIFESTS=corpus_statutes/manifest_codes.csv indexes just those files (comma-separated).
+if os.environ.get("ONLY_MANIFESTS"):
+    CORPUS_MANIFESTS = [p.strip() for p in os.environ["ONLY_MANIFESTS"].split(",") if p.strip()]
 
 COLLECTION_NAME = "supreme_court_judgments"
 CHUNK_SIZE_WORDS = 350
 CHUNK_OVERLAP_WORDS = 50
-TRACKING_FILE = "indexed_case_ids.txt"
+TRACKING_FILE = os.environ.get("TRACKING_FILE", "indexed_case_ids.txt")   # a second run alongside uses its own
 
 GROUP_CHUNKS = 192            # chunks encoded and uploaded together
 ENCODE_BATCH = int(os.environ.get("ENCODE_BATCH", "32"))

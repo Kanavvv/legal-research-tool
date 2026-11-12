@@ -260,7 +260,35 @@ ACT_ALIASES = {
     "specific relief": "The Specific Relief Act, 1963",
     "transfer of property": "The Transfer of Property Act, 1882",
     "tpa": "The Transfer of Property Act, 1882",
+    "bharatiya nyaya sanhita": "The Bharatiya Nyaya Sanhita, 2023",
+    "bharatiya nagarik suraksha sanhita": "The Bharatiya Nagarik Suraksha Sanhita, 2023",
+    "bharatiya sakshya adhiniyam": "The Bharatiya Sakshya Adhiniyam, 2023",
+    "penal code": "The Indian Penal Code, 1860",
+    "code of criminal procedure": "The Code of Criminal Procedure, 1973",
+    "criminal procedure": "The Code of Criminal Procedure, 1973",
+    "evidence act": "The Indian Evidence Act, 1872",
+    "evidence": "The Indian Evidence Act, 1872",
+    "code of civil procedure": "The Code of Civil Procedure, 1908",
+    "civil procedure": "The Code of Civil Procedure, 1908",
+    "divorce act": "The Divorce Act, 1869",
 }
+
+# Short forms people write after a section number ("318 BNS", "u/s 438 CrPC").
+# Matched exactly, so BNS never swallows BNSS.
+CODE_ABBREVIATIONS = {
+    "bns": "The Bharatiya Nyaya Sanhita, 2023",
+    "bnss": "The Bharatiya Nagarik Suraksha Sanhita, 2023",
+    "bsa": "The Bharatiya Sakshya Adhiniyam, 2023",
+    "ipc": "The Indian Penal Code, 1860",
+    "crpc": "The Code of Criminal Procedure, 1973",
+    "iea": "The Indian Evidence Act, 1872",
+    "cpc": "The Code of Civil Procedure, 1908",
+}
+CODE_REF = re.compile(
+    r"\b(?:(?:section|sec\.?|s\.|u/s\.?)\s*)?(\d+[A-Z]{0,3})\s*(?:\(\w+\)\s*)*(?:of\s+(?:the\s+)?)?"
+    r"(BNSS|BNS|BSA|IPC|Cr\.?\s?P\.?\s?C\.?|C\.?P\.?C\.?|IEA)\b",
+    re.IGNORECASE,
+)
 
 SECTION_REF = re.compile(
     r"\b(?:section|sec\.?|s\.|u/s\.?)\s*(\d+[A-Z]{0,3})\b(?:\s*(?:\(\w+\)\s*)*)?(?:\s*(?:of|under|,)?\s*(?:the\s+)?([A-Za-z][A-Za-z .]{1,40}?)\s+act\b)?",
@@ -277,6 +305,8 @@ def _resolve_act(name):
     if not name:
         return None
     n = name.lower().replace(".", "").strip()
+    if n.replace(" ", "") in CODE_ABBREVIATIONS:
+        return CODE_ABBREVIATIONS[n.replace(" ", "")]
     n = re.sub(r"^(the|indian)\s+", "", n)
     for alias, act in ACT_ALIASES.items():
         if n == alias or n.startswith(alias) or alias.startswith(n) and len(n) >= 4:
@@ -295,6 +325,10 @@ def find_references(query):
         act = _resolve_act(m.group(2)) or (lone_acts[0] if len(set(lone_acts)) == 1 else None)
         if act:
             sections.append((act, m.group(1).upper()))
+    for m in CODE_REF.finditer(query):
+        code = re.sub(r"[\s.]", "", m.group(2)).lower()
+        if code in CODE_ABBREVIATIONS:
+            sections.append((CODE_ABBREVIATIONS[code], m.group(1).upper()))
     for m in ARTICLE_REF.finditer(query):
         sections.append(("The Constitution of India", m.group(1).upper()))
     cases = [(a.strip(), b.strip()) for a, b in CASE_NAME.findall(query)]
