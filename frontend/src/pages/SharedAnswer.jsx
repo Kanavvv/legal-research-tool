@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { API_URL } from "../api";
 import ResultView from "../ui/ResultView";
+import ShareTools from "../ui/ShareTools";
 
 export default function SharedAnswer() {
   const { id } = useParams();
@@ -47,6 +48,7 @@ export default function SharedAnswer() {
           actions={
             <div className="answer-actions">
               <Link to="/" className="btn btn--lime btn--sm">Ask your own question</Link>
+              <ShareTools question={data.question} answer={data.answer} sources={data.sources.length} url={`${window.location.origin}/a/${id}`} />
             </div>
           }
         />

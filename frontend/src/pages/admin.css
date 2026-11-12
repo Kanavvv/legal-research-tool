@@ -357,3 +357,34 @@ body:has(.cr) { background: #07090C; }
 @media (prefers-reduced-motion: reduce) {
   .cr *, .cr *::before, .cr *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Visitors and trending ---------- */
+.cr .cr-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.cr .cr-split > .adm-card { margin: 0; }
+.cr .cr-trend-edit { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 12px; }
+.cr .cr-trend-edit > li { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start; padding: 14px;
+  border: 1px solid var(--c-line); border-radius: 12px; background: rgba(255, 255, 255, 0.015); }
+.cr .cr-trend-n { color: var(--c-accent); font-size: 13px; padding-top: 10px; }
+.cr .cr-trend-fields { display: grid; gap: 8px; min-width: 0; }
+.cr .cr-trend-row { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.cr .cr-trend-actions { display: flex; gap: 6px; align-items: center; }
+@media (max-width: 700px) {
+  .cr .cr-trend-edit > li { grid-template-columns: 1fr; }
+  .cr .cr-trend-row { grid-template-columns: 1fr; }
+}
+.cr .cr-trend-fields .adm-input { width: 100%; max-width: none; box-sizing: border-box; }
+
+/* ---------- Everything on the site ---------- */
+.cr .cr-cat-search { flex: 1 1 220px; max-width: 320px; }
+.cr .cr-cat-head { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 4px 10px; margin-bottom: 12px; }
+.cr .cr-cat-head h2 { margin: 0; }
+.cr .cr-cat-head p { grid-column: 1 / -1; margin: 0; }
+.cr .cr-cat-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
+.cr .cr-cat-item { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 14px 16px; border: 1px solid var(--c-line); border-radius: 12px; background: rgba(255, 255, 255, 0.015); }
+.cr .cr-cat-item .cr-light { margin-top: 6px; }
+.cr .cr-cat-item--off { opacity: 0.72; }
+.cr .cr-cat-body { display: grid; gap: 6px; min-width: 0; }
+.cr .cr-cat-body p { margin: 0; }
+.cr .cr-cat-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.cr .cr-cat-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--c-ink-3); }
+@media (max-width: 520px) { .cr .cr-cat-list { grid-template-columns: 1fr; } }

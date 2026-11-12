@@ -31,6 +31,7 @@ const Digest = lazy(() => import("./pages/Digest"));
 const Tools = lazy(() => import("./pages/Tools"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Now = lazy(() => import("./pages/Now"));
+const Trending = lazy(() => import("./pages/Trending"));
 const Deadlines = lazy(() => import("./pages/Deadlines"));
 const IsItLegal = lazy(() => import("./pages/IsItLegal"));
 const Notice = lazy(() => import("./pages/Notice"));
@@ -59,6 +60,7 @@ const META = {
   "/lawyers/join": ["List yourself as an advocate · Nyaya", "Advocates can add a free listing to Nyaya's directory."],
   "/digest": ["This week in the Supreme Court · Nyaya", "A short weekly digest of new Supreme Court judgments, in plain words."],
   "/tools": ["All tools · Nyaya", "Every Nyaya tool in one place: ask, convert, compare, argue, draft, and more."],
+  "/trending": ["What India is asking: this week's legal questions · Nyaya", "The legal questions people are asking this week, answered with the law behind them. Ask any of them free."],
   "/now": ["Something just happened? What to do now · Nyaya", "Step-by-step help for online fraud, arrest, a refused FIR, cheque bounce, road accidents, legal notices, domestic violence and more. English and Hindi."],
   "/deadlines": ["Legal deadline calculator: cheque bounce, consumer, RTI, appeals · Nyaya", "Work out the last day to send a cheque-bounce notice, file a consumer complaint, appeal an RTI, claim for an accident and more, from the law that sets it."],
   "/is-it-legal": ["Is this legal? Quick answers on Indian law · Nyaya", "Describe a situation and get a straight answer from Indian law, with the sections and judgments behind it."],
@@ -157,6 +159,7 @@ export default function App() {
                   <Route path="/lawyers/join" element={<Lawyers join />} />
                   <Route path="/digest" element={<Digest />} />
                   <Route path="/tools" element={<Tools />} />
+                  <Route path="/trending" element={<Trending />} />
                   <Route path="/now" element={<Now />} />
                   <Route path="/now/:slug" element={<Now />} />
                   <Route path="/deadlines" element={<Deadlines />} />

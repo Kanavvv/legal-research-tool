@@ -613,3 +613,24 @@ a.site-banner:hover { background: #A8321F; }
 }
 .paused-tool { padding: 28px; display: grid; gap: 12px; }
 .paused-tool p { margin: 0; }
+
+/* ---------- Trending: what people are asking ---------- */
+.trend-list { list-style: none; margin: 8px 0 34px; padding: 0; display: grid; gap: 10px; counter-reset: none; }
+.trend-item { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; padding: 20px 22px; color: inherit; text-decoration: none;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease); }
+.trend-item:hover { border-color: rgba(255, 107, 91, 0.55); transform: translateY(-1px); }
+.trend-rank { font-size: 13px; color: var(--coral); padding-top: 5px; }
+.trend-body { display: grid; gap: 6px; }
+.trend-title { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.18; color: var(--cream); }
+.trend-topic { font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--coral-2); text-decoration: none; }
+.trend-go { font-size: 14px; }
+.trend-section { margin: 0 0 34px; }
+.trend-section .zone-title { margin-bottom: 14px; }
+.trend-topics { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.trend-topics li { padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.trend-q { color: var(--cream); text-decoration: none; font-size: 15.5px; line-height: 1.4; }
+.trend-q:hover { color: var(--coral-2); }
+@media (prefers-reduced-motion: reduce) { .trend-item, .trend-item:hover { transition: none; transform: none; } }
+
+/* ---------- Share buttons ---------- */
+.btn--wa { display: inline-flex; align-items: center; gap: 7px; }
