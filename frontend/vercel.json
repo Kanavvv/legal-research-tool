@@ -17,8 +17,16 @@
       "destination": "https://api.asknyaya.in/sitemap-content.xml"
     },
     {
+      "source": "/a/:id",
+      "destination": "https://api.asknyaya.in/seo/a/:id"
+    },
+    {
+      "source": "/explained/:slug",
+      "destination": "https://api.asknyaya.in/seo/explained/:slug"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     }
   ],
   "headers": [

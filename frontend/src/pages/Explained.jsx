@@ -63,23 +63,6 @@ function One({ slug }) {
     return () => { live = false; };
   }, [slug]);
 
-  // Structured data so search engines can show the questions and answers directly
-  useEffect(() => {
-    if (!x) return undefined;
-    const el = document.createElement("script");
-    el.type = "application/ld+json";
-    el.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        { "@type": "Article", headline: x.title, description: x.dek, datePublished: x.published_at || x.created,
-          dateModified: x.updated, publisher: { "@type": "Organization", name: "Nyaya", url: "https://asknyaya.in" } },
-        ...(x.faq?.length ? [{ "@type": "FAQPage", mainEntity: x.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }] : []),
-      ],
-    });
-    document.head.appendChild(el);
-    return () => el.remove();
-  }, [x]);
-
   return (
     <main id="main" className="station">
       <header className="result-head">
