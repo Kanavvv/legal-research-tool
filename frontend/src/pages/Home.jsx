@@ -19,6 +19,8 @@ import LangToggle from "../components/LangToggle";
 import SaveToFolder from "../ui/SaveToFolder";
 import MicButton from "../ui/MicButton";
 import SpeakButton from "../ui/SpeakButton";
+import ShareTools from "../ui/ShareTools";
+import { trackEvent } from "../ui/track";
 import { PRO_ON, WHATSAPP_URL } from "../config";
 import { oldLawRefs } from "../codeMap";
 import { sectionPath } from "../lawCodes";
@@ -145,6 +147,7 @@ export default function Home() {
     setCheck(null);
     setFollowUp("");
     setShareStatus("");
+    setShareLink(null);
     setUpgradeHint(false);
 
     setQuestion(q);
@@ -324,18 +327,25 @@ export default function Home() {
     } catch { /* clipboard blocked */ }
   }
 
+  // One link per answer: "Share link" and "Send on WhatsApp" reuse it.
+  async function ensureLink() {
+    if (shareLink) return `${window.location.origin}/a/${shareLink.id}`;
+    const res = await apiFetch(`${API_URL}/share`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: asked, answer, sources }),
+    });
+    if (!res.ok) throw await responseError(res);
+    const { id, token } = await res.json();
+    setShareLink({ id, token, public: false });
+    trackEvent("share_link");
+    return `${window.location.origin}/a/${id}`;
+  }
+
   async function shareAnswer() {
     setShareStatus("Making a link…");
     try {
-      const res = await apiFetch(`${API_URL}/share`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: asked, answer, sources }),
-      });
-      if (!res.ok) throw await responseError(res);
-      const { id, token } = await res.json();
-      setShareLink({ id, token, public: false });
-      const url = `${window.location.origin}/a/${id}`;
+      const url = await ensureLink();
       try {
         if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
           await navigator.share({ title: asked, url });
@@ -608,6 +618,7 @@ export default function Home() {
                       <button type="button" className="btn btn--ghost btn--sm" onClick={copyAnswer}>{copyStatus || "Copy answer"}</button>
                       <button type="button" className="btn btn--ghost btn--sm" onClick={exportWord}>Export to Word</button>
                       <button type="button" className="btn btn--ghost btn--sm" onClick={shareAnswer}>{shareStatus || "Share link"}</button>
+                      <ShareTools question={asked} answer={answer} sources={sources.length} getLink={ensureLink} />
                       <SaveToFolder question={asked} answer={answer} sources={sources} />
                       <SpeakButton text={answer} />
                       {shareLink && (

@@ -19,6 +19,7 @@ const GROUPS = [
   {
     title: "For everyone",
     items: [
+      { to: "/trending", name: "What India is asking", sub: "This week's most-asked legal questions. Tap one for the answer." },
       { to: "/now", name: "Something just happened?", sub: "Online fraud, an arrest, a refused FIR, an accident: what to do now, today and this week." },
       { to: "/is-it-legal", name: "Is this legal?", sub: "Describe a situation, get a straight answer with the law behind it." },
       { to: "/notice", name: "Got a notice?", sub: "Photo of a legal notice, summons or FIR, explained: what it is, how urgent, what next. Free." },

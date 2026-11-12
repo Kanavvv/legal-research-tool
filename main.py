@@ -950,5 +950,7 @@ import admin  # noqa: E402  (needs extras and features set up first)
 app.include_router(admin.router)
 import control  # noqa: E402
 app.include_router(control.router)
+import growth  # noqa: E402
+app.include_router(growth.router)
 import tools  # noqa: E402
 app.include_router(tools.router)

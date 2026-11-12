@@ -4,6 +4,7 @@ import { API_URL, apiFetch, getLang, responseError, setLang } from "../api";
 import LangSwitch from "../ui/LangSwitch";
 import MicButton from "../ui/MicButton";
 import SourceList from "../ui/SourceList";
+import ShareTools from "../ui/ShareTools";
 
 const UI = {
   en: {
@@ -140,6 +141,8 @@ export default function IsItLegal() {
           <div className="answer-actions">
             <Link to="/" state={{ rerunQuestion: text }} className="btn btn--ghost btn--sm">{t.deeper}</Link>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setOut(null); setText(""); }}>{t.again}</button>
+            <ShareTools question={text} answer={`${out.headline}. ${out.why}`} sources={(out.sources || []).length}
+              url={`${window.location.origin}/is-it-legal`} text={`${text.trim().slice(0, 200)}\n\nNyaya says: ${out.headline}\nCheck your own question free:`} />
           </div>
           <SourceList title={t.sources} sources={out.sources || []} />
         </section>
