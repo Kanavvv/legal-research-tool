@@ -35,6 +35,13 @@ KNOWN = {  # old section -> new section (number before any sub-section)
     "iea": {"65B": "63", "24": "22", "45": "39", "32": "26", "114": "119", "101": "104"},
 }
 
+# Sub-sections checked by hand where the new section's sub-sections are worded
+# almost alike and word overlap alone picks the wrong one
+KNOWN_SUB = {
+    "ipc": {"302": "1", "304A": "1", "323": "2", "324": "1", "325": "2", "326": "2",
+            "379": "2", "406": "2", "420": "4"},
+}
+
 
 # Old sections with no counterpart in the new code, and why (shown on the site)
 NO_EQUIVALENT = {
@@ -127,6 +134,9 @@ def main():
                 rows[k].update(new=want, sub="", score=1.0, new_heading=new.get(want, {}).get("heading", ""), verified=True)
         for k in hits:
             rows[k]["verified"] = True
+        for k, sub in KNOWN_SUB.get(old_code, {}).items():
+            if k in rows:
+                rows[k].update(sub=sub, verified=True)
         for k, r in rows.items():
             note = NO_EQUIVALENT.get(old_code, {}).get(k)
             repealed = r["heading"].lower().startswith(("rep.", "repealed", "omitted"))
