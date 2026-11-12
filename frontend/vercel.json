@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/sitemap-shares.xml",
-      "destination": "https://legal-research-backend-256323345647.us-central1.run.app/sitemap-shares.xml"
+      "destination": "https://api.asknyaya.in/sitemap-shares.xml"
     },
     {
       "source": "/(.*)",
