@@ -442,6 +442,10 @@ async def wa_receive(req: Request, background: BackgroundTasks):
         return {"ok": True}
     for entry in payload.get("entry", []):
         for change in entry.get("changes", []):
+            for s in change.get("value", {}).get("statuses", []) or []:
+                if s.get("status") == "failed":  # delivery reports: keep the reason, not the number
+                    log_event("whatsapp_delivery_failed", severity="WARNING",
+                              errors=[{k: e.get(k) for k in ("code", "title", "message")} | {"details": (e.get("error_data") or {}).get("details")} for e in s.get("errors", [])][:3])
             for m in change.get("value", {}).get("messages", []) or []:
                 key = f"wa_msg|{m.get('id')}"
                 if cache_get(key) is not None:  # Meta retries deliveries; answer each message once
