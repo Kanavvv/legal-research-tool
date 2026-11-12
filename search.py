@@ -227,6 +227,9 @@ def get_statute_section(case_id):
     # Chunking flattened the line breaks; put paragraph breaks back before
     # numbered clauses, Explanations, Illustrations and provisos.
     text = " ".join(words)
+    # import_criminal_codes.py writes "Act, Section N (BNS s.N): heading" instead
+    text = re.sub(r"^" + re.escape(f"{parsed['act']}, Section {parsed['number']} (") + r"[^)]*\):\s*"
+                  + re.escape(parsed["heading"]) + r"\s*", "", text, count=1)
     text = re.sub(r"([.;:—])\s+(?=(\(\w{1,4}\)|Explanation|Illustrations?|Provided that)\s)", r"\1\n\n", text)
 
     return {

@@ -17,6 +17,8 @@ import { pulseCurrents, smoothScrollTo } from "../ui/motion";
 import { API_URL, apiFetch, responseError, linkCitations, getLang } from "../api";
 import LangToggle from "../components/LangToggle";
 import SaveToFolder from "../ui/SaveToFolder";
+import MicButton from "../ui/MicButton";
+import SpeakButton from "../ui/SpeakButton";
 
 
 const QUESTION_POOL = [
@@ -436,6 +438,7 @@ export default function Home() {
                 placeholder="Can a landlord evict a tenant without notice?"
                 autoComplete="off"
               />
+              <MicButton onText={(t) => { setQuestion(t); if (askHint) setAskHint(""); }} />
               <button type="submit" className="btn btn--lime" disabled={busy}>
                 {busy ? "Searching…" : "Ask"}
                 <span className="btn-arrow" aria-hidden="true">
@@ -574,6 +577,7 @@ export default function Home() {
                       <button type="button" className="btn btn--ghost btn--sm" onClick={exportWord}>Export to Word</button>
                       <button type="button" className="btn btn--ghost btn--sm" onClick={shareAnswer}>{shareStatus || "Share link"}</button>
                       <SaveToFolder question={asked} answer={answer} sources={sources} />
+                      <SpeakButton text={answer} />
                       {shareLink && (
                         <label className="share-public">
                           <input type="checkbox" checked={shareLink.public} onChange={(e) => setSharePublic(e.target.checked)} />
