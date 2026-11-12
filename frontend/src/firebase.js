@@ -3,7 +3,10 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKa9zvZfJIgfempwIbBemrXNxa_rRvl-E",
-  authDomain: "legal-research-tool-509320.firebaseapp.com",
+  // Sign-in pages are served from our own domain (vercel.json proxies /__/auth to
+  // Firebase), so browsers that wall off third-party storage still pass the
+  // result back. Local dev keeps Firebase's own domain.
+  authDomain: window.location.hostname === "asknyaya.in" ? "asknyaya.in" : "legal-research-tool-509320.firebaseapp.com",
   projectId: "legal-research-tool-509320",
   storageBucket: "legal-research-tool-509320.firebasestorage.app",
   messagingSenderId: "256323345647",
