@@ -36,7 +36,7 @@ const META = {
   "/privacy": ["Privacy Policy · Nyaya", "How Nyaya handles your information."],
   "/terms": ["Terms of Use · Nyaya", "The terms for using Nyaya. Nyaya is a research aid, not legal advice."],
   "/pricing": ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro (Rs 199 for 30 days) adds 200 questions a day, document review, drafts and case alerts."],
-  "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement or order and get it explained in plain words, with the Indian law that applies."],
+  "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement, FIR or order, even a phone photo, and get it explained in plain words with the Indian law that applies."],
   "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 

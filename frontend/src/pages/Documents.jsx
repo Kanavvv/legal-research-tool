@@ -12,6 +12,24 @@ const KINDS = [
   { id: "consumer_complaint", label: "Consumer complaint", hint: "What you bought, from whom, when, what went wrong, what you've tried, and what you want." },
 ];
 
+// Phone photos are often 4-12 MB; shrink to a sharp, readable JPEG before upload.
+async function shrinkImage(file) {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 export default function Documents() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -47,11 +65,12 @@ export default function Documents() {
     let res;
     try {
       if (mode === "review") {
-        if (!file) { setError("Choose a PDF, Word or text file first."); return; }
-        if (file.size > 5 * 1024 * 1024) { setError("That file is over 5 MB."); return; }
+        if (!file) { setError("Choose a file or a photo of the document first."); return; }
+        const upload = await shrinkImage(file);
+        if (upload.size > 5 * 1024 * 1024) { setError("That file is over 5 MB."); return; }
         setTitle(file.name);
         const form = new FormData();
-        form.append("file", file);
+        form.append("file", upload);
         form.append("question", question.trim());
         setPhase("writing");
         res = await apiFetch(`${API_URL}/document`, { method: "POST", body: form });
@@ -87,7 +106,7 @@ export default function Documents() {
         <div>
           <h1 className="station-title">Your <em>paperwork</em>, read and drafted.</h1>
           <p className="station-lede">
-            Upload a notice, agreement or order and get it explained in plain words, with the law that applies.
+            Upload a notice, agreement, FIR or order (a phone photo works) and get it explained in plain words, with the law that applies.
             Or describe your situation and get a first draft to take to a lawyer. Part of Nyaya Pro.
           </p>
         </div>
@@ -102,13 +121,13 @@ export default function Documents() {
         {mode === "review" ? (
           <>
             <label className={file ? "drop drop--has" : "drop"}>
-              <input type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              <input type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*"
                 onChange={(e) => setFile(e.target.files?.[0] || null)} />
               <span className="drop-icon" aria-hidden="true">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 17v-6M9.5 13.5 12 11l2.5 2.5" /></svg>
               </span>
-              <span className="drop-main">{file ? file.name : "Choose a PDF, Word or text file"}</span>
-              <span className="drop-sub mono muted">{file ? `${(file.size / 1024).toFixed(0)} KB` : "up to 5 MB · read once, never stored"}</span>
+              <span className="drop-main">{file ? file.name : "Choose a file, or take a photo of the page"}</span>
+              <span className="drop-sub mono muted">{file ? `${(file.size / 1024).toFixed(0)} KB` : "PDF, Word, text or photo (even a scanned FIR) · read once, never stored"}</span>
             </label>
             <div className="field">
               <label htmlFor="doc-q">Anything specific you want to know? <span className="muted">(optional)</span></label>
