@@ -2,7 +2,7 @@ import { auth } from "./firebase";
 
 // One place for the backend's address. Set VITE_API_URL in Vercel to move it
 // (for example to https://api.asknyaya.in) without touching the code.
-export const API_URL = (import.meta.env.VITE_API_URL || "https://legal-research-backend-256323345647.us-central1.run.app").replace(/\/$/, "");
+export const API_URL = (import.meta.env.VITE_API_URL || "https://api.asknyaya.in").replace(/\/$/, "");
 
 // fetch, plus the signed-in user's token when there is one, so the server can
 // apply their plan. Signed-out visitors are sent exactly as before.
