@@ -22,7 +22,10 @@ COPY admin.py .
 COPY tools.py .
 COPY control.py .
 COPY growth.py .
+<<<<<<< HEAD
 COPY library.py .
 COPY cases.py .
+=======
+>>>>>>> origin/main
 
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
