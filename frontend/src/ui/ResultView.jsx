@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { linkCitations } from "../api";
+import { courtWeight } from "./courtWeight";
 
 // A finished (or streaming) answer on judgment paper, with its sources.
 // Used by shared answers, document reviews and drafts.
@@ -69,6 +70,9 @@ export default function ResultView({ label = "answer", answer, sources = [], che
                   <span className="source-n mono">{String(i + 1).padStart(2, "0")}</span>
                   <span className="mono muted">{[s.doc_type === "statute" ? "Act" : s.court, s.year].filter(Boolean).join(" · ")}</span>
                 </div>
+                {courtWeight(s) && (
+                  <p className={`court-weight court-weight--${courtWeight(s).level}`} title={courtWeight(s).long}>{courtWeight(s).short}</p>
+                )}
                 <h3 className="source-title">
                   {s.source_url && s.source_url !== "nan" ? <a href={s.source_url} target="_blank" rel="noreferrer">{s.title}</a> : s.title}
                 </h3>

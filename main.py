@@ -36,6 +36,7 @@ from guard import cache_get, cache_set, rate_limit, check_budget, record_usage, 
 import plans
 import features
 import extras
+import safety
 from plans import optional_user, use_quota
 
 from search import search, get_case_by_id, search_by_title, search_titles_fast, list_statutes, get_statute_section
@@ -229,6 +230,9 @@ def group_by_case(results):
 class FeedbackRequest(BaseModel):
     question: str
     helpful: bool
+    reason: str = ""      # optional "what was wrong?"
+    answer: str = ""      # the answer being rated, so a reviewer can see it
+    route: str = "ask"
 
 
 @app.get("/")
@@ -268,12 +272,17 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
     use_quota(req, "ask", claims)
 
     lang = clean_lang(request.lang)
+    emergency = safety.emergency_lines(question)
+    if emergency:
+        log_event("emergency_lines", keys=[e["key"] for e in emergency], route="ask")
     history = [t for t in request.history if t.question.strip()][-MAX_TURNS:]
     history_key = hashlib.sha256(json.dumps([[t.question, t.answer[:200]] for t in history]).encode()).hexdigest()[:16] if history else ""
     cache_key = f"ask|{question.lower()}|{request.year}|{request.court}|{request.doc_type}|{request.level}|{history_key}|{lang}"
     cached = cache_get(cache_key)
 
     def stream_cached(payload):
+        if emergency:
+            yield json.dumps({"type": "emergency", "lines": emergency}) + "\n"
         yield json.dumps({"type": "sources", "sources": payload["sources"]}) + "\n"
         yield json.dumps({"type": "delta", "text": payload["answer"]}) + "\n"
         if payload.get("check"):
@@ -382,6 +391,8 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
         system_prompt += FOLLOW_UP_NOTE
 
     def generate():
+        if emergency:
+            yield json.dumps({"type": "emergency", "lines": emergency}) + "\n"
         yield json.dumps({"type": "sources", "sources": sources_payload}) + "\n"
         full_text = ""
         started = time.time()
@@ -796,10 +807,28 @@ def statute_section_endpoint(case_id: str):
 
 @app.post("/feedback")
 def feedback_endpoint(request: FeedbackRequest, req: Request):
-    """Lightweight feedback logging -- visible in Cloud Run logs, no database needed yet."""
+    """Thumbs up/down on an answer. Kept in Firestore (feedback/) for the admin
+    dashboard and for building the answer test set; also logged."""
     rate_limit(req, "search", shared=False)
-    log_event("feedback", helpful=request.helpful, question=request.question[:500])
+    log_event("feedback", helpful=request.helpful, route=request.route[:20], question=request.question[:500],
+              reason=request.reason[:500])
+    save_feedback(request.question, request.helpful, request.reason, request.answer, request.route)
     return {"status": "received"}
+
+
+def save_feedback(question, helpful, reason="", answer="", route="ask"):
+    if db is None:
+        return
+    try:
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        db.collection("feedback").add({
+            "question": question[:1000], "helpful": bool(helpful), "reason": (reason or "")[:1000],
+            "answer": (answer or "")[:4000], "route": (route or "ask")[:20],
+            "created": now, "expires": now + datetime.timedelta(days=365),
+        })
+    except Exception as e:
+        log_event("feedback_store_error", severity="WARNING", error=str(e)[:200])
 
 
 class SubscribeRequest(BaseModel):
