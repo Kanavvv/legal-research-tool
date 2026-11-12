@@ -27,7 +27,7 @@ def _sources_payload(sources):
             for s in (sources or [])][:5]
 
 
-def _claude_json(route, system, content, user, max_tokens=900):
+def _claude_json(route, system, content, user, max_tokens=1600):
     """One Claude call whose reply is a JSON object."""
     model = features._helpers["model"]
     started = time.time()
@@ -43,7 +43,7 @@ def _claude_json(route, system, content, user, max_tokens=900):
     try:
         return json.loads(m.group(0) if m else text)
     except (ValueError, AttributeError):
-        log_event("tool_bad_json", severity="WARNING", route=route, text=text[:300])
+        log_event("tool_bad_json", severity="WARNING", route=route, stop_reason=getattr(msg, "stop_reason", None), text=text[:300])
         raise HTTPException(status_code=502, detail="Couldn't read the answer. Please try again.")
 
 
@@ -159,7 +159,7 @@ async def decode_notice(req: Request, file: UploadFile | None = File(None), text
     out = await run_in_threadpool(
         _claude_json, "notice", NOTICE_SYSTEM + _lang_note(lang),
         f"<document>\n{doc}\n</document>\n" + ("(Read from a photo.)\n" if scanned else "")
-        + f"\nCase and statute excerpts:\n\n{context}", uid, 1200)
+        + f"\nCase and statute excerpts:\n\n{context}", uid, 2600 if lang == "hi" else 1600)
     log_event("notice_decoded", chars=len(doc), scanned=scanned, urgency=out.get("urgency"))
     clip = lambda xs, n, m: [str(x)[:m] for x in (xs or [])][:n]  # noqa: E731
     return {
@@ -217,6 +217,6 @@ def template_assist(body: AssistRequest, req: Request, claims=Depends(optional_u
     use_quota(req, "ask", claims)
     check_budget()
     out = _claude_json(f"assist_{body.kind}", ASSIST[body.kind], f"<problem>{problem}</problem>",
-                       (claims or {}).get("uid"), 800)
+                       (claims or {}).get("uid"), 1400)
     return {k: [str(x)[:300] for x in v][:3] if isinstance(v, list) else str(v)[:2000]
             for k, v in out.items() if isinstance(v, (str, list))}
