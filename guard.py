@@ -229,7 +229,31 @@ SETTINGS_DEFAULTS = {
     "banner_text": "",
     "banner_link": "",
     "blocked_uids": [],
+    "features_off": [],                # tools switched off from the dashboard (see FEATURES)
 }
+
+# Tools the dashboard can switch off without a deploy. A switched-off tool answers 503 with
+# a short message, and the site hides or pauses its page.
+FEATURES = {
+    "ask": "Ask Nyaya (the main question box)",
+    "check": "Is this legal?",
+    "notice": "Notice decoder",
+    "assist": "Template help (RTI, consumer)",
+    "compare": "Compare cases",
+    "argument": "Argument builder",
+    "brief": "Case briefs (students)",
+    "moot": "Moot practice (students)",
+    "lawyers_join": "Lawyer sign-ups",
+}
+
+
+def feature_on(name):
+    return name not in (get_settings().get("features_off") or [])
+
+
+def require_feature(name):
+    if not feature_on(name):
+        raise HTTPException(status_code=503, detail="This tool is paused for a short while. Please try again later.")
 _settings_cache = {"at": 0.0, "value": None}
 
 

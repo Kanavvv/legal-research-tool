@@ -611,3 +611,5 @@ a.site-banner:hover { background: #A8321F; }
   .dl-layout { grid-template-columns: minmax(0, 1fr); }
   .now-line-call { display: none; }
 }
+.paused-tool { padding: 28px; display: grid; gap: 12px; }
+.paused-tool p { margin: 0; }

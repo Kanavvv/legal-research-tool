@@ -1,13 +1,9 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./AuthContext";
-import Reeded from "./ui/Reeded";
-import Consent from "./ui/Consent";
-import Nav from "./ui/Nav";
-import SiteBanner from "./ui/SiteBanner";
+import Chrome from "./ui/Chrome";
+import FeatureGate from "./ui/FeatureGate";
 import { prefersReducedMotion } from "./ui/motion";
-import Footer from "./components/Footer";
-import WelcomeModal from "./components/WelcomeModal";
 import Home from "./pages/Home";
 import "./App.css";
 import "./world.css";
@@ -132,52 +128,48 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollManager />
-        <Reeded />
-        <div className="site">
-          <SiteBanner />
-          <Nav />
-          <WelcomeModal />
-          <div className="column">
-            <Suspense fallback={<Loading />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/argument-builder" element={<ArgumentBuilder />} />
-                <Route path="/compare" element={<CompareCases />} />
-                <Route path="/statutes" element={<StatuteBrowser />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/documents" element={<Documents />} />
-                <Route path="/drafts" element={<Documents />} />
-                <Route path="/a/:id" element={<SharedAnswer />} />
-                <Route path="/convert" element={<Convert />} />
-                <Route path="/law/:act/:num" element={<LawSection />} />
-                <Route path="/rights" element={<Rights />} />
-                <Route path="/rights/:slug" element={<Rights />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/templates/:slug" element={<Templates />} />
-                <Route path="/students" element={<Students />} />
-                <Route path="/lawyers" element={<Lawyers />} />
-                <Route path="/lawyers/join" element={<Lawyers join />} />
-                <Route path="/digest" element={<Digest />} />
-                <Route path="/tools" element={<Tools />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/now" element={<Now />} />
-                <Route path="/now/:slug" element={<Now />} />
-                <Route path="/deadlines" element={<Deadlines />} />
-                <Route path="/is-it-legal" element={<IsItLegal />} />
-                <Route path="/notice" element={<Notice />} />
-                <Route path="/help" element={<Hub />} />
-                <Route path="/help/:slug" element={<Hub />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-            <Footer />
-          </div>
-        </div>
-        <Consent />
+        <Routes>
+          <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
+          <Route path="*" element={
+            <Chrome>
+              <Suspense fallback={<Loading />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/argument-builder" element={<FeatureGate name="argument"><ArgumentBuilder /></FeatureGate>} />
+                  <Route path="/compare" element={<FeatureGate name="compare"><CompareCases /></FeatureGate>} />
+                  <Route path="/statutes" element={<StatuteBrowser />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/documents" element={<Documents />} />
+                  <Route path="/drafts" element={<Documents />} />
+                  <Route path="/a/:id" element={<SharedAnswer />} />
+                  <Route path="/convert" element={<Convert />} />
+                  <Route path="/law/:act/:num" element={<LawSection />} />
+                  <Route path="/rights" element={<Rights />} />
+                  <Route path="/rights/:slug" element={<Rights />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/templates/:slug" element={<Templates />} />
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/lawyers" element={<Lawyers />} />
+                  <Route path="/lawyers/join" element={<Lawyers join />} />
+                  <Route path="/digest" element={<Digest />} />
+                  <Route path="/tools" element={<Tools />} />
+                  <Route path="/now" element={<Now />} />
+                  <Route path="/now/:slug" element={<Now />} />
+                  <Route path="/deadlines" element={<Deadlines />} />
+                  <Route path="/is-it-legal" element={<FeatureGate name="check"><IsItLegal /></FeatureGate>} />
+                  <Route path="/notice" element={<FeatureGate name="notice"><Notice /></FeatureGate>} />
+                  <Route path="/help" element={<Hub />} />
+                  <Route path="/help/:slug" element={<Hub />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </Chrome>
+          } />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

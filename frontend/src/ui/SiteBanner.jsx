@@ -1,13 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { API_URL } from "../api";
+import { useSiteConfig } from "./siteConfig";
 
-// A one-line announcement the admin can switch on from /admin > Settings.
+// A one-line announcement the admin can switch on from the control room's Settings.
 export default function SiteBanner() {
-  const [banner, setBanner] = useState(null);
-  useEffect(() => {
-    fetch(`${API_URL}/site-config`).then((r) => (r.ok ? r.json() : null)).then((d) => setBanner(d?.banner || null)).catch(() => {});
-  }, []);
+  const banner = useSiteConfig()?.banner;
   if (!banner) return null;
   const { text, link } = banner;
   if (!link) return <p className="site-banner" role="status">{text}</p>;

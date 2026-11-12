@@ -81,7 +81,7 @@ def _graph(path, **params):
 def site_config():
     s = guard.get_settings()
     banner = {"text": s.get("banner_text", ""), "link": s.get("banner_link", "")} if s.get("banner_on") and s.get("banner_text") else None
-    return {"banner": banner}
+    return {"banner": banner, "features_off": s.get("features_off") or []}
 
 
 # ---------------- overview ----------------

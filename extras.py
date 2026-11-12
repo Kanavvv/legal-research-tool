@@ -84,6 +84,7 @@ BRIEF_SYSTEM = (
 
 @router.post("/brief")
 def case_brief(body: BriefRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("brief")
     rate_limit(req, "compare")
     use_quota(req, "compare", claims)
     check_budget()
@@ -131,6 +132,7 @@ MOOT_SYSTEM = (
 
 @router.post("/moot")
 def moot_turn(body: MootRequest, req: Request, claims=Depends(optional_user)):
+    guard.require_feature("moot")
     prop = body.proposition.strip()
     if len(prop) < 30 or len(prop) > 4000:
         raise HTTPException(status_code=400, detail="Give the moot proposition in 30 to 4000 characters.")
@@ -257,6 +259,7 @@ def my_listing(claims=Depends(required_user)):
 
 @router.post("/lawyers")
 def save_listing(body: LawyerListing, req: Request, claims=Depends(required_user)):
+    guard.require_feature("lawyers_join")
     rate_limit(req, "share")
     if not body.consent:
         raise HTTPException(status_code=400, detail="Please confirm the declaration.")
@@ -721,6 +724,10 @@ async def wa_receive(req: Request):
                 sender = m.get("from", "")
                 if sender:
                     await run_in_threadpool(_wa_touch, _hash(sender))
+                if sender and m.get("type") == "text":
+                    import control  # the owner's "admin" commands; works even while answers are paused
+                    if await run_in_threadpool(control.wa_admin, sender, (m.get("text") or {}).get("body", "")):
+                        continue
                 s = guard.get_settings()
                 if s.get("whatsapp_paused") and sender and m.get("type") in ("text", "image", "document", "audio"):
                     await run_in_threadpool(_wa_send, sender, s.get("whatsapp_pause_message") or "Nyaya on WhatsApp is taking a short break.")
