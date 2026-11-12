@@ -4,7 +4,7 @@ import { useAuth } from "../AuthContext";
 import { API_URL, apiFetch, responseError } from "../api";
 
 const FREE = ["10 questions a day", "5 case comparisons a day", "5 argument briefs a day", "Follow-up questions", "Save answers to folders", "Share links"];
-const PRO = ["200 questions a day", "50 comparisons and 50 briefs a day", "Explain any notice, agreement or order you upload", "Drafts: legal notice replies, RTI applications, consumer complaints", "Weekly email alerts on up to 5 topics", "Everything in Free"];
+const PRO = ["200 questions a day", "50 comparisons and 50 briefs a day", "Explain any notice, agreement, FIR or order, even from a photo", "Drafts: legal notice replies, RTI applications, consumer complaints", "Weekly email alerts on up to 5 topics", "Everything in Free"];
 
 function loadCheckout() {
   return new Promise((resolve, reject) => {

@@ -373,7 +373,7 @@ def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user
             yield json.dumps({"type": "error", "detail": "The answer got interrupted -- please try again."}) + "\n"
             return
 
-        record_usage("ask", ANSWER_MODEL, final.usage, started, relevant=is_relevant,
+        record_usage("ask", ANSWER_MODEL, final.usage, started, user=(claims or {}).get("uid"), relevant=is_relevant,
                      level=request.level, follow_up=bool(history))
         check = check_citations(full_text, sources_payload)
         if check["invalid"] or check["unverified"]:
@@ -463,7 +463,7 @@ def compare_endpoint(request: CompareRequest, req: Request, claims=Depends(optio
             log_event("claude_error", severity="ERROR", route="compare", traceback=traceback.format_exc()[-2000:])
             yield json.dumps({"type": "error", "detail": "The comparison got interrupted -- please try again."}) + "\n"
             return
-        record_usage("compare", ANSWER_MODEL, final.usage, started)
+        record_usage("compare", ANSWER_MODEL, final.usage, started, user=(claims or {}).get("uid"))
         yield json.dumps({"type": "done"}) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
@@ -528,7 +528,7 @@ def argument_endpoint(request: ArgumentRequest, req: Request, claims=Depends(opt
     except Exception:
         log_event("claude_error", severity="ERROR", route="argument", traceback=traceback.format_exc()[-2000:])
         raise HTTPException(status_code=502, detail="Couldn't build the brief right now. Please try again.")
-    record_usage("argument", ANSWER_MODEL, message.usage, started)
+    record_usage("argument", ANSWER_MODEL, message.usage, started, user=(claims or {}).get("uid"))
 
     brief_text = "".join(block.text for block in message.content if hasattr(block, "text"))
 

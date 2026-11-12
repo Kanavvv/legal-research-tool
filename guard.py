@@ -271,10 +271,32 @@ def check_budget():
         )
 
 
-def record_usage(route, model, usage, started_at=None, **extra):
-    """Adds this call's cost to today's total and logs it."""
+def _record_user_cost(user, route, usd, usage):
+    """user_costs/{uid}_{YYYYMM}: what each account actually costs us, per month and per feature.
+    Feeds pricing decisions (see usage_report.py)."""
+    if _db is None or Increment is None:
+        return
+    who = user or "anon"
+    month = datetime.datetime.now(IST).strftime("%Y%m")
+    try:
+        _col("user_costs").document(f"{who}_{month}").set({
+            "uid": who, "month": month,
+            "usd": Increment(usd), "calls": Increment(1),
+            "input_tokens": Increment(getattr(usage, "input_tokens", 0) or 0),
+            "output_tokens": Increment(getattr(usage, "output_tokens", 0) or 0),
+            "by_route": {route: {"usd": Increment(usd), "calls": Increment(1)}},
+            "updated": datetime.datetime.now(datetime.timezone.utc),
+        }, merge=True)
+    except Exception as e:
+        log_event("user_cost_store_error", severity="WARNING", error=str(e)[:200])
+
+
+def record_usage(route, model, usage, started_at=None, user=None, **extra):
+    """Adds this call's cost to today's total and to the caller's monthly cost row, and logs it.
+    `user` is the Firebase uid; signed-out use is pooled under "anon"."""
     usd = cost_usd(model, usage)
     day = _today()
+    _record_user_cost(user, route, usd, usage)
     _mem_spend[day] = _mem_spend.get(day, 0.0) + usd
     if _spend_cache["day"] == day:
         _spend_cache["usd"] += usd
