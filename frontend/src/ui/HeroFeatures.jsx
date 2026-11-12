@@ -14,7 +14,7 @@ const I = {
 
 const ITEMS = [
   ["court", "Supreme Court", "judgments"],
-  ["bench", "Bombay High Court", "2023 judgments"],
+  ["bench", "Bombay & Delhi HCs", "2023 judgments"],
   ["act", "Central Acts", "read by section"],
   ["cite", "Every claim", "cited to its source"],
   ["free", "Free to use", "no sign-up needed"],

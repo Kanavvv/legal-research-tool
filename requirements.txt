@@ -11,3 +11,4 @@ fastapi
 uvicorn
 anthropic
 firebase-admin
+python-multipart

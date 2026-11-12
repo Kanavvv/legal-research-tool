@@ -23,3 +23,5 @@ chroma_db/
 *.parquet
 .claude/
 weekly_job/
+*.mp4
+.impeccable/

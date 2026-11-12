@@ -3,8 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sonar from "../ui/Sonar";
 import SourceList from "../ui/SourceList";
+import { API_URL, apiFetch, responseError } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 const LOADING_MESSAGES = [
   "Pulling both judgments up from the wall…",
@@ -113,16 +113,12 @@ export default function CompareCases() {
     const msgTimer = setInterval(() => setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length), 2200);
 
     try {
-      const res = await fetch(`${API_URL}/compare`, {
+      const res = await apiFetch(`${API_URL}/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ case_id_a: caseA.case_id, case_id_b: caseB.case_id }),
       });
-      if (!res.ok) {
-        let detail = `Server responded with ${res.status}`;
-        try { const d = await res.json(); if (d.detail) detail = d.detail; } catch { /* not JSON */ }
-        throw new Error(detail);
-      }
+      if (!res.ok) throw await responseError(res);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -172,8 +168,8 @@ export default function CompareCases() {
           }
         }
       }
-    } catch {
-      setError("We lost the line on the way down. Try the comparison again in a moment.");
+    } catch (err) {
+      setError(err?.userMessage || "We lost the line on the way down. Try the comparison again in a moment.");
     } finally {
       clearInterval(msgTimer);
       setLoading(false);

@@ -3,8 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sonar from "../ui/Sonar";
 import SourceList from "../ui/SourceList";
+import { API_URL, apiFetch, responseError } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 const LOADING_MESSAGES = [
   "Looking for precedents on your side…",
@@ -33,12 +33,12 @@ export default function ArgumentBuilder() {
     const interval = setInterval(() => setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length), 1400);
 
     try {
-      const res = await fetch(`${API_URL}/argument`, {
+      const res = await apiFetch(`${API_URL}/argument`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ position }),
       });
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      if (!res.ok) throw await responseError(res);
       const data = await res.json();
       setBrief(data.brief);
 
@@ -48,8 +48,8 @@ export default function ArgumentBuilder() {
         if (!seen.has(s.case_id)) { seen.add(s.case_id); uniqueSources.push(s); }
       }
       setSources(uniqueSources);
-    } catch {
-      setError("We couldn't build your argument just now. Check your connection and try again in a moment.");
+    } catch (err) {
+      setError(err?.userMessage || "We couldn't build your argument just now. Check your connection and try again in a moment.");
     } finally {
       clearInterval(interval);
       setLoading(false);

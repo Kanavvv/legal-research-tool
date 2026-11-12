@@ -32,7 +32,7 @@ import pandas as pd
 import pdfplumber
 import anthropic
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import PointStruct, Filter, FieldCondition, MatchValue, MatchAny
 from sentence_transformers import SentenceTransformer
 
 BASE_URL = "https://indian-supreme-court-judgments.s3.amazonaws.com"
@@ -208,6 +208,96 @@ def send_digest(html_body):
         print(f"Broadcast created but failed to send: {send_resp.status_code} {send_resp.text}")
 
 
+# ---------------- Pro case alerts ----------------
+# Users follow topics on the site (stored in Firestore under users/{uid}/alerts).
+# After new judgments are indexed, each Pro user with alerts gets one email
+# listing the new judgments that match their topics. Needs
+# FIREBASE_SERVICE_ACCOUNT_B64; without it, alerts are skipped.
+
+ALERT_MIN_SCORE = float(os.environ.get("ALERT_MIN_SCORE", "20"))  # dot-product score; unrelated text scores ~12
+ALERTS_FROM = os.environ.get("ALERTS_FROM_ADDRESS", FROM_ADDRESS)
+
+
+def _firestore():
+    # On Cloud Run the job's own service account reaches Firestore (same project), so no key is needed.
+    # A base64 service-account key still works for local runs.
+    import base64, json
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    if not firebase_admin._apps:
+        b64 = os.environ.get("FIREBASE_SERVICE_ACCOUNT_B64", "")
+        if b64:
+            firebase_admin.initialize_app(credentials.Certificate(json.loads(base64.b64decode(b64))))
+        else:
+            firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT", "legal-research-tool-509320")})
+    return firestore.client()
+
+
+def match_topic(topic, new_ids, limit=5):
+    pts = qdrant.query_points(
+        collection_name=COLLECTION_NAME,
+        query=model.encode(topic).tolist(),
+        limit=40,
+        query_filter=Filter(must=[FieldCondition(key="case_id", match=MatchAny(any=list(new_ids)))]),
+        with_payload=["case_id", "title", "citation", "source_url"],
+    ).points
+    seen, out = set(), []
+    for p in pts:
+        if p.score < ALERT_MIN_SCORE or p.payload["case_id"] in seen:
+            continue
+        seen.add(p.payload["case_id"])
+        out.append(p.payload)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def send_alerts(new_judgments):
+    db = _firestore()
+    if db is None:
+        print("Alerts: FIREBASE_SERVICE_ACCOUNT_B64 not set, skipping.")
+        return
+    new_ids = [j["case_id"] for j in new_judgments]
+    now = datetime.datetime.now(datetime.timezone.utc)
+    sent = 0
+    for user in db.collection("users").where("has_alerts", "==", True).stream():
+        data = user.to_dict() or {}
+        if not data.get("pro_until") or data["pro_until"] < now or not data.get("alert_email"):
+            continue
+        sections = []
+        for alert in user.reference.collection("alerts").stream():
+            topic = alert.get("topic")
+            hits = match_topic(topic, new_ids)
+            if hits:
+                items = "".join(
+                    f'<li><a href="{h.get("source_url", "")}">{h["title"]}</a><br><small>{h.get("citation", "")}</small></li>'
+                    for h in hits)
+                sections.append(f"<h3>{topic}</h3><ul>{items}</ul>")
+        if not sections:
+            continue
+        html = (
+            "<p>New Supreme Court judgments matching the topics you follow on Nyaya:</p>"
+            + "".join(sections)
+            + '<p><a href="https://asknyaya.in/">Ask Nyaya about any of them</a>. '
+              'Change or stop these alerts on <a href="https://asknyaya.in/account">your account page</a>.</p>'
+        )
+        if DRY_RUN:
+            print(f"[DRY RUN] Would email alerts to user {user.id}: {len(sections)} topic(s) matched")
+            continue
+        resp = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+            json={"from": ALERTS_FROM, "to": [data["alert_email"]],
+                  "subject": "New judgments on topics you follow", "html": html},
+            timeout=30,
+        )
+        if resp.status_code in (200, 201):
+            sent += 1
+        else:
+            print(f"Alert email failed for {user.id}: {resp.status_code} {resp.text[:200]}")
+    print(f"Alerts: emailed {sent} user(s).")
+
+
 def main():
     this_year = datetime.date.today().year
     years_env = os.environ.get("TEST_YEARS", "").strip()
@@ -255,6 +345,11 @@ def main():
     print("Writing the digest...")
     html_body = build_digest(all_new)
     send_digest(html_body)
+
+    try:
+        send_alerts(all_new)
+    except Exception as e:  # alerts must never break the digest run
+        print(f"Alerts failed: {e}")
 
 
 if __name__ == "__main__":

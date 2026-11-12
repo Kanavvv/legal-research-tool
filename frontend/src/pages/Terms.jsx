@@ -3,7 +3,7 @@ export default function Terms() {
     <main id="main" className="station station--narrow">
       <article className="prose prose--page">
       <h1>Terms of Service</h1>
-      <p className="prose-meta">Last updated: [26/09/2026]</p>
+      <p className="prose-meta">Last updated: [12/11/2026]</p>
 
       <h2>1. Acceptance of Terms</h2>
       <p>By accessing or using Nyaya (the "Service"), you agree to these Terms of Service. If you do not agree, please do not use the Service.</p>
@@ -48,20 +48,39 @@ export default function Terms() {
         use.
       </p>
 
-      <h2>7. Third-Party Services</h2>
+      <h2>7. Nyaya Pro, Payments and Refunds</h2>
       <p>
-        The Service relies on third-party infrastructure (including Anthropic, Google Cloud,
-        Vercel, and Qdrant). We are not responsible for outages or issues originating from
+        Nyaya Pro is a one-time 30-day pass for one person, priced as shown on the <a href="/pricing">pricing page</a> (currently
+        Rs 199, inclusive of any applicable taxes). It does not renew automatically. Buying again before a pass ends adds 30 days
+        to it. Payments are processed by Razorpay; we never see or store your card, UPI or bank details.
+      </p>
+      <p>
+        <strong>Cancellation.</strong> Since nothing renews, there is nothing to cancel. Your pass simply ends after 30 days.
+      </p>
+      <p>
+        <strong>Refunds.</strong> If Pro isn't right for you, email us within 7 days of payment from the address on your account
+        and we will refund the full amount. Duplicate or failed-but-charged payments are always refunded. Approved refunds go back
+        to the original payment method through Razorpay, usually within 5 to 7 working days. Once refunded, the pass ends.
+      </p>
+      <p>
+        Daily limits on both plans are listed on the pricing page and may change; we will not reduce the limits of a Pro pass
+        you have already paid for.
+      </p>
+
+      <h2>8. Third-Party Services</h2>
+      <p>
+        The Service relies on third-party infrastructure (including Anthropic, Google Cloud, Firebase,
+        Vercel, Qdrant, Razorpay and Resend). We are not responsible for outages or issues originating from
         these providers.
       </p>
 
-      <h2>8. Changes to the Service or Terms</h2>
+      <h2>9. Changes to the Service or Terms</h2>
       <p>We may modify or discontinue the Service, or update these Terms, at any time without prior notice.</p>
 
-      <h2>9. Governing Law</h2>
+      <h2>10. Governing Law</h2>
       <p>These Terms are governed by the laws of India, without regard to conflict of law principles.</p>
 
-      <h2>10. Contact</h2>
+      <h2>11. Contact</h2>
       <p>Questions about these Terms can be directed to: [kanavkedia060@gmail.com]</p>
       </article>
     </main>
