@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://legal-research-tool-509320.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://legal-research-tool-509320.firebaseapp.com/__/firebase/:path*"
+    },
+    {
       "source": "/sitemap-shares.xml",
       "destination": "https://api.asknyaya.in/sitemap-shares.xml"
     },
@@ -27,7 +35,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "Permissions-Policy",
