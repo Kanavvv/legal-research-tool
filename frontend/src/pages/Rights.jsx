@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getLang, setLang } from "../api";
+import { pageLang, setLang } from "../api";
 import { RIGHTS, findGuide } from "../data/rights";
 import { ACTS, sectionLabel, sectionPath } from "../lawCodes";
 import { setPageMeta } from "../ui/meta";
@@ -58,7 +58,7 @@ function Guide({ g, lang, t }) {
 
 export default function Rights() {
   const { slug } = useParams();
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const g = slug ? findGuide(slug) : null;
 

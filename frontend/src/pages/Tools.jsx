@@ -8,17 +8,21 @@ const GROUPS = [
   {
     title: "Ask and research",
     items: [
-      { to: "/", name: "Ask Nyaya", sub: "A question in plain words, answered from judgments and Acts, with every source cited. Type or speak, English or Hindi." },
+      { to: "/", name: "Ask Nyaya", sub: "A question in plain words, or just what happened, answered from judgments and Acts with every source cited. Type or speak, in English, Hindi or six more Indian languages." },
       { to: "/convert", name: "IPC ↔ BNS converter", sub: "Old section to new, and back, with both texts side by side." },
       { to: "/statutes", name: "Statute browser", sub: "Central Acts, section by section." },
       { to: "/compare", name: "Compare cases", sub: "Two judgments side by side: facts, holdings, reasoning." },
       { to: "/argument-builder", name: "Argument builder", sub: "Both sides of a legal question, each point cited." },
       { to: "/digest", name: "Weekly digest", sub: "The week's new Supreme Court judgments, in plain words." },
+      { to: "/explained", name: "In the news, explained", sub: "Legal headlines, what the law actually says, and what it means for you." },
     ],
   },
   {
     title: "For everyone",
     items: [
+      { to: "/trending", name: "What India is asking", sub: "This week's most-asked legal questions. Tap one for the answer." },
+      { to: "/answers", name: "Questions people asked", sub: "Every answer listed publicly, searchable, each with its sources." },
+      { to: "/cases", name: "My cases", sub: "Your court cases with the next hearing date, reminders by email, and orders explained in plain words." },
       { to: "/now", name: "Something just happened?", sub: "Online fraud, an arrest, a refused FIR, an accident: what to do now, today and this week." },
       { to: "/is-it-legal", name: "Is this legal?", sub: "Describe a situation, get a straight answer with the law behind it." },
       { to: "/notice", name: "Got a notice?", sub: "Photo of a legal notice, summons or FIR, explained: what it is, how urgent, what next. Free." },
@@ -34,7 +38,7 @@ const GROUPS = [
     title: "For law students",
     items: [
       { to: "/students?tab=brief", name: "Case briefs", sub: "Facts, issues, holding and ratio of any judgment in the index." },
-      { to: "/students?tab=moot", name: "Moot practice", sub: "Argue before a bench that asks hard questions, and get a scorecard." },
+      { to: "/students?tab=moot", name: "Moot practice", sub: "Argue before a bench (and, if you like, opposing counsel) that pushes back. Speak your submissions, get a scorecard, challenge a friend." },
       { to: "/students?tab=quiz", name: "Quizzes", sub: "The new codes, the Constitution and landmark cases." },
     ],
   },

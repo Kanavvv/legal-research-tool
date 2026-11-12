@@ -111,6 +111,7 @@ class MootRequest(BaseModel):
     side: str = "petitioner"
     history: list[MootTurn] = []
     lang: str = "en"
+    opponent: bool = False   # an opposing counsel answers each submission before the bench does
 
 
 MOOT_SYSTEM = (
@@ -127,6 +128,15 @@ MOOT_SYSTEM = (
     "that is not in the excerpts, you may ask them to show where the holding says so. After about "
     "eight exchanges, close the session with a short scorecard: Knowledge of law, Use of authority, "
     "Answering the bench, Structure, each out of 10, with one line on what to work on."
+)
+
+
+MOOT_OPPONENT = (
+    "\n\nThis session also has opposing counsel, appearing for the {other}. After each submission "
+    "(not when opening), first write a short paragraph headed '**Opposing counsel:**' that rebuts the "
+    "submission's strongest point, from the excerpts where they help; then write '**The bench:**' and "
+    "continue as above, with a question that may also put opposing counsel's point to the student. "
+    "Keep the whole reply under 230 words."
 )
 
 
@@ -148,13 +158,16 @@ def moot_turn(body: MootRequest, req: Request, claims=Depends(optional_user)):
     last = next((t.text for t in reversed(history) if t.role == "counsel"), "")
     context, sources = _sources_and_context(f"{prop[:600]}\n{last[:900]}", top_k=5)
     transcript = "\n\n".join(
-        f"<counsel>{t.text}</counsel>" if t.role == "counsel" else f"BENCH: {t.text}" for t in history
+        f"<counsel>{t.text}</counsel>" if t.role == "counsel" else f"REPLY: {t.text}" for t in history
     ) or "(No submissions yet: open the session.)"
     user_content = (
         f"<proposition>\n{prop}\n</proposition>\n\nThe session so far:\n\n{transcript}\n\n"
         f"Case and statute excerpts:\n\n{context}"
     )
-    return _stream_answer("moot", MOOT_SYSTEM.format(side=side), user_content, sources, max_tokens=700,
+    system = MOOT_SYSTEM.format(side=side)
+    if body.opponent:
+        system += MOOT_OPPONENT.format(other="respondent" if side == "petitioner" else "petitioner")
+    return _stream_answer("moot", system, user_content, sources, max_tokens=900 if body.opponent else 700,
                           user=(claims or {}).get("uid"), lang=_lang(body.lang))
 
 
@@ -376,6 +389,9 @@ WA_HELP = (
     "📚 Reply *daily* for one useful law a day.\n\n"
     "Longer answers with sources: https://asknyaya.in\nThis is research help, not legal advice."
 )
+WA_PUBLIC_LINK = os.environ.get("WHATSAPP_PUBLIC_LINK", "https://wa.me/919136423655")
+# Every Law of the day carries a way back, so a forward to a family group brings people in.
+WA_FORWARD = f"\n\n↪️ Forward this to someone who needs it. Ask Nyaya free: {WA_PUBLIC_LINK}?text=daily"
 WA_DAILY_ON = ("📚 Done! You'll get one useful law every morning. Reply *stop* anytime to turn it off.")
 WA_DAILY_OFF = "Okay, no more daily laws. Reply *daily* if you want them back."
 
@@ -415,6 +431,19 @@ WA_GREETINGS = {
     "namaste", "namaskar", "hi nyaya", "hello nyaya", "hey nyaya", "good morning", "good evening",
     "नमस्ते", "नमस्कार", "हेलो", "हाय",
 }
+
+
+# Unicode blocks of the Indian scripts people write in. Devanagari is Hindi or Marathi;
+# the WhatsApp reply simply follows the language of the question.
+_SCRIPTS = [("hi", r"[\u0900-\u097F]"), ("bn", r"[\u0980-\u09FF]"), ("gu", r"[\u0A80-\u0AFF]"),
+            ("ta", r"[\u0B80-\u0BFF]"), ("te", r"[\u0C00-\u0C7F]"), ("kn", r"[\u0C80-\u0CFF]")]
+
+
+def _script_of(text):
+    for code, rx in _SCRIPTS:
+        if re.search(rx, text or ""):
+            return code
+    return "en"
 
 
 def _wa_is_greeting(text):
@@ -488,25 +517,27 @@ def _wa_answer(sender, text, heard=False):
         if not _wa_allowed(sender_hash):
             _wa_send(sender, emergency + "You've reached today's limit of questions on WhatsApp. Ask again tomorrow, or use https://asknyaya.in")
             return
-        hindi = bool(re.search(r"[ऀ-ॿ]", text))
+        script = _script_of(text)
         turns = _wa_turns(sender_hash)
         # Stand-alone questions are shared across people, so popular ones cost nothing the second time
-        cache_key = None if turns else "wa_ans|" + ("hi|" if hindi else "en|") + " ".join(text.lower().split())[:300]
+        cache_key = None if turns else "wa_ans|" + script + "|" + " ".join(text.lower().split())[:300]
         reply = cache_get(cache_key) if cache_key else None
-        guard.log_question("whatsapp", text, lang="hi" if hindi else "en", cached=reply is not None,
+        guard.log_question("whatsapp", text, lang=script, cached=reply is not None,
                            cache_key=cache_key, follow_up=bool(turns), voice=heard)
         if reply is None:
             check_budget()
             context_q = " ".join([t["q"] for t in turns] + [text])
             context, _ = _sources_and_context(context_q[:1000], top_k=5)
-            system = WA_SYSTEM + (" Reply in simple Hindi (Devanagari)." if hindi else "")
+            system = WA_SYSTEM + ("" if script == "en" else
+                                  " Reply in the same language and script the question is written in, in simple words.")
             messages = []
             for t in turns:
                 messages += [{"role": "user", "content": f"<question>{t['q']}</question>"}, {"role": "assistant", "content": t["a"]}]
             messages.append({"role": "user", "content": f"<question>{text[:1000]}</question>\n\nExcerpts:\n\n{context}"})
             model = features._helpers["model"]
             started = time.time()
-            msg = features._client.messages.create(model=model, max_tokens=500, system=system, messages=messages)
+            msg = features._client.messages.create(model=model, max_tokens=500 if script == "en" else 900,
+                                                   system=system, messages=messages)
             record_usage("whatsapp", model, msg.usage, started, user=None, follow_up=bool(turns))
             reply = "".join(b.text for b in msg.content if hasattr(b, "text")).strip()
             if cache_key and msg.stop_reason == "end_turn":
@@ -675,7 +706,7 @@ def wa_daily(req: Request):
             tips[lang] = _daily_tip(day, lang)
         last = s.get("last_in")
         if last and _now() - last < datetime.timedelta(hours=23):
-            _wa_send(s["to"], f"📚 *Law of the day*\n\n{tips[lang]}\n\nReply *stop* to turn these off.")
+            _wa_send(s["to"], f"📚 *Law of the day*\n\n{tips[lang]}{WA_FORWARD}\n\nReply *stop* to turn these off.")
             free += 1
         elif _wa_send_template(s["to"], lang, tips[lang]):
             sent += 1

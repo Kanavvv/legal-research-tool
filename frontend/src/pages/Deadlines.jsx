@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getLang, setLang } from "../api";
+import { pageLang, setLang } from "../api";
 import { DEADLINES, compute, icsFor, isClosedDay } from "../data/deadlines";
 import { ACTS, sectionPath } from "../lawCodes";
 import LangSwitch from "../ui/LangSwitch";
@@ -37,7 +37,7 @@ function fmt(d, lang) {
 
 export default function Deadlines() {
   const [params, setParams] = useSearchParams();
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const id = DEADLINES.some((d) => d.id === params.get("for")) ? params.get("for") : DEADLINES[0].id;
   const calc = DEADLINES.find((d) => d.id === id);

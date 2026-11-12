@@ -153,11 +153,22 @@ def shares_sitemap(req: Request):
                     headers={"Cache-Control": "public, max-age=3600"})
 
 
+def _count_view(share_id):
+    """Feeds "most read" on /trending. Best effort: a failed count never blocks the page."""
+    if guard.Increment is None:
+        return
+    try:
+        _need_db().collection("shares").document(share_id).update({"views": guard.Increment(1)})
+    except Exception:
+        pass
+
+
 @router.get("/share/{share_id}")
 def get_share(share_id: str, req: Request):
     rate_limit(req, "search", shared=False)
     if not re.fullmatch(r"[A-Za-z0-9_-]{6,20}", share_id):
         raise HTTPException(status_code=404, detail="That shared answer doesn't exist.")
+    _count_view(share_id)
     cached = guard.cache_get(f"share|{share_id}")
     if cached is not None:
         return cached

@@ -13,6 +13,10 @@
       "destination": "https://api.asknyaya.in/sitemap-shares.xml"
     },
     {
+      "source": "/sitemap-content.xml",
+      "destination": "https://api.asknyaya.in/sitemap-content.xml"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -9,6 +9,8 @@ import { CasePicker } from "./CompareCases";
 import { QUIZ } from "../data/quiz";
 import { sectionLabel, sectionPath } from "../lawCodes";
 import { PRO_ON } from "../config";
+import MicButton from "../ui/MicButton";
+import ShareTools from "../ui/ShareTools";
 
 const TABS = [
   { id: "brief", label: "Case brief" },
@@ -71,17 +73,29 @@ function Brief() {
   );
 }
 
-const SAMPLE_PROP = "The State of Arcadia passed a law requiring every news website to register with a government officer, who may cancel registration for content \"likely to disturb public order\". A digital news outlet whose registration was cancelled without a hearing challenges the law under Articles 14, 19(1)(a) and 21.";
+// Original practice problems (fictional states and parties).
+const SAMPLES = [
+  { name: "Press registration", text: "The State of Arcadia passed a law requiring every news website to register with a government officer, who may cancel registration for content \"likely to disturb public order\". A digital news outlet whose registration was cancelled without a hearing challenges the law under Articles 14, 19(1)(a) and 21." },
+  { name: "Night-shift ban", text: "The State of Vindhara amended its Shops and Establishments Act to bar women from working in any shop or office between 9 pm and 6 am, \"for their safety\". A software firm and three of its women employees, who lost night-shift allowances, challenge the amendment under Articles 14, 15, 16 and 19(1)(g)." },
+  { name: "Phone at the checkpoint", text: "During a routine check, police in Sarnagar seized Ravi's phone without a warrant and asked for its passcode, saying he matched the description of a suspect in a cheating case. He refused; they charged him with obstructing a public servant. Ravi seeks quashing of the charge and return of the phone, relying on Articles 20(3) and 21 and the BNSS." },
+  { name: "Delayed flat", text: "A builder promised possession of a flat in 2021. In 2025 it offers possession with a 12% price increase, citing a clause allowing \"revision for cost escalation\". The buyer, who has paid 90% of the original price, files a consumer complaint seeking possession at the agreed price and compensation for delay; the builder says the dispute must go to arbitration under the agreement." },
+];
 
+// A shared link opens the same problem: /students?tab=moot&p=<problem>&side=respondent
 function Moot() {
-  const [prop, setProp] = useState("");
-  const [side, setSide] = useState("petitioner");
+  const [params] = useSearchParams();
+  const [prop, setProp] = useState(() => (params.get("p") || "").slice(0, 4000));
+  const [side, setSide] = useState(() => (params.get("side") === "respondent" ? "respondent" : "petitioner"));
+  const [opponent, setOpponent] = useState(false);
   const [turns, setTurns] = useState([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const endRef = useRef(null);
   const started = turns.length > 0;
+  const lastBench = [...turns].reverse().find((t) => t.role === "bench")?.text || "";
+  const scorecard = /knowledge of law/i.test(lastBench) && /\b\d{1,2}\s*\/\s*10\b|out of 10/i.test(lastBench) ? lastBench.replace(/\[Source \d+\]/g, "") : "";
+  const challengeUrl = `${window.location.origin}/students?${new URLSearchParams({ tab: "moot", p: prop.trim().slice(0, 1500), side })}`;
 
   async function send(history) {
     setBusy(true); setError("");
@@ -90,7 +104,7 @@ function Moot() {
     try {
       const res = await apiFetch(`${API_URL}/moot`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposition: prop.trim(), side, history, lang: getLang() }),
+        body: JSON.stringify({ proposition: prop.trim(), side, history, lang: getLang(), opponent }),
       });
       if (!res.ok) throw await responseError(res);
       let text = "";
@@ -128,17 +142,26 @@ function Moot() {
         <div className="field">
           <label htmlFor="moot-prop">Moot proposition</label>
           <textarea id="moot-prop" rows={6} value={prop} maxLength={4000} onChange={(e) => setProp(e.target.value)} placeholder="Paste the moot problem, or write a short one." />
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setProp(SAMPLE_PROP)}>Use a sample problem</button>
+          <div className="moot-samples">
+            <span className="mono muted">or practise on</span>
+            {SAMPLES.map((x) => <button key={x.name} type="button" className="choice" onClick={() => setProp(x.text)}>{x.name}</button>)}
+          </div>
         </div>
-        <div className="segmented" role="group" aria-label="You appear for">
-          <button type="button" aria-pressed={side === "petitioner"} onClick={() => setSide("petitioner")}>Petitioner</button>
-          <button type="button" aria-pressed={side === "respondent"} onClick={() => setSide("respondent")}>Respondent</button>
+        <div className="moot-options">
+          <div className="segmented" role="group" aria-label="You appear for">
+            <button type="button" aria-pressed={side === "petitioner"} onClick={() => setSide("petitioner")}>Petitioner</button>
+            <button type="button" aria-pressed={side === "respondent"} onClick={() => setSide("respondent")}>Respondent</button>
+          </div>
+          <div className="segmented" role="group" aria-label="Who answers you">
+            <button type="button" aria-pressed={!opponent} onClick={() => setOpponent(false)}>Bench only</button>
+            <button type="button" aria-pressed={opponent} onClick={() => setOpponent(true)}>Bench + opposing counsel</button>
+          </div>
         </div>
         {error && <div className="alert" role="alert">{error}</div>}
         <div className="doc-submit">
           <button type="submit" className="btn btn--lime" disabled={busy}>Begin, may it please the court</button>
           <LangToggle />
-          <p className="mono muted">The bench questions you from real judgments. After about eight exchanges it gives you a scorecard.</p>
+          <p className="mono muted">The bench questions you from real judgments{opponent ? ", and opposing counsel rebuts every point" : ""}. After about eight exchanges you get a scorecard. You can speak your submissions too.</p>
         </div>
       </form>
     );
@@ -149,16 +172,26 @@ function Moot() {
       <ol className="moot-log">
         {turns.map((t, i) => (
           <li key={i} className={`card moot-turn moot-turn--${t.role}`}>
-            <p className="mono muted">{t.role === "bench" ? "the bench" : `counsel for the ${side}`}</p>
+            <p className="mono muted">{t.role === "bench" ? (opponent ? "the court" : "the bench") : `counsel for the ${side}`}</p>
             {t.text ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{t.text.replace(/\[Source \d+\]/g, "")}</ReactMarkdown> : <p className="muted">The bench is considering…</p>}
           </li>
         ))}
       </ol>
       {error && <div className="alert" role="alert">{error}</div>}
+      {scorecard && !busy && (
+        <div className="card moot-share">
+          <p><b>Session scored.</b> Send the same problem to a friend and compare scorecards.</p>
+          <div className="answer-actions">
+            <ShareTools question="My moot court scorecard on Nyaya" answer={scorecard} url={challengeUrl} event="moot_share"
+              text={`I just argued a moot before Nyaya's AI bench. Think you can beat my score? Same problem, your turn:`} />
+          </div>
+        </div>
+      )}
       <form className="card doc-form" onSubmit={submit}>
         <div className="field">
           <label htmlFor="moot-say">Your submission</label>
           <textarea id="moot-say" rows={4} value={draft} maxLength={3000} onChange={(e) => setDraft(e.target.value)} placeholder="My Lords, the impugned law fails the test of reasonableness because…" />
+          <div className="moot-mic"><MicButton onText={setDraft} /><span className="mono muted">speak it, as you would in court</span></div>
         </div>
         <div className="doc-submit">
           <button type="submit" className="btn btn--lime" disabled={busy || !draft.trim()}>{busy ? "The bench is speaking…" : "Submit"}</button>

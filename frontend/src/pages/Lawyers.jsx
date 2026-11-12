@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { API_URL, apiFetch, responseError } from "../api";
 import { useAuth } from "../AuthContext";
 
@@ -24,9 +24,19 @@ function Card({ l }) {
   );
 }
 
+const CITY_KEY = "nyaya_city";
+
 function Directory() {
-  const [city, setCity] = useState("");
-  const [area, setArea] = useState("");
+  // Other pages link here with ?area= (and the visitor's city is remembered) so a
+  // problem lands on the advocates who handle it.
+  const [params] = useSearchParams();
+  const [city, setCity] = useState(() => {
+    try { return params.get("city") || localStorage.getItem(CITY_KEY) || ""; } catch { return params.get("city") || ""; }
+  });
+  const [area, setArea] = useState(params.get("area") || "");
+  useEffect(() => {
+    try { if (city.trim()) localStorage.setItem(CITY_KEY, city.trim()); } catch { /* storage off */ }
+  }, [city]);
   const [data, setData] = useState(null);
 
   useEffect(() => {

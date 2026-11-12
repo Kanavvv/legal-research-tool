@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getLang, setLang } from "../api";
+import { pageLang, setLang } from "../api";
 import { GUIDES, HELPLINES, WHEN, findGuideNow } from "../data/guides";
 import { ACTS, sectionLabel, sectionPath } from "../lawCodes";
 import LangSwitch from "../ui/LangSwitch";
 import { setPageMeta } from "../ui/meta";
 import NotFound from "./NotFound";
+import ShareTools from "../ui/ShareTools";
 
 const UI = {
   en: {
@@ -101,6 +102,8 @@ function Guide({ g, lang, t }) {
         {l.rights && <Link to={`/rights/${l.rights}`} className="btn btn--ghost btn--sm">{t.rights}</Link>}
         {l.hub && <Link to={`/help/${l.hub}`} className="btn btn--ghost btn--sm">{t.hub}</Link>}
         <Link to="/now" className="btn btn--ghost btn--sm">{t.all}</Link>
+        <ShareTools question={g.title[lang]} url={`${window.location.origin}/now/${g.slug}`} card={false} event="guide_wa"
+          text={`${g.title[lang]}: ${lang === "hi" ? "अभी क्या करें, कदम दर कदम" : "what to do right now, step by step"}`} />
       </div>
     </>
   );
@@ -108,7 +111,7 @@ function Guide({ g, lang, t }) {
 
 export default function Now() {
   const { slug } = useParams();
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const g = slug ? findGuideNow(slug) : null;
 

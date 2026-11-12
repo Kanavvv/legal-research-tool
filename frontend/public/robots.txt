@@ -3,3 +3,4 @@ Allow: /
 
 Sitemap: https://asknyaya.in/sitemap.xml
 Sitemap: https://asknyaya.in/sitemap-shares.xml
+Sitemap: https://asknyaya.in/sitemap-content.xml

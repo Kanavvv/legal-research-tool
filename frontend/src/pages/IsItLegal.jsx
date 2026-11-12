@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { API_URL, apiFetch, getLang, responseError, setLang } from "../api";
+import { API_URL, apiFetch, getLang, pageLang, responseError, setLang } from "../api";
 import LangSwitch from "../ui/LangSwitch";
 import MicButton from "../ui/MicButton";
 import SourceList from "../ui/SourceList";
+import ShareTools from "../ui/ShareTools";
 
 const UI = {
   en: {
@@ -44,7 +45,7 @@ const EXAMPLES = {
 };
 
 export default function IsItLegal() {
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,7 +62,7 @@ export default function IsItLegal() {
     try {
       const res = await apiFetch(`${API_URL}/check`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ situation: q, lang }),
+        body: JSON.stringify({ situation: q, lang: getLang() }),
       });
       if (!res.ok) throw await responseError(res);
       setOut(await res.json());
@@ -140,6 +141,8 @@ export default function IsItLegal() {
           <div className="answer-actions">
             <Link to="/" state={{ rerunQuestion: text }} className="btn btn--ghost btn--sm">{t.deeper}</Link>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setOut(null); setText(""); }}>{t.again}</button>
+            <ShareTools question={text} answer={`${out.headline}. ${out.why}`} sources={(out.sources || []).length}
+              url={`${window.location.origin}/is-it-legal`} text={`${text.trim().slice(0, 200)}\n\nNyaya says: ${out.headline}\nCheck your own question free:`} />
           </div>
           <SourceList title={t.sources} sources={out.sources || []} />
         </section>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { API_URL, apiFetch, getLang, responseError, setLang } from "../api";
+import { API_URL, apiFetch, getLang, pageLang, responseError, setLang } from "../api";
 import LangSwitch from "../ui/LangSwitch";
 import SourceList from "../ui/SourceList";
 import { shrinkImage } from "../ui/shrinkImage";
+import { trackEvent } from "../ui/track";
+import { WHATSAPP_URL } from "../config";
 
 const UI = {
   en: {
@@ -33,7 +35,7 @@ const UI = {
 };
 
 export default function Notice() {
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const [mode, setMode] = useState("file");
   const [file, setFile] = useState(null);
@@ -48,7 +50,7 @@ export default function Notice() {
     e.preventDefault();
     setError("");
     const form = new FormData();
-    form.append("lang", lang);
+    form.append("lang", getLang()); // answers can come in any Indian language; this page is English or Hindi
     if (mode === "file") {
       if (!file) { setError(lang === "hi" ? "पहले फ़ाइल या फ़ोटो चुनें।" : "Choose a file or a photo first."); return; }
       const upload = await shrinkImage(file);
@@ -85,6 +87,13 @@ export default function Notice() {
         <h1 className="station-title" lang={lang}>{t.title} <em>{t.em}</em></h1>
         <p className="station-lede" lang={lang}>{t.lede}</p>
         <LangSwitch lang={lang} onChange={changeLang} />
+        <p className="muted wa-alt" lang={lang}>
+          {lang === "hi" ? "फ़ोन पर हैं? " : "On your phone? "}
+          <a className="text-link" href={WHATSAPP_URL} target="_blank" rel="noreferrer" onClick={() => trackEvent("wa_notice")}>
+            {lang === "hi" ? "नोटिस की फ़ोटो सीधे WhatsApp पर Nyaya को भेजें" : "Send a photo of the notice to Nyaya on WhatsApp"}
+          </a>
+          {lang === "hi" ? ", जवाब वहीं मिलेगा।" : " and get the answer there."}
+        </p>
       </header>
 
       {!out && (

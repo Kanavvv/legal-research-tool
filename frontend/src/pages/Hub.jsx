@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getLang, setLang } from "../api";
+import { pageLang, setLang } from "../api";
 import { DEADLINES } from "../data/deadlines";
 import { GUIDES, HELPLINES } from "../data/guides";
 import { HUBS, findHub } from "../data/hubs";
@@ -49,7 +49,7 @@ function Section({ title, children, lang }) {
 
 export default function Hub() {
   const { slug } = useParams();
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(pageLang);
   const t = UI[lang];
   const h = slug ? findHub(slug) : null;
 

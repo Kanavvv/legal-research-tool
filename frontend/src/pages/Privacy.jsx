@@ -28,8 +28,10 @@ export default function Privacy() {
       logs such as IP address, browser type and request times.</p>
       <p><strong>Analytics and cookies.</strong> Only if you choose "Allow" on the banner, we count page
       visits with Vercel Web Analytics. It sets no cookies, does not follow you across other sites, and
-      reports only aggregate numbers such as page views and country. If you choose "No thanks", it
-      never loads. Your choice is stored in your browser's local storage under "nyaya-consent";
+      reports only aggregate numbers such as page views and country. We also keep our own daily totals:
+      how many times each page was viewed, whether on a phone or computer, which website sent you there,
+      and how often answers were shared. These are plain counts per day, with no name, address, account or
+      device identifier attached. If you choose "No thanks", neither kind of counting runs. Your choice is stored in your browser's local storage under "nyaya-consent";
       clear your site data to be asked again. We do not show advertising.</p>
 
       <h2>2. How We Use Information</h2>
