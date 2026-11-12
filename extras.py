@@ -22,7 +22,8 @@ import time
 import traceback
 
 import requests
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
@@ -251,7 +252,7 @@ def my_listing(claims=Depends(required_user)):
 
 
 @router.post("/lawyers")
-def save_listing(body: LawyerListing, req: Request, background: BackgroundTasks, claims=Depends(required_user)):
+def save_listing(body: LawyerListing, req: Request, claims=Depends(required_user)):
     rate_limit(req, "share")
     if not body.consent:
         raise HTTPException(status_code=400, detail="Please confirm the declaration.")
@@ -275,7 +276,7 @@ def save_listing(body: LawyerListing, req: Request, background: BackgroundTasks,
     data.update(status="pending", uid=claims["uid"], account_email=claims.get("email", ""), updated=_now())
     _need_db().collection("lawyers").document(claims["uid"]).set(data)
     log_event("lawyer_listing", uid_hash=_hash(claims["uid"]))
-    background.add_task(_notify_admins, data)
+    _notify_admins(data)  # inline: Cloud Run throttles CPU after the response, so background tasks stall
     return {"status": "pending"}
 
 
@@ -428,7 +429,9 @@ def wa_verify(req: Request):
 
 
 @router.post("/whatsapp/webhook")
-async def wa_receive(req: Request, background: BackgroundTasks):
+async def wa_receive(req: Request):
+    # Answer before returning 200: Cloud Run throttles CPU once a response is sent, so a
+    # background task would stall. If Meta retries a slow delivery, the msg-id cache skips it.
     if not WA_ON:
         raise HTTPException(status_code=404)
     raw = await req.body()
@@ -453,7 +456,7 @@ async def wa_receive(req: Request, background: BackgroundTasks):
                 cache_set(key, 1, days=1)
                 sender = m.get("from", "")
                 if m.get("type") == "text" and sender:
-                    background.add_task(_wa_answer, sender, m["text"].get("body", ""))
+                    await run_in_threadpool(_wa_answer, sender, m["text"].get("body", ""))
                 elif sender:
-                    background.add_task(_wa_send, sender, "I can read text messages only, for now. Type your question.")
+                    await run_in_threadpool(_wa_send, sender, "I can read text messages only, for now. Type your question.")
     return {"ok": True}
