@@ -23,12 +23,19 @@ export default function About() {
 
       <h2>Our data</h2>
       <p>
-        Judgments are sourced from the public{" "}
+        Supreme Court judgments come from the public{" "}
         <a href="https://github.com/vanga/indian-supreme-court-judgments" target="_blank" rel="noreferrer">
           Indian Supreme Court Judgments dataset
         </a>
-        , hosted on AWS Open Data and licensed CC-BY-4.0. This is official eCourts data made
-        publicly available.
+        , and High Court judgments (Delhi, Bombay, Madras, Karnataka, Allahabad and Calcutta) from its
+        companion High Court dataset, both hosted on AWS Open Data and licensed CC-BY-4.0. This is official
+        eCourts data made publicly available.
+      </p>
+      <p>
+        The text of the Acts comes from India Code. The Bharatiya Nyaya Sanhita, Bharatiya Nagarik Suraksha
+        Sanhita and Bharatiya Sakshya Adhiniyam come from the Acts as published (via PRS Legislative Research),
+        and the old IPC, CrPC and Evidence Act from public section-by-section copies. The IPC ↔ BNS matches are
+        worked out by comparing the section texts and checked against known pairs.
       </p>
 
       <h2>Limitations</h2>

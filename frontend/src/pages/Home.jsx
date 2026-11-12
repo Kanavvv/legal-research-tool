@@ -420,7 +420,7 @@ export default function Home() {
             <span className="line"><span style={{ "--d": 3 }}><em>receipts.</em></span></span>
           </h1>
           <p className="hero-lede enter" style={{ "--d": 4 }}>
-            Ask in plain English. Nyaya reads the judgments and the Acts, and every line of the
+            Ask in plain English or Hindi, typed or spoken. Nyaya reads the judgments and the Acts, and every line of the
             answer points back to the passage it came from. No login, no jargon you didn't ask for.
           </p>
 
@@ -768,6 +768,32 @@ export default function Home() {
 
           <OnThisDay />
         </div>
+      </section>
+
+      {/* ---------- Free tools for everyone ---------- */}
+      <section className="block" aria-labelledby="free-title">
+        <Reveal className="block-head">
+          <div>
+            <p className="pill"><span className="dot" aria-hidden="true" />free, no sign-in</p>
+            <h2 id="free-title" className="block-title">Law you can <em>use today</em>.</h2>
+          </div>
+          <p className="block-lede">The new criminal codes, your rights in plain words (also in Hindi), and documents you can fill in and print.</p>
+        </Reveal>
+        <ul className="tile-grid">
+          {[
+            ["/convert", "IPC ↔ BNS converter", "Type IPC 420, get BNS 318, with both texts side by side."],
+            ["/rights", "Know your rights", "Arrest, FIR, bail, tenants, consumers. English and हिन्दी."],
+            ["/templates", "Free templates", "RTI, consumer complaint, cheque-bounce notice, rent agreement."],
+            ["/students", "Student mode", "Case briefs, a moot bench that pushes back, and quizzes."],
+          ].map(([to, name, sub], i) => (
+            <li key={to}>
+              <Reveal as={Link} to={to} className="card tile" style={{ "--i": i }}>
+                <span className="tile-title">{name}</span>
+                <span className="tile-sub muted">{sub}</span>
+              </Reveal>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* ---------- Games ---------- */}
