@@ -33,3 +33,6 @@ frontend/dist/
 # Mac
 .DS_Store
 indexed_case_ids_*.txt
+
+# macOS/iCloud sync conflict copies
+* 2.*
