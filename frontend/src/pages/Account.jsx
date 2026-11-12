@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import DeskExtras from "../ui/DeskExtras";
 import {
   signInWithPopup,
   createUserWithEmailAndPassword,
@@ -9,12 +10,14 @@ import {
 import { auth, googleProvider } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { authFetch } from "../authFetch";
+import { API_URL } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 export default function Account() {
   const { user, signOutUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const next = location.state?.next || "/";
   const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,7 +56,7 @@ export default function Account() {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate("/");
+      navigate(next);
     } catch (err) {
       setError(readableError(err));
     } finally {
@@ -74,7 +77,7 @@ export default function Account() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      navigate("/");
+      navigate(next);
     } catch (err) {
       setError(readableError(err));
     } finally {
@@ -105,6 +108,8 @@ export default function Account() {
             Sign out
           </button>
         </header>
+
+        <DeskExtras />
 
         <div className="desk">
           <section className="card desk-card" aria-labelledby="desk-history">

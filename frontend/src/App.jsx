@@ -20,6 +20,9 @@ const About = lazy(() => import("./pages/About"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Documents = lazy(() => import("./pages/Documents"));
+const SharedAnswer = lazy(() => import("./pages/SharedAnswer"));
 
 const SITE = "https://asknyaya.in";
 const DEFAULT_DESC = "Ask a question about Indian law in plain English. Nyaya reads real Supreme Court and High Court judgments and central Acts, and cites every answer.";
@@ -32,6 +35,9 @@ const META = {
   "/about": ["How Nyaya works", "How Nyaya finds, reads and cites Indian judgments and Acts, and where its limits are."],
   "/privacy": ["Privacy Policy · Nyaya", "How Nyaya handles your information."],
   "/terms": ["Terms of Use · Nyaya", "The terms for using Nyaya. Nyaya is a research aid, not legal advice."],
+  "/pricing": ["Pricing · Nyaya", "Nyaya is free to use. Nyaya Pro (Rs 199 for 30 days) adds 200 questions a day, document review, drafts and case alerts."],
+  "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement or order and get it explained in plain words, with the Indian law that applies."],
+  "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 
 function setMeta(sel, attr, value) {
@@ -53,6 +59,11 @@ function ScrollManager() {
     }
   }, [pathname, hash]);
   useEffect(() => {
+    if (pathname.startsWith("/a/")) {
+      // Shared answers set their own title; keep them out of search results
+      setMeta('link[rel="canonical"]', "href", SITE + pathname);
+      return;
+    }
     const [title, desc] = META[pathname] || ["Page not found · Nyaya", DEFAULT_DESC];
     document.title = title;
     setMeta('meta[name="description"]', "content", desc);
@@ -98,6 +109,10 @@ export default function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/documents" element={<Documents />} />
+                <Route path="/drafts" element={<Documents />} />
+                <Route path="/a/:id" element={<SharedAnswer />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

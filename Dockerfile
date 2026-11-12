@@ -12,5 +12,8 @@ ENV HF_HUB_OFFLINE=1
 
 COPY main.py .
 COPY search.py .
+COPY guard.py .
+COPY plans.py .
+COPY features.py .
 
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

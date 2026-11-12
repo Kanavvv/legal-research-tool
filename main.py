@@ -8,8 +8,8 @@ Endpoints:
   - POST /ask            -> the full RAG pipeline (search + Claude answer)
   - POST /feedback       -> lightweight thumbs up/down logging
 
-Includes simple in-memory caching (repeated questions don't re-call Claude)
-and basic per-IP rate limiting to control cost and abuse.
+Cost and abuse controls (shared rate limits, shared answer cache, a daily
+spend cap and structured logs) live in guard.py.
 
 Run it with: uvicorn main:app --reload
 """
@@ -19,7 +19,8 @@ import re
 import time
 import json
 import base64
-from collections import OrderedDict
+import traceback
+import hashlib
 from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,13 @@ import anthropic
 import requests
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth, firestore
+
+import guard
+from guard import cache_get, cache_set, rate_limit, check_budget, record_usage, log_event
+
+import plans
+import features
+from plans import optional_user, use_quota
 
 from search import search, get_case_by_id, search_by_title, search_titles_fast, list_statutes, get_statute_section
 
@@ -59,6 +67,12 @@ if FIREBASE_SA_B64:
 else:
     print("WARNING: FIREBASE_SERVICE_ACCOUNT_B64 not set. Login-based features will fail until it is.")
 
+guard.init(db)
+
+ANSWER_MODEL = "claude-sonnet-4-6"
+plans.init(db, firebase_auth if db is not None else None)
+BLURB_MODEL = os.environ.get("BLURB_MODEL", "claude-haiku-5-5")
+
 
 def require_user(authorization: str = Header(None)):
     """Verifies the Firebase ID token sent as 'Authorization: Bearer <token>'.
@@ -74,51 +88,46 @@ def require_user(authorization: str = Header(None)):
 
 app = FastAPI(title="Legal Research Tool API")
 
+# Only our own site may call the API from a browser. (Scripts ignore CORS,
+# which is what the rate limits and spend cap are for.)
+ALLOWED_ORIGINS = [
+    "https://asknyaya.in",
+    "https://www.asknyaya.in",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+] + [o.strip() for o in os.environ.get("EXTRA_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    # Vercel preview deployments of this project
+    allow_origin_regex=r"https://legal-research-tool[a-z0-9-]*\.vercel\.app",
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=86400,
 )
 
-# ---------------- simple in-memory cache ----------------
-# Repeated identical questions skip the Claude call entirely.
-# Resets whenever the server restarts/redeploys -- that's fine, it's a
-# cost-saving convenience, not a database.
-CACHE = OrderedDict()
-CACHE_MAX_SIZE = 500
+
+@app.middleware("http")
+async def request_log(request: Request, call_next):
+    """One log line per request: route, status, latency. Uncaught errors are
+    logged with their traceback, which Cloud Error Reporting picks up."""
+    started = time.time()
+    try:
+        response = await call_next(request)
+    except Exception:
+        log_event("unhandled_error", severity="ERROR", path=request.url.path,
+                  method=request.method, traceback=traceback.format_exc()[-4000:])
+        raise
+    if request.method != "OPTIONS":
+        log_event("request", path=request.url.path, method=request.method,
+                  status=response.status_code, latency_ms=round((time.time() - started) * 1000))
+    return response
 
 
-def cache_get(key):
-    if key in CACHE:
-        CACHE.move_to_end(key)
-        return CACHE[key]
-    return None
-
-
-def cache_set(key, value):
-    CACHE[key] = value
-    CACHE.move_to_end(key)
-    if len(CACHE) > CACHE_MAX_SIZE:
-        CACHE.popitem(last=False)
-
-
-# ---------------- simple per-IP rate limiting ----------------
-# Allows a limited number of /ask requests per minute per visitor, so
-# one person can't run up the API bill or hammer the server.
-RATE_LIMIT_MAX = 10        # requests
-RATE_LIMIT_WINDOW = 60     # seconds
-request_log = {}
-
-
-def check_rate_limit(ip):
-    now = time.time()
-    timestamps = [t for t in request_log.get(ip, []) if now - t < RATE_LIMIT_WINDOW]
-    if len(timestamps) >= RATE_LIMIT_MAX:
-        return False
-    timestamps.append(now)
-    request_log[ip] = timestamps
-    return True
+class Turn(BaseModel):
+    question: str
+    answer: str
 
 
 class AskRequest(BaseModel):
@@ -127,6 +136,68 @@ class AskRequest(BaseModel):
     court: str | None = None
     doc_type: str | None = None
     level: str | None = "standard"
+    history: list[Turn] = []   # earlier turns of this conversation, oldest first
+
+
+MAX_TURNS = 3
+FOLLOW_UP_NOTE = (
+    " This may be a follow-up in an ongoing conversation: use the earlier turns to "
+    "understand what is being asked, but cite only the case excerpts provided with "
+    "the latest question, numbered as given."
+)
+
+CITE_REF = re.compile(r"\[Source\s+(\d+)\]", re.IGNORECASE)
+NAMED_CASE = re.compile(
+    r"([A-Z][\w.&'-]*(?:\s+[A-Z][\w.&'-]*){0,5})\s+(?:v\.|vs\.?|versus)\s+([A-Z][\w.&'-]*(?:\s+(?:of\s+)?[A-Z][\w.&'-]*){0,5})"
+)
+_NAME_STOP = {"the", "of", "and", "ors", "anr", "state", "union", "india", "others", "another"}
+_LEAD_WORDS = {"In", "See", "Compare", "Also", "Cf", "As", "The", "Per", "Following", "Unlike", "Like",
+               "And", "But", "Under", "Similarly", "Thus", "However", "Here", "Then", "While", "Whereas"}
+
+
+def _name_words(text):
+    return {w.lower() for w in re.findall(r"[A-Za-z]{3,}", text)} - _NAME_STOP
+
+
+def check_citations(answer, sources):
+    """Checks the finished answer against the sources it was given:
+    [Source N] numbers must exist, and any case named in the text should be
+    one of the sources. Returns what the page shows under the answer."""
+    numbers = sorted({int(n) for n in CITE_REF.findall(answer)})
+    invalid = [n for n in numbers if n < 1 or n > len(sources)]
+    titles = [_name_words(s.get("title", "")) for s in sources]
+    unverified = []
+    for a, b in NAMED_CASE.findall(answer):
+        words = _name_words(f"{a} {b}")
+        if len(words) < 2:
+            continue
+        if not any(len(words & t) >= min(2, len(words)) for t in titles):
+            lead = a.split()
+            while lead and lead[0] in _LEAD_WORDS:
+                lead = lead[1:]
+            name = f"{' '.join(lead)} v. {b}".strip().rstrip(".,;:")
+            if lead and name not in unverified:
+                unverified.append(name)
+    return {
+        "type": "check",
+        "cited": [n for n in numbers if n not in invalid],
+        "invalid": invalid,
+        "unverified": unverified[:5],
+    }
+
+
+def group_by_case(results):
+    """Several excerpts can come from one judgment. Merge them so each judgment
+    is one numbered source, which keeps [Source N] and the page in step."""
+    grouped = {}
+    for score, doc, meta in results:
+        cid = meta.get("case_id")
+        if cid not in grouped:
+            grouped[cid] = [score, [doc], meta]
+        else:
+            grouped[cid][1].append(doc)
+            grouped[cid][0] = max(grouped[cid][0], score)
+    return [(score, "\n[...]\n".join(docs), meta) for score, docs, meta in grouped.values()]
 
 
 class FeedbackRequest(BaseModel):
@@ -140,8 +211,9 @@ def root():
 
 
 @app.get("/search")
-def search_endpoint(q: str):
-    results = search(q)
+def search_endpoint(q: str, req: Request):
+    rate_limit(req, "search", shared=False)
+    results = search(q[:500])
     return {
         "query": q,
         "results": [
@@ -158,26 +230,37 @@ def search_endpoint(q: str):
 
 
 @app.post("/ask")
-def ask_endpoint(request: AskRequest, req: Request):
+def ask_endpoint(request: AskRequest, req: Request, claims=Depends(optional_user)):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
-    client_ip = req.client.host if req.client else "unknown"
-    if not check_rate_limit(client_ip):
-        raise HTTPException(status_code=429, detail="Too many requests -- please slow down and try again shortly.")
+    question = request.question.strip()
+    if not question or len(question) > 1000:
+        raise HTTPException(status_code=400, detail="Questions need to be between 1 and 1000 characters.")
 
-    cache_key = f"{request.question.strip().lower()}|{request.year}|{request.court}|{request.doc_type}|{request.level}"
+    rate_limit(req, "ask")
+    use_quota(req, "ask", claims)
+
+    history = [t for t in request.history if t.question.strip()][-MAX_TURNS:]
+    history_key = hashlib.sha256(json.dumps([[t.question, t.answer[:200]] for t in history]).encode()).hexdigest()[:16] if history else ""
+    cache_key = f"ask|{question.lower()}|{request.year}|{request.court}|{request.doc_type}|{request.level}|{history_key}"
     cached = cache_get(cache_key)
 
     def stream_cached(payload):
         yield json.dumps({"type": "sources", "sources": payload["sources"]}) + "\n"
         yield json.dumps({"type": "delta", "text": payload["answer"]}) + "\n"
+        if payload.get("check"):
+            yield json.dumps(payload["check"]) + "\n"
         yield json.dumps({"type": "done"}) + "\n"
 
     if cached is not None:
+        log_event("cache_hit", route="ask")
         return StreamingResponse(stream_cached(cached), media_type="application/x-ndjson")
 
-    results = search(request.question, top_k=5, year=request.year, court=request.court, doc_type=request.doc_type)
+    check_budget()
+    context = " ".join(t.question for t in history)
+    results = group_by_case(search(question, top_k=6, year=request.year, court=request.court,
+                                   doc_type=request.doc_type, context=context))
 
     # The cross-encoder's score tells us whether what we found is actually
     # relevant, not just the closest thing available. Below this, treat the
@@ -212,7 +295,7 @@ def ask_endpoint(request: AskRequest, req: Request):
                 "any specific case name or citation you are not certain is accurate. This is "
                 "general educational information, not legal advice."
             )
-        user_content = f"Question: {request.question}"
+        user_content = f"Question: {question}"
     else:
         context_blocks = []
         for i, (score, doc, meta) in enumerate(results):
@@ -244,7 +327,7 @@ def ask_endpoint(request: AskRequest, req: Request):
                 "name for it. If the excerpts are entirely unrelated to the question, say so plainly rather "
                 "than stretching them to fit. This is for educational research, not legal advice."
             )
-        user_content = f"Question: {request.question}\n\nCase excerpts:\n\n{context_text}"
+        user_content = f"Question: {question}\n\nCase excerpts:\n\n{context_text}"
 
         sources_payload = [
             {
@@ -260,25 +343,44 @@ def ask_endpoint(request: AskRequest, req: Request):
             }
             for score, _, meta in results
         ]
+        annotate_with_graph(sources_payload)
+
+    messages = []
+    for t in history:
+        messages.append({"role": "user", "content": f"Question: {t.question[:1000]}"})
+        messages.append({"role": "assistant", "content": t.answer[:2500] or "(no answer)"})
+    messages.append({"role": "user", "content": user_content})
+    if history:
+        system_prompt += FOLLOW_UP_NOTE
 
     def generate():
         yield json.dumps({"type": "sources", "sources": sources_payload}) + "\n"
         full_text = ""
+        started = time.time()
         try:
             with client.messages.stream(
-                model="claude-sonnet-4-6",
-                max_tokens=800,
+                model=ANSWER_MODEL,
+                max_tokens=900,
                 system=system_prompt,
-                messages=[{"role": "user", "content": user_content}],
+                messages=messages,
             ) as stream:
                 for text in stream.text_stream:
                     full_text += text
                     yield json.dumps({"type": "delta", "text": text}) + "\n"
-        except Exception as e:
+                final = stream.get_final_message()
+        except Exception:
+            log_event("claude_error", severity="ERROR", route="ask", traceback=traceback.format_exc()[-2000:])
             yield json.dumps({"type": "error", "detail": "The answer got interrupted -- please try again."}) + "\n"
             return
 
-        cache_set(cache_key, {"answer": full_text, "sources": sources_payload})
+        record_usage("ask", ANSWER_MODEL, final.usage, started, relevant=is_relevant,
+                     level=request.level, follow_up=bool(history))
+        check = check_citations(full_text, sources_payload)
+        if check["invalid"] or check["unverified"]:
+            log_event("citation_check_flag", severity="WARNING", invalid=check["invalid"], unverified=check["unverified"])
+        yield json.dumps(check) + "\n"
+        if final.stop_reason in ("end_turn", "max_tokens"):
+            cache_set(cache_key, {"answer": full_text, "sources": sources_payload, "check": check})
         yield json.dumps({"type": "done"}) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
@@ -289,11 +391,13 @@ class ArgumentRequest(BaseModel):
 
 
 @app.get("/case-search")
-def case_search(q: str):
+def case_search(q: str, req: Request):
     """A lighter search just for picking a case by name -- used by Compare
     Cases' two search boxes. Tries a real text match on the title first
     (reliable for exact/partial names), falling back to semantic search
     only if that finds nothing (e.g. for a looser, topic-style query)."""
+    rate_limit(req, "search", shared=False)
+    q = q[:200]
     try:
         cases = search_by_title(q, doc_type="judgment", limit=8)
     except Exception:
@@ -311,13 +415,13 @@ class CompareRequest(BaseModel):
 
 
 @app.post("/compare")
-def compare_endpoint(request: CompareRequest, req: Request):
+def compare_endpoint(request: CompareRequest, req: Request, claims=Depends(optional_user)):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
-    client_ip = req.client.host if req.client else "unknown"
-    if not check_rate_limit(client_ip):
-        raise HTTPException(status_code=429, detail="Too many requests -- please slow down and try again shortly.")
+    rate_limit(req, "compare")
+    use_quota(req, "compare", claims)
+    check_budget()
 
     case_a = get_case_by_id(request.case_id_a)
     case_b = get_case_by_id(request.case_id_b)
@@ -344,32 +448,48 @@ def compare_endpoint(request: CompareRequest, req: Request):
             {"title": case_a["title"], "citation": case_a["citation"], "case_id": case_a["case_id"], "source_url": case_a.get("source_url", "")},
             {"title": case_b["title"], "citation": case_b["citation"], "case_id": case_b["case_id"], "source_url": case_b.get("source_url", "")},
         ]}) + "\n"
-        full_text = ""
+        started = time.time()
         try:
             with client.messages.stream(
-                model="claude-sonnet-4-6",
+                model=ANSWER_MODEL,
                 max_tokens=1200,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_content}],
             ) as stream:
                 for text in stream.text_stream:
-                    full_text += text
                     yield json.dumps({"type": "delta", "text": text}) + "\n"
+                final = stream.get_final_message()
         except Exception:
+            log_event("claude_error", severity="ERROR", route="compare", traceback=traceback.format_exc()[-2000:])
             yield json.dumps({"type": "error", "detail": "The comparison got interrupted -- please try again."}) + "\n"
             return
+        record_usage("compare", ANSWER_MODEL, final.usage, started)
         yield json.dumps({"type": "done"}) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
 
 
 @app.post("/argument")
-def argument_endpoint(request: ArgumentRequest):
+def argument_endpoint(request: ArgumentRequest, req: Request, claims=Depends(optional_user)):
     """Builds a two-sided argument brief: supporting precedents AND counterarguments to address."""
     if not API_KEY:
         raise HTTPException(status_code=500, detail="Server is missing ANTHROPIC_API_KEY.")
 
-    results = search(request.position, top_k=10)
+    position = request.position.strip()
+    if not position or len(position) > 2000:
+        raise HTTPException(status_code=400, detail="Describe your position in 1 to 2000 characters.")
+
+    rate_limit(req, "argument")
+    use_quota(req, "argument", claims)
+
+    cache_key = f"argument|{position.lower()}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        log_event("cache_hit", route="argument")
+        return cached
+
+    check_budget()
+    results = group_by_case(search(position, top_k=10))
     if not results:
         return {"brief": "No relevant judgments were found for this scenario.", "sources": []}
 
@@ -394,25 +514,34 @@ def argument_endpoint(request: ArgumentRequest):
         "and must never be presented to an actual court or client as a real legal opinion."
     )
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1200,
-        system=system_prompt,
-        messages=[{
-            "role": "user",
-            "content": f"My position: {request.position}\n\nCase excerpts:\n\n{context_text}",
-        }],
-    )
+    started = time.time()
+    try:
+        message = client.messages.create(
+            model=ANSWER_MODEL,
+            max_tokens=1200,
+            system=system_prompt,
+            messages=[{
+                "role": "user",
+                "content": f"My position: {position}\n\nCase excerpts:\n\n{context_text}",
+            }],
+        )
+    except Exception:
+        log_event("claude_error", severity="ERROR", route="argument", traceback=traceback.format_exc()[-2000:])
+        raise HTTPException(status_code=502, detail="Couldn't build the brief right now. Please try again.")
+    record_usage("argument", ANSWER_MODEL, message.usage, started)
 
     brief_text = "".join(block.text for block in message.content if hasattr(block, "text"))
 
-    return {
+    response = {
         "brief": brief_text,
         "sources": [
             {"title": meta["title"], "citation": meta["citation"], "case_id": meta["case_id"], "source_url": meta.get("source_url", "")}
             for _, _, meta in results
         ],
     }
+    if message.stop_reason in ("end_turn", "max_tokens"):
+        cache_set(cache_key, response)
+    return response
 
 
 @app.get("/on-this-day")
@@ -449,11 +578,13 @@ def on_this_day():
     pick = judgments[index]
 
     blurb = ""
-    if API_KEY:
+    if API_KEY and guard.spent_today() < guard.DAILY_BUDGET_USD:
         try:
+            started = time.time()
             message = client.messages.create(
-                model="claude-sonnet-4-6",
+                model=BLURB_MODEL,
                 max_tokens=150,
+                thinking={"type": "disabled"},
                 system=(
                     "You write a single short, engaging sentence (max ~30 words) for a legal "
                     "research gazette's 'On This Day' feature, explaining in plain language why "
@@ -466,11 +597,14 @@ def on_this_day():
                 }],
             )
             blurb = "".join(b.text for b in message.content if hasattr(b, "text")).strip()
+            record_usage("on_this_day", BLURB_MODEL, message.usage, started)
         except Exception:
+            log_event("claude_error", severity="WARNING", route="on_this_day", traceback=traceback.format_exc()[-2000:])
             blurb = ""
 
     response = {"judgment": {**pick, "blurb": blurb}}
-    cache_set(cache_key, response)
+    # Shared across instances, so it's one Claude call per day, not one per server
+    cache_set(cache_key, response, days=2)
     return response
 
 
@@ -552,6 +686,46 @@ def get_leaderboard():
     ]}
 
 
+def graph_doc_id(case_id):
+    return case_id.replace("/", "%2F")
+
+
+def annotate_with_graph(sources):
+    """Adds cited_by_count and an overruled hint to each source, from the
+    precedent graph (one batched Firestore read). Best effort."""
+    if db is None or not sources:
+        return sources
+    try:
+        refs = [db.collection("case_graph").document(graph_doc_id(s["case_id"])) for s in sources]
+        found = {snap.id: snap.to_dict() for snap in db.get_all(refs) if snap.exists}
+        for s in sources:
+            g = found.get(graph_doc_id(s["case_id"]))
+            if g:
+                s["cited_by_count"] = g.get("cited_by_count", 0)
+                s["overruled_hint"] = bool(g.get("overruled_mentions"))
+    except Exception as e:
+        log_event("graph_lookup_error", severity="WARNING", error=str(e)[:200])
+    return sources
+
+
+@app.get("/graph/{case_id:path}")
+def get_graph(case_id: str, req: Request):
+    """The precedent graph around one judgment: what it relies on, what later
+    judgments cite it, and any later judgment that mentions it as overruled."""
+    rate_limit(req, "search", shared=False)
+    empty = {"case_id": case_id, "cites": [], "cited_by": [], "cites_count": 0,
+             "cited_by_count": 0, "overruled_mentions": []}
+    if db is None:
+        return empty
+    cached = cache_get(f"graph|{case_id}")
+    if cached is not None:
+        return cached
+    snap = db.collection("case_graph").document(graph_doc_id(case_id)).get()
+    data = {**empty, **(snap.to_dict() or {})} if snap.exists else empty
+    cache_set(f"graph|{case_id}", data, shared=False)
+    return data
+
+
 @app.get("/related/{case_id}")
 def get_related(case_id: str):
     """Returns other corpus judgments that cite, or are cited by, this one.
@@ -572,7 +746,7 @@ def statutes_endpoint():
     if cached is not None:
         return cached
     response = {"acts": list_statutes()}
-    cache_set("statutes", response)
+    cache_set("statutes", response, shared=False)
     return response
 
 
@@ -586,14 +760,15 @@ def statute_section_endpoint(case_id: str):
     section = get_statute_section(case_id)
     if not section:
         raise HTTPException(status_code=404, detail="Couldn't find that section in the corpus.")
-    cache_set(cache_key, section)
+    cache_set(cache_key, section, shared=False)
     return section
 
 
 @app.post("/feedback")
-def feedback_endpoint(request: FeedbackRequest):
+def feedback_endpoint(request: FeedbackRequest, req: Request):
     """Lightweight feedback logging -- visible in Cloud Run logs, no database needed yet."""
-    print(f"FEEDBACK | helpful={request.helpful} | question={request.question!r}")
+    rate_limit(req, "search", shared=False)
+    log_event("feedback", helpful=request.helpful, question=request.question[:500])
     return {"status": "received"}
 
 
@@ -602,8 +777,9 @@ class SubscribeRequest(BaseModel):
 
 
 @app.post("/subscribe")
-def subscribe_endpoint(request: SubscribeRequest):
+def subscribe_endpoint(request: SubscribeRequest, req: Request):
     """Adds an email to the Resend Audience used for the weekly digest."""
+    rate_limit(req, "compare")  # 5 a minute, 30 a day per visitor is plenty
     email = request.email.strip().lower()
     if not EMAIL_PATTERN.match(email):
         raise HTTPException(status_code=400, detail="That doesn't look like a valid email address.")
@@ -696,3 +872,10 @@ def get_favorites(uid: str = Depends(require_user)):
     docs = firestore_db.collection("users").document(uid).collection("favorites") \
         .order_by("saved_at", direction=firestore.Query.DESCENDING).stream()
     return {"favorites": [d.to_dict() for d in docs]}
+
+
+# ---------------- plans, payments and the newer features ----------------
+features.init(db, client, search, check_citations=check_citations,
+              group_by_case=group_by_case, model=ANSWER_MODEL)
+app.include_router(plans.router)
+app.include_router(features.router)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Reveal from "../ui/Reveal";
+import { API_URL } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 export default function OnThisDay() {
   const [judgment, setJudgment] = useState(undefined); // undefined = loading, null = none found

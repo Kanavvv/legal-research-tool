@@ -21,10 +21,14 @@ import time
 import xml.etree.ElementTree as ET
 
 BASE_URL = "https://indian-high-court-judgments.s3.ap-south-1.amazonaws.com"
-YEAR = 2023
-COURT = "27_1"  # Bombay High Court
-BENCHES = ["newos", "newas", "hcbgoa", "hcaurdb", "kolhcdb", "newos_spl"]  # excludes "testcase"
-NUM_PER_BENCH = 400
+# Defaults fetch the Bombay High Court. Another court, e.g. Delhi:
+#   HC_COURT=7_26 HC_BENCHES=dhcdb HC_NAME="High Court of Delhi" NUM_PER_BENCH=2000 python3 fetch_hc_corpus.py
+# (court codes and benches are listed in the bucket under metadata/parquet/year=YYYY/)
+YEAR = int(os.environ.get("HC_YEAR", "2023"))
+COURT = os.environ.get("HC_COURT", "27_1")  # Bombay High Court
+BENCHES = os.environ.get("HC_BENCHES", "newos,newas,hcbgoa,hcaurdb,kolhcdb,newos_spl").split(",")  # excludes "testcase"
+COURT_NAME = os.environ.get("HC_NAME", "Bombay High Court")
+NUM_PER_BENCH = int(os.environ.get("NUM_PER_BENCH", "400"))
 
 OUTPUT_DIR = "corpus_hc"
 MANIFEST_PATH = f"{OUTPUT_DIR}/manifest.csv"
@@ -124,7 +128,7 @@ for bench in BENCHES:
             "case_id": case_id,
             "title": str(row.get("title", "")),
             "citation": f"CNR {cnr}",
-            "court": str(row.get("court", "Bombay High Court")),
+            "court": COURT_NAME,
             "decision_date": decision_date,
             "text_file": text_filename,
             "year": YEAR,

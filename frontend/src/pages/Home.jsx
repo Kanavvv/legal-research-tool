@@ -14,8 +14,9 @@ import Scales from "../ui/Scales";
 import HeroFeatures from "../ui/HeroFeatures";
 import { playSonar } from "../sound";
 import { pulseCurrents, smoothScrollTo } from "../ui/motion";
+import { API_URL, apiFetch, responseError, linkCitations } from "../api";
+import SaveToFolder from "../ui/SaveToFolder";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 const QUESTION_POOL = [
   "What did the court decide about specific performance of a contract?",
@@ -34,10 +35,6 @@ const QUESTION_POOL = [
 
 const HISTORY_KEY = "nyaya-search-history";
 
-function linkCitations(md) {
-  // [Source 3] becomes a link to the matching source card
-  return md.replace(/\[Source (\d+)\]/g, "[Source $1](#src-$1)");
-}
 
 function relevance(sources) {
   const scores = sources.map((s) => (typeof s.score === "number" ? s.score : null));
@@ -88,6 +85,11 @@ export default function Home() {
   const [filterDocType, setFilterDocType] = useState("");
   const [readingLevel, setReadingLevel] = useState("standard");
   const [askHint, setAskHint] = useState("");
+  const [thread, setThread] = useState([]); // earlier turns of this conversation
+  const [check, setCheck] = useState(null); // the server's citation check
+  const [followUp, setFollowUp] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
+  const [upgradeHint, setUpgradeHint] = useState(false);
 
   const timers = useRef([]);
   const resultRef = useRef(null);
@@ -123,10 +125,16 @@ export default function Home() {
     }
   }
 
-  async function runSearch(raw) {
+  async function runSearch(raw, opts = {}) {
     const q = raw.trim();
     if (!q || busy) return;
     const t0 = performance.now();
+    const turns = opts.followUp && asked && answer ? [...thread, { q: asked, a: answer }].slice(-3) : [];
+    setThread(turns);
+    setCheck(null);
+    setFollowUp("");
+    setShareStatus("");
+    setUpgradeHint(false);
 
     setQuestion(q);
     setAsked(q);
@@ -150,7 +158,7 @@ export default function Home() {
     ];
 
     try {
-      const res = await fetch(`${API_URL}/ask`, {
+      const res = await apiFetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,9 +167,10 @@ export default function Home() {
           court: filterCourt || null,
           doc_type: filterDocType || null,
           level: readingLevel,
+          history: turns.map((t) => ({ question: t.q, answer: t.a })),
         }),
       });
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      if (!res.ok) throw await responseError(res);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -212,6 +221,8 @@ export default function Home() {
           }
           pending += msg.text;
           if (!flushTimer) flushTimer = setTimeout(flush, 30);
+        } else if (msg.type === "check") {
+          setCheck(msg);
         } else if (msg.type === "error") {
           throw new Error(msg.detail || "stream error");
         } else if (msg.type === "done") {
@@ -229,10 +240,11 @@ export default function Home() {
       }
       if (buffer.trim()) handle(JSON.parse(buffer));
       finish();
-    } catch {
+    } catch (err) {
       timers.current.forEach(clearTimeout);
       setPhase("error");
-      setError("We couldn't reach the index just now, so no answer came back. Check your connection and try again in a moment.");
+      setUpgradeHint(!!err?.upgrade);
+      setError(err?.userMessage || "We couldn't reach the index just now, so no answer came back. Check your connection and try again in a moment.");
       requestAnimationFrame(() => smoothScrollTo(resultRef.current));
     }
   }
@@ -256,11 +268,12 @@ export default function Home() {
     if (relatedData[caseId] !== undefined) return;
     setRelatedData((prev) => ({ ...prev, [caseId]: "loading" }));
     try {
-      const res = await fetch(`${API_URL}/related/${encodeURIComponent(caseId)}`);
+      const res = await fetch(`${API_URL}/graph/${encodeURIComponent(caseId)}`);
+      if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
-      setRelatedData((prev) => ({ ...prev, [caseId]: data.related || [] }));
+      setRelatedData((prev) => ({ ...prev, [caseId]: data }));
     } catch {
-      setRelatedData((prev) => ({ ...prev, [caseId]: [] }));
+      setRelatedData((prev) => ({ ...prev, [caseId]: null }));
     }
   }
 
@@ -292,6 +305,31 @@ export default function Home() {
       setCitationCopied(index);
       setTimeout(() => setCitationCopied(null), 1500);
     } catch { /* clipboard blocked */ }
+  }
+
+  async function shareAnswer() {
+    setShareStatus("Making a link…");
+    try {
+      const res = await apiFetch(`${API_URL}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: asked, answer, sources }),
+      });
+      if (!res.ok) throw await responseError(res);
+      const { id } = await res.json();
+      const url = `${window.location.origin}/a/${id}`;
+      try {
+        if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
+          await navigator.share({ title: asked, url });
+          setShareStatus("Shared");
+          return;
+        }
+      } catch { /* fall back to copying */ }
+      await navigator.clipboard.writeText(url);
+      setShareStatus("Link copied");
+    } catch (err) {
+      setShareStatus(err?.userMessage ? "Try again later" : "Couldn't share");
+    }
   }
 
   async function copyAnswer() {
@@ -351,7 +389,7 @@ export default function Home() {
         <div className="hero-copy">
           <p className="pill enter" style={{ "--d": 0 }}>
             <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v13M3 14.5h10M2 5h12M2 5l-1.5 4.5a2 2 0 0 0 3 0L2 5Zm12 0-1.5 4.5a2 2 0 0 0 3 0L14 5Z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Supreme Court · Bombay HC · Central Acts
+            Supreme Court · High Courts · Central Acts
             <span className="pill-chip">beta</span>
           </p>
           <h1 id="hero-title" className="hero-title">
@@ -411,6 +449,7 @@ export default function Home() {
                     <option value="">All courts</option>
                     <option value="Supreme Court of India">Supreme Court of India</option>
                     <option value="Bombay High Court">Bombay High Court</option>
+                    <option value="Delhi High Court">Delhi High Court</option>
                   </select>
                 </div>
                 <div className="field">
@@ -453,11 +492,28 @@ export default function Home() {
         {phase !== "idle" && (
           <>
             <header className="result-head">
-              <p className="mono muted">you asked</p>
+              {thread.length > 0 && (
+                <ol className="thread" aria-label="Earlier in this conversation">
+                  {thread.map((t, i) => (
+                    <li key={i}>
+                      <details>
+                        <summary>{t.q}</summary>
+                        <div className="thread-a">{t.a.slice(0, 900)}{t.a.length > 900 ? "…" : ""}</div>
+                      </details>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <p className="mono muted">{thread.length ? "and then you asked" : "you asked"}</p>
               <h2 className="result-q">{asked}</h2>
             </header>
 
-            {error && <div className="alert" role="alert">{error}</div>}
+            {error && (
+              <div className="alert" role="alert">
+                {error}
+                {upgradeHint && <> <Link to="/pricing" className="alert-link">See Nyaya Pro</Link></>}
+              </div>
+            )}
 
             {phase !== "error" && (
               <div className="result-grid">
@@ -491,12 +547,46 @@ export default function Home() {
                     <div className="answer-actions">
                       <button type="button" className="btn btn--ghost btn--sm" onClick={copyAnswer}>{copyStatus || "Copy answer"}</button>
                       <button type="button" className="btn btn--ghost btn--sm" onClick={exportWord}>Export to Word</button>
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={shareAnswer}>{shareStatus || "Share link"}</button>
+                      <SaveToFolder question={asked} answer={answer} sources={sources} />
                       <div className="feedback" role="group" aria-label="Was this useful?">
                         <span className="mono muted">useful?</span>
                         <button type="button" aria-pressed={feedbackGiven === true} onClick={() => sendFeedback(true)}>Yes</button>
                         <button type="button" aria-pressed={feedbackGiven === false} onClick={() => sendFeedback(false)}>No</button>
                       </div>
                     </div>
+                  )}
+                  {phase === "done" && check && (check.cited.length > 0 || check.invalid.length > 0 || check.unverified.length > 0) && (
+                    <p className={check.invalid.length || check.unverified.length ? "cite-check cite-check--warn" : "cite-check"} role="status">
+                      {check.invalid.length || check.unverified.length ? (
+                        <>
+                          Citation check: {check.cited.length} of the references match the sources.
+                          {check.invalid.length > 0 && <> {check.invalid.map((n) => `[Source ${n}]`).join(", ")} doesn't exist.</>}
+                          {check.unverified.length > 0 && <> Not among the sources, so verify before relying on it: {check.unverified.join("; ")}.</>}
+                        </>
+                      ) : (
+                        <>Citation check: all {check.cited.length} references point to the sources listed.</>
+                      )}
+                    </p>
+                  )}
+                  {phase === "done" && answer && (
+                    <form
+                      className="follow"
+                      onSubmit={(e) => { e.preventDefault(); if (followUp.trim().length >= 3) runSearch(followUp, { followUp: true }); }}
+                    >
+                      <label htmlFor="follow-q" className="mono muted">ask a follow-up</label>
+                      <div className="follow-row">
+                        <input
+                          id="follow-q"
+                          value={followUp}
+                          onChange={(e) => setFollowUp(e.target.value)}
+                          placeholder="What if the tenant had paid rent late?"
+                          maxLength={600}
+                          autoComplete="off"
+                        />
+                        <button type="submit" className="btn btn--lime btn--sm" disabled={followUp.trim().length < 3}>Ask</button>
+                      </div>
+                    </form>
                   )}
                 </article>
 
@@ -522,6 +612,12 @@ export default function Home() {
                             {[s.doc_type === "statute" ? "Act" : s.court, s.year].filter(Boolean).join(" · ")}
                           </span>
                         </div>
+                        {(s.cited_by_count > 0 || s.overruled_hint) && (
+                          <p className="source-graph mono">
+                            {s.cited_by_count > 0 && <span>cited by {s.cited_by_count} later {s.cited_by_count === 1 ? "judgment" : "judgments"}</span>}
+                            {s.overruled_hint && <span className="source-warn">check: later called overruled</span>}
+                          </p>
+                        )}
                         <h3 className="source-title">
                           {s.source_url && s.source_url !== "nan" ? (
                             <a href={s.source_url} target="_blank" rel="noreferrer">{s.title}</a>
@@ -531,7 +627,7 @@ export default function Home() {
                         <div className="meter" aria-hidden="true"><span /></div>
                         <div className="source-actions">
                           <button type="button" onClick={() => copyCitation(s, i)}>{citationCopied === i ? "Copied" : "Copy citation"}</button>
-                          <button type="button" aria-expanded={!!relatedOpen[s.case_id]} onClick={() => toggleRelated(s.case_id)}>Related</button>
+                          <button type="button" aria-expanded={!!relatedOpen[s.case_id]} onClick={() => toggleRelated(s.case_id)}>Precedents</button>
                           <button type="button" aria-pressed={!!favorited[s.case_id]} onClick={() => toggleFavorite(s)}>
                             {favorited[s.case_id] ? "Saved" : "Save"}
                           </button>
@@ -539,16 +635,36 @@ export default function Home() {
                         {relatedOpen[s.case_id] && (
                           <div className="related">
                             {relatedData[s.case_id] === "loading" ? (
-                              <p className="muted">Looking for related cases…</p>
-                            ) : relatedData[s.case_id] && relatedData[s.case_id].length > 0 ? (
-                              relatedData[s.case_id].map((r) => (
-                                <p key={r.case_id || r.title} className="related-item">
-                                  <span>{r.title}</span>
-                                  <span className="mono muted">{r.citation}</span>
-                                </p>
-                              ))
+                              <p className="muted">Tracing citations…</p>
+                            ) : !relatedData[s.case_id] || (relatedData[s.case_id].cites_count === 0 && relatedData[s.case_id].cited_by_count === 0) ? (
+                              <p className="muted">No citations to or from this one in the index yet.</p>
                             ) : (
-                              <p className="muted">No related cases in the index yet.</p>
+                              <>
+                                {relatedData[s.case_id].overruled_mentions?.length > 0 && (
+                                  <div className="related-warn">
+                                    <p>Later judgments describe this as overruled near where they cite it. Read them before relying on it:</p>
+                                    {relatedData[s.case_id].overruled_mentions.slice(0, 3).map((r) => (
+                                      <p key={r.case_id} className="related-item"><span>{r.title}</span><span className="mono muted">{r.citation}</span></p>
+                                    ))}
+                                  </div>
+                                )}
+                                {relatedData[s.case_id].cited_by_count > 0 && (
+                                  <>
+                                    <p className="related-head mono">cited by {relatedData[s.case_id].cited_by_count} · newest first</p>
+                                    {relatedData[s.case_id].cited_by.slice(0, 5).map((r) => (
+                                      <p key={r.case_id} className="related-item"><span>{r.title}</span><span className="mono muted">{r.citation}</span></p>
+                                    ))}
+                                  </>
+                                )}
+                                {relatedData[s.case_id].cites_count > 0 && (
+                                  <>
+                                    <p className="related-head mono">relies on {relatedData[s.case_id].cites_count}</p>
+                                    {relatedData[s.case_id].cites.slice(0, 5).map((r) => (
+                                      <p key={r.case_id} className="related-item"><span>{r.title}</span><span className="mono muted">{r.citation}</span></p>
+                                    ))}
+                                  </>
+                                )}
+                              </>
                             )}
                           </div>
                         )}

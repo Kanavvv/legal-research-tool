@@ -7,7 +7,8 @@ const LINKS = [
   { to: "/compare", label: "Compare" },
   { to: "/argument-builder", label: "Argument" },
   { to: "/statutes", label: "Statutes" },
-  { to: "/#games", label: "Games" },
+  { to: "/documents", label: "Documents" },
+  { to: "/pricing", label: "Pro" },
 ];
 
 export function Mark({ size = 28 }) {

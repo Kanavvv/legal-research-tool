@@ -4,8 +4,8 @@ import DoorScene from "../ui/DoorScene";
 import Reveal from "../ui/Reveal";
 import { Mark } from "../ui/Nav";
 import { prefersReducedMotion } from "../ui/motion";
+import { API_URL } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -117,6 +117,8 @@ export default function Footer() {
           <Link to="/compare">Compare</Link>
           <Link to="/argument-builder">Argument</Link>
           <Link to="/statutes">Statutes</Link>
+          <Link to="/documents">Documents</Link>
+          <Link to="/drafts">Drafts</Link>
         </div>
         <div>
           <p className="mono muted">learn</p>
@@ -126,6 +128,7 @@ export default function Footer() {
         <div>
           <p className="mono muted">you</p>
           <Link to="/account">Sign in / My desk</Link>
+          <Link to="/pricing">Pricing</Link>
         </div>
         <div>
           <p className="mono muted">legal</p>

@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Sonar from "../ui/Sonar";
 import { prefersReducedMotion } from "../ui/motion";
+import { API_URL } from "../api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 export default function StatuteBrowser() {
   const [acts, setActs] = useState([]);

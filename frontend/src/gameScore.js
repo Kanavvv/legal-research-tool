@@ -1,6 +1,6 @@
 import { authFetch } from "./authFetch";
+import { API_URL } from "./api";
 
-const API_URL = "https://legal-research-backend-256323345647.us-central1.run.app";
 
 /**
  * Submits a game result if signed in. Silently does nothing if signed out --

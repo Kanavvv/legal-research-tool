@@ -1,5 +1,5 @@
 """
-search.py (v3 -- filters added)
+search.py (v4 -- hybrid: meaning + exact references)
 
 Two-stage retrieval against Qdrant, now with optional filters:
   - year: only judgments from this year
@@ -237,8 +237,119 @@ def get_statute_section(case_id):
     }
 
 
-def search(query, top_k=TOP_K, candidates=CANDIDATES, year=None, court=None, doc_type=None):
-    query_embedding = bi_encoder.encode([query]).tolist()[0]
+# ---------------- exact references (the "keyword" half of hybrid search) ----------------
+# Meaning-based search is good at "can a landlord evict without notice" and bad
+# at "Section 138 NI Act" or "Kesavananda Bharati v. State of Kerala": numbers
+# and names carry little meaning for an embedding. These are spotted directly
+# and looked up by title, then added to the candidates and kept in the results.
+
+ACT_ALIASES = {
+    "arbitration": "The Arbitration and Conciliation Act, 1996",
+    "constitution": "The Constitution of India",
+    "consumer protection": "The Consumer Protection Act, 2019",
+    "cpa": "The Consumer Protection Act, 2019",
+    "hindu marriage": "The Hindu Marriage Act, 1955",
+    "hma": "The Hindu Marriage Act, 1955",
+    "contract": "The Indian Contract Act, 1872",
+    "ica": "The Indian Contract Act, 1872",
+    "motor vehicles": "The Motor Vehicles Act, 1988",
+    "mv": "The Motor Vehicles Act, 1988",
+    "negotiable instruments": "The Negotiable Instruments Act, 1881",
+    "ni": "The Negotiable Instruments Act, 1881",
+    "sale of goods": "The Sale of Goods Act, 1930",
+    "specific relief": "The Specific Relief Act, 1963",
+    "transfer of property": "The Transfer of Property Act, 1882",
+    "tpa": "The Transfer of Property Act, 1882",
+}
+
+SECTION_REF = re.compile(
+    r"\b(?:section|sec\.?|s\.|u/s\.?)\s*(\d+[A-Z]{0,3})\b(?:\s*(?:\(\w+\)\s*)*)?(?:\s*(?:of|under|,)?\s*(?:the\s+)?([A-Za-z][A-Za-z .]{1,40}?)\s+act\b)?",
+    re.IGNORECASE,
+)
+ARTICLE_REF = re.compile(r"\b(?:article|art\.)\s*(\d+[A-Z]{0,2})\b", re.IGNORECASE)
+CASE_NAME = re.compile(
+    r"([A-Z][\w.&'-]*(?:\s+[A-Z][\w.&'-]*){0,5})\s+(?:v\.|vs\.?|versus)\s+([A-Z][\w.&'-]*(?:\s+(?:of\s+)?[A-Z][\w.&'-]*){0,5})"
+)
+STOP_TITLE_WORDS = {"the", "of", "and", "ors", "anr", "others", "another", "state", "union", "india", "mr", "mrs", "dr", "m/s"}
+
+
+def _resolve_act(name):
+    if not name:
+        return None
+    n = name.lower().replace(".", "").strip()
+    n = re.sub(r"^(the|indian)\s+", "", n)
+    for alias, act in ACT_ALIASES.items():
+        if n == alias or n.startswith(alias) or alias.startswith(n) and len(n) >= 4:
+            return act
+    return None
+
+
+def find_references(query):
+    """Returns (statute section refs, case-name refs) spotted in the query.
+    A section with no Act named is only used if exactly one Act is mentioned
+    elsewhere in the query."""
+    sections = []
+    lone_acts = [act for alias, act in ACT_ALIASES.items()
+                 if re.search(rf"\b{re.escape(alias)}\b(\s+act)?", query, re.IGNORECASE) and len(alias) > 3]
+    for m in SECTION_REF.finditer(query):
+        act = _resolve_act(m.group(2)) or (lone_acts[0] if len(set(lone_acts)) == 1 else None)
+        if act:
+            sections.append((act, m.group(1).upper()))
+    for m in ARTICLE_REF.finditer(query):
+        sections.append(("The Constitution of India", m.group(1).upper()))
+    cases = [(a.strip(), b.strip()) for a, b in CASE_NAME.findall(query)]
+    return list(dict.fromkeys(sections)), cases[:2]
+
+
+def _statute_case_ids(act, number):
+    """case_ids of statute sections whose parsed title is exactly this Act and number."""
+    act_words = " ".join(w for w in re.findall(r"[A-Za-z]+", act) if w.lower() not in {"the", "of", "and"})
+    points, _ = client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=Filter(must=[
+            FieldCondition(key="title", match=MatchText(text=f"{act_words} {number}")),
+            FieldCondition(key="doc_type", match=MatchValue(value="statute")),
+        ]),
+        limit=60, with_payload=["case_id", "title"], with_vectors=False,
+    )
+    ids = []
+    for p in points:
+        parsed = parse_statute_title(p.payload.get("title", ""))
+        if parsed and parsed["act"] == act and parsed["number"].upper() == number and p.payload["case_id"] not in ids:
+            ids.append(p.payload["case_id"])
+    return ids
+
+
+def _case_name_ids(party_a, party_b, limit=3):
+    words = [w for w in re.findall(r"[A-Za-z]{3,}", f"{party_a} {party_b}") if w.lower() not in STOP_TITLE_WORDS]
+    if len(words) < 1:
+        return []
+    found = search_by_title(" ".join(words[:6]), doc_type="judgment", limit=limit)
+    if not found and len(words) > 2:
+        found = search_by_title(" ".join(words[:2]), doc_type="judgment", limit=limit)
+    return [c["case_id"] for c in found]
+
+
+def _best_chunk(case_id, query_embedding):
+    """The chunk of this document that is closest in meaning to the question."""
+    pts = client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_embedding,
+        limit=1,
+        query_filter=Filter(must=[FieldCondition(key="case_id", match=MatchValue(value=case_id))]),
+        with_payload=True,
+    ).points
+    return pts[0] if pts else None
+
+
+def search(query, top_k=TOP_K, candidates=CANDIDATES, year=None, court=None, doc_type=None, context=""):
+    """Hybrid retrieval: meaning-based candidates plus any statute sections or
+    cases the question names outright, all re-ranked by the cross-encoder.
+    Named references are always kept, since the reader asked about them.
+    `context` (earlier turns of a conversation) widens the meaning search
+    without changing what the cross-encoder scores against."""
+    embed_text = f"{context}\n{query}".strip() if context else query
+    query_embedding = bi_encoder.encode([embed_text]).tolist()[0]
     query_filter = build_filter(year, court, doc_type)
 
     results = client.query_points(
@@ -247,6 +358,25 @@ def search(query, top_k=TOP_K, candidates=CANDIDATES, year=None, court=None, doc
         limit=candidates,
         query_filter=query_filter,
     ).points
+
+    pinned_ids = []
+    try:
+        section_refs, case_refs = find_references(query)
+        if doc_type in (None, "statute"):
+            for act, number in section_refs[:3]:
+                pinned_ids += _statute_case_ids(act, number)[:1]
+        if doc_type in (None, "judgment"):
+            for a, b in case_refs:
+                pinned_ids += _case_name_ids(a, b, limit=1)
+    except Exception as e:  # never let the extra lookups break the main search
+        print(f"reference lookup failed: {e}")
+
+    have = {(r.payload.get("case_id"), r.payload.get("chunk_index")) for r in results}
+    for cid in dict.fromkeys(pinned_ids):
+        p = _best_chunk(cid, query_embedding)
+        if p and (p.payload.get("case_id"), p.payload.get("chunk_index")) not in have:
+            results.append(p)
+            have.add((p.payload.get("case_id"), p.payload.get("chunk_index")))
 
     if not results:
         return []
@@ -258,7 +388,17 @@ def search(query, top_k=TOP_K, candidates=CANDIDATES, year=None, court=None, doc
     scores = cross_encoder.predict(pairs)
 
     reranked = sorted(zip(scores, docs, metas), key=lambda x: x[0], reverse=True)
-    return reranked[:top_k]
+    pinned = set(pinned_ids)
+    top = reranked[:top_k]
+    # Make sure each named reference made it in, replacing the weakest others
+    for item in reranked[top_k:]:
+        if item[2].get("case_id") in pinned and not any(t[2].get("case_id") == item[2].get("case_id") for t in top):
+            for i in range(len(top) - 1, -1, -1):
+                if top[i][2].get("case_id") not in pinned:
+                    top[i] = item
+                    break
+    top.sort(key=lambda x: x[0], reverse=True)
+    return top
 
 
 if __name__ == "__main__":
