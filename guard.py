@@ -190,6 +190,75 @@ def cache_get(key):
         return None
 
 
+def cache_delete(key):
+    """Forgets one cached answer (this instance's memory and the shared store)."""
+    _mem_cache.pop(key, None)
+    if _db is None:
+        return
+    try:
+        _col("answer_cache").document(_hash(key)).delete()
+    except Exception as e:
+        log_event("cache_store_error", severity="WARNING", op="delete", error=str(e)[:200])
+
+
+def log_question(route, text, lang="en", cached=False, cache_key=None, **extra):
+    """questions/: the text of what people ask, without who asked, kept 30 days.
+    Feeds the admin dashboard and the trending page."""
+    if _db is None:
+        return
+    now = datetime.datetime.now(datetime.timezone.utc)
+    try:
+        _col("questions").add({
+            "text": (text or "")[:1000], "route": route, "lang": lang, "cached": bool(cached),
+            "cache_key": cache_key, "created": now, "expires": now + datetime.timedelta(days=30), **extra,
+        })
+    except Exception as e:
+        log_event("question_log_error", severity="WARNING", error=str(e)[:200])
+
+
+# ---------------- admin settings ----------------
+
+SETTINGS_DEFAULTS = {
+    "daily_budget_usd": None,          # None: use the DAILY_BUDGET_USD env var
+    "whatsapp_per_day": None,          # None: use WHATSAPP_PER_DAY
+    "whatsapp_paused": False,
+    "whatsapp_pause_message": "Nyaya on WhatsApp is taking a short break. Please use https://asknyaya.in for now.",
+    "daily_law_on": True,
+    "banner_on": False,
+    "banner_text": "",
+    "banner_link": "",
+    "blocked_uids": [],
+}
+_settings_cache = {"at": 0.0, "value": None}
+
+
+def get_settings():
+    """Settings the admin dashboard can change without a deploy, cached for 30 seconds."""
+    if _settings_cache["value"] is not None and time.time() - _settings_cache["at"] < 30:
+        return _settings_cache["value"]
+    value = dict(SETTINGS_DEFAULTS)
+    if _db is not None:
+        try:
+            snap = _col("settings").document("app").get()
+            if snap.exists:
+                value.update({k: v for k, v in (snap.to_dict() or {}).items() if k in SETTINGS_DEFAULTS})
+        except Exception as e:
+            log_event("settings_error", severity="WARNING", error=str(e)[:200])
+    _settings_cache.update(at=time.time(), value=value)
+    return value
+
+
+def save_settings(changes, who=""):
+    if _db is None:
+        raise HTTPException(status_code=503, detail="Settings need the database.")
+    clean = {k: v for k, v in changes.items() if k in SETTINGS_DEFAULTS}
+    _col("settings").document("app").set({**clean, "updated": datetime.datetime.now(datetime.timezone.utc),
+                                          "updated_by": who}, merge=True)
+    _settings_cache["value"] = None
+    log_event("settings_changed", keys=sorted(clean), by=who)
+    return get_settings()
+
+
 def _mem_set(key, value):
     _mem_cache[key] = value
     _mem_cache.move_to_end(key)
@@ -258,13 +327,20 @@ def spent_today():
     return usd
 
 
+def budget_usd():
+    """Today's spending cap: the admin setting if there is one, else DAILY_BUDGET_USD."""
+    b = get_settings().get("daily_budget_usd")
+    return float(b) if b else DAILY_BUDGET_USD
+
+
 def check_budget():
-    """Raises 503 once today's Claude spend has reached DAILY_BUDGET_USD."""
-    if DAILY_BUDGET_USD <= 0:
+    """Raises 503 once today's Claude spend has reached the daily budget."""
+    cap = budget_usd()
+    if cap <= 0:
         return
     usd = spent_today()
-    if usd >= DAILY_BUDGET_USD:
-        log_event("budget_exhausted", severity="ERROR", spent_usd=round(usd, 4), budget_usd=DAILY_BUDGET_USD)
+    if usd >= cap:
+        log_event("budget_exhausted", severity="ERROR", spent_usd=round(usd, 4), budget_usd=cap)
         raise HTTPException(
             status_code=503,
             detail="Nyaya has answered as many questions as it can today. Please come back tomorrow.",
@@ -304,7 +380,7 @@ def record_usage(route, model, usage, started_at=None, user=None, **extra):
         try:
             _col("spend").document(day).set(
                 {"usd": Increment(usd), "calls": Increment(1),
-                 "by_route": {route: Increment(usd)}},
+                 "by_route": {route: Increment(usd)}, "calls_by_route": {route: Increment(1)}},
                 merge=True,
             )
         except Exception as e:

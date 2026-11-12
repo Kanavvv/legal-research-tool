@@ -4,6 +4,7 @@ import { AuthProvider } from "./AuthContext";
 import Reeded from "./ui/Reeded";
 import Consent from "./ui/Consent";
 import Nav from "./ui/Nav";
+import SiteBanner from "./ui/SiteBanner";
 import { prefersReducedMotion } from "./ui/motion";
 import Footer from "./components/Footer";
 import WelcomeModal from "./components/WelcomeModal";
@@ -32,6 +33,7 @@ const Students = lazy(() => import("./pages/Students"));
 const Lawyers = lazy(() => import("./pages/Lawyers"));
 const Digest = lazy(() => import("./pages/Digest"));
 const Tools = lazy(() => import("./pages/Tools"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 const SITE = "https://asknyaya.in";
 const DEFAULT_DESC = "Ask a question about Indian law in plain English. Nyaya reads real Supreme Court and High Court judgments and central Acts, and cites every answer.";
@@ -122,6 +124,7 @@ export default function App() {
         <ScrollManager />
         <Reeded />
         <div className="site">
+          <SiteBanner />
           <Nav />
           <WelcomeModal />
           <div className="column">
@@ -150,6 +153,7 @@ export default function App() {
                 <Route path="/lawyers/join" element={<Lawyers join />} />
                 <Route path="/digest" element={<Digest />} />
                 <Route path="/tools" element={<Tools />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

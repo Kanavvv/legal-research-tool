@@ -28,6 +28,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 import features
+import guard
 import safety
 import wa_more
 from wa_more import MediaError
@@ -395,11 +396,12 @@ def _wa_allowed(sender_hash):
     db = features._db
     if db is None:
         return True
+    per_day = guard.get_settings().get("whatsapp_per_day") or WA_PER_DAY
     day = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))).strftime("%Y%m%d")
     ref = db.collection("rate_limits").document(f"wa_{sender_hash}_{day}")
     snap = ref.get()
     n = (snap.to_dict() or {}).get("n", 0) if snap.exists else 0
-    if n >= WA_PER_DAY:
+    if n >= per_day:
         return False
     ref.set({"n": n + 1, "expires": _now() + datetime.timedelta(days=2)})
     return True
@@ -488,6 +490,8 @@ def _wa_answer(sender, text, heard=False):
         # Stand-alone questions are shared across people, so popular ones cost nothing the second time
         cache_key = None if turns else "wa_ans|" + ("hi|" if hindi else "en|") + " ".join(text.lower().split())[:300]
         reply = cache_get(cache_key) if cache_key else None
+        guard.log_question("whatsapp", text, lang="hi" if hindi else "en", cached=reply is not None,
+                           cache_key=cache_key, follow_up=bool(turns), voice=heard)
         if reply is None:
             check_budget()
             context_q = " ".join([t["q"] for t in turns] + [text])
@@ -655,6 +659,9 @@ def wa_daily(req: Request):
         raise HTTPException(status_code=403)
     if claims.get("email") != DAILY_INVOKER or not claims.get("email_verified"):
         raise HTTPException(status_code=403)
+    if not guard.get_settings().get("daily_law_on", True):
+        log_event("whatsapp_daily_skipped", reason="turned off in admin")
+        return {"skipped": True}
     db = _need_db()
     day = wa_more.today_ist()
     subs = [d.to_dict() for d in db.collection("wa_daily").stream()]
@@ -714,6 +721,10 @@ async def wa_receive(req: Request):
                 sender = m.get("from", "")
                 if sender:
                     await run_in_threadpool(_wa_touch, _hash(sender))
+                s = guard.get_settings()
+                if s.get("whatsapp_paused") and sender and m.get("type") in ("text", "image", "document", "audio"):
+                    await run_in_threadpool(_wa_send, sender, s.get("whatsapp_pause_message") or "Nyaya on WhatsApp is taking a short break.")
+                    continue
                 kind = m.get("type")
                 if kind in ("image", "document") and sender:
                     media = m.get(kind) or {}
