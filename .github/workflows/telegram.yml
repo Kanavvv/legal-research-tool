@@ -1,0 +1,61 @@
+# Posts the pre-approved queue in brand/telegram-queue.json to the Nyaya Telegram channel.
+# Times are IST; GitHub cron is UTC (IST = UTC + 5:30). GitHub can start scheduled runs a
+# few minutes late; each run posts only its own slot, so a late run never double-posts.
+# To pause: Actions tab → "Telegram posts" → ⋯ → Disable workflow.
+name: Telegram posts
+
+on:
+  schedule:
+    - cron: "30 3 * * 1-6"  # am  · 9:00 IST Mon–Sat (Old → New)
+    - cron: "30 5 * * 0"    # am  · 11:00 IST Sun (Landmark)
+    - cron: "30 4 * * 6"    # sat · 10:00 IST Sat (Digest)
+    - cron: "30 12 * * 5"   # fri · 18:00 IST Fri (Explained)
+    - cron: "0 14 * * *"    # pm  · 19:30 IST daily (Quiz)
+  workflow_dispatch:
+    inputs:
+      id:
+        description: "Post one entry by id now (e.g. welcome)"
+        required: true
+        default: welcome
+      dry_run:
+        description: "Only print, don't post"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-posts
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Post
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || '@asknyaya' }}
+          SCHEDULE: ${{ github.event.schedule }}
+          ENTRY_ID: ${{ inputs.id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            ARGS="--id $ENTRY_ID"
+            [ "$DRY_RUN" = "true" ] && ARGS="$ARGS --dry-run"
+          else
+            case "$SCHEDULE" in
+              "30 3 * * 1-6"|"30 5 * * 0") SLOT=am ;;
+              "30 4 * * 6") SLOT=sat ;;
+              "30 12 * * 5") SLOT=fri ;;
+              "0 14 * * *") SLOT=pm ;;
+              *) echo "Unknown schedule $SCHEDULE"; exit 1 ;;
+            esac
+            ARGS="--slot $SLOT"
+          fi
+          python scripts/telegram_post.py $ARGS

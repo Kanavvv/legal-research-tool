@@ -1,0 +1,348 @@
+{
+  "note": "Nyaya Telegram queue. Only entries here get posted. Edit text before its date to change it; delete an entry to skip it. Times: am 9:00 IST (Sun 11:00), sat 10:00, fri 18:00, pm 19:30. 'manual' entries post only when run by hand.",
+  "posts": [
+    {
+      "id": "welcome",
+      "date": null,
+      "slot": "manual",
+      "type": "text",
+      "text": "Welcome to Nyaya on Telegram.\n\nFrom 1 July 2024, the BNS, BNSS and BSA replaced the IPC, CrPC and Evidence Act. Every section number you learnt changed. This channel helps you relearn them, a few minutes a day.\n\nWhat you get here:\n• 9 am, Mon–Sat: one IPC section and where it lives in the BNS now (#OldToNew)\n• 7:30 pm, daily: a quiz poll with the answer explained (#Quiz)\n• Sunday: one landmark judgment, briefed (#Landmark)\n• Friday and Saturday: explainers and the week in the Supreme Court\n\nUseful links:\nStudent tools (case briefs, moots, quizzes): https://asknyaya.in/students?utm_source=telegram&utm_medium=channel\nIPC ↔ BNS converter: https://asknyaya.in/convert?utm_source=telegram&utm_medium=channel\nNews explained: https://asknyaya.in/explained?utm_source=telegram&utm_medium=channel\n\nNyaya is a free legal research site that answers from real Supreme Court and High Court judgments, with sources cited. Research help, not legal advice.\n\nForward this to your class group if it helps."
+    },
+    {
+      "id": "day01-oldtonew",
+      "date": "2026-11-16",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 302 → BNS 103(1)\n\nPunishment for murder.\nOld: IPC s.302\nNew: BNS s.103(1): death or imprisonment for life, and fine.\n\nExam trap: s.103 punishes murder; it doesn't define it. The definition (old IPC s.300) is now BNS s.101.\n\nNew in s.103: sub-section (2) covers murder by a group of five or more on grounds such as race, caste, community or personal belief. The IPC had nothing like it.\n\nCheck any section: https://asknyaya.in/convert?q=IPC+302&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day01-quiz",
+      "date": "2026-11-16",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "From which date do the BNS, BNSS and BSA apply?",
+      "options": [
+        "1 January 2024",
+        "1 July 2024",
+        "26 January 2024",
+        "1 April 2025"
+      ],
+      "correct": 1,
+      "explanation": "In force from 1 July 2024. Offences and proceedings from before that date are still governed by the IPC, CrPC and Evidence Act."
+    },
+    {
+      "id": "day02-oldtonew",
+      "date": "2026-11-17",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 420 → BNS 318(4)\n\nCheating and dishonestly inducing delivery of property.\nOld: IPC s.420\nNew: BNS s.318(4): up to 7 years, and fine.\n\nExam trap: the definition of cheating (old IPC s.415) is now BNS s.318(1). Simple cheating (old IPC s.417) is s.318(2). The whole cheating family now sits in one section.\n\nhttps://asknyaya.in/convert?q=IPC+420&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day02-quiz",
+      "date": "2026-11-17",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "IPC s.300 defined murder. Which BNS section defines it now?",
+      "options": [
+        "BNS s.100",
+        "BNS s.101",
+        "BNS s.103",
+        "BNS s.105"
+      ],
+      "correct": 1,
+      "explanation": "BNS s.101 defines murder and s.103 punishes it. s.100 is culpable homicide (old IPC s.299)."
+    },
+    {
+      "id": "day03-oldtonew",
+      "date": "2026-11-18",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 498A → BNS 85\n\nCruelty by a husband or his relatives.\nOld: IPC s.498A\nNew: BNS s.85: up to 3 years, and fine.\n\nExam trap: the meaning of \"cruelty\" (the old Explanation to s.498A) is now its own section, BNS s.86. Questions often ask for s.86, not s.85.\n\nhttps://asknyaya.in/convert?q=IPC+498A&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day03-quiz",
+      "date": "2026-11-18",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Anticipatory bail (CrPC s.438) is now in:",
+      "options": [
+        "BNSS s.478",
+        "BNSS s.480",
+        "BNSS s.482",
+        "BNSS s.483"
+      ],
+      "correct": 2,
+      "explanation": "BNSS s.482. Bail in non-bailable offences (old CrPC s.437) is s.480; special powers of the High Court and Sessions Court (old s.439) are s.483."
+    },
+    {
+      "id": "day04-oldtonew",
+      "date": "2026-11-19",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 307 → BNS 109(1)\n\nAttempt to murder.\nOld: IPC s.307\nNew: BNS s.109(1): up to 10 years and fine; if hurt is caused, up to imprisonment for life.\n\nExam trap: the aggravated form (attempt by someone already serving a life sentence, with hurt caused) is s.109(2), punishable with death or imprisonment for life.\n\nhttps://asknyaya.in/convert?q=IPC+307&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day04-quiz",
+      "date": "2026-11-19",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Which BNS section defines \"cruelty\" for the offence that replaced IPC s.498A?",
+      "options": [
+        "BNS s.80",
+        "BNS s.85",
+        "BNS s.86",
+        "BNS s.69"
+      ],
+      "correct": 2,
+      "explanation": "s.85 punishes cruelty by a husband or relatives; s.86 defines cruelty (the old Explanation to s.498A). s.80 is dowry death."
+    },
+    {
+      "id": "day05-oldtonew",
+      "date": "2026-11-20",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 379 → BNS 303(2)\n\nTheft.\nOld: IPC s.379\nNew: BNS s.303(2): up to 3 years, or fine, or both.\n\nWhat's new: a repeat conviction for theft carries rigorous imprisonment of 1 to 5 years, and fine. For a first-time theft of property worth less than ₹5,000, where the property is returned or its value restored, the court can order community service.\n\nThe definition of theft (old IPC s.378) is s.303(1).\n\nhttps://asknyaya.in/convert?q=IPC+379&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day05-explained",
+      "date": "2026-11-20",
+      "slot": "fri",
+      "type": "text",
+      "text": "#Explained · Weekend reading\n\nThe legal side of this week's news, in plain words. Good for GD-PI prep and current-affairs answers in judiciary mains.\n\nhttps://asknyaya.in/explained?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day05-quiz",
+      "date": "2026-11-20",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "The certificate for electronic records (Evidence Act s.65B) is now in:",
+      "options": [
+        "BSA s.57",
+        "BSA s.61",
+        "BSA s.63",
+        "BSA s.65"
+      ],
+      "correct": 2,
+      "explanation": "BSA s.63, with the certificate format in the Schedule. s.61 says an electronic record can't be refused merely for being electronic."
+    },
+    {
+      "id": "day06-oldtonew",
+      "date": "2026-11-21",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 34 → BNS 3(5)\n\nActs done by several persons in furtherance of common intention.\nOld: IPC s.34\nNew: BNS s.3(5)\n\nExam trap: it isn't a standalone section any more. It's sub-section (5) of s.3, \"General explanations\". In an FIR or chargesheet you'll now see \"BNS 103(1) r/w 3(5)\" where you used to see \"IPC 302 r/w 34\".\n\nhttps://asknyaya.in/convert?q=IPC+34&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day06-digest",
+      "date": "2026-11-21",
+      "slot": "sat",
+      "type": "text",
+      "text": "#Digest · This week in the Supreme Court\n\nThe week's important judgments, summarised and sourced:\nhttps://asknyaya.in/digest?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day06-quiz",
+      "date": "2026-11-21",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "For offences punishable with 3 to 7 years, BNSS s.173(3) allows a preliminary enquiry before an FIR. It must be completed within:",
+      "options": [
+        "7 days",
+        "14 days",
+        "30 days",
+        "60 days"
+      ],
+      "correct": 1,
+      "explanation": "14 days, with prior permission from an officer not below the rank of DSP, to check whether there is a prima facie case."
+    },
+    {
+      "id": "day07-landmark",
+      "date": "2026-11-22",
+      "slot": "am",
+      "type": "text",
+      "text": "#Landmark · Kesavananda Bharati v. State of Kerala (1973)\n\nCitation: (1973) 4 SCC 225 · decided 24 April 1973\nBench: 13 judges, the largest the Supreme Court has ever sat. Majority 7:6.\n\nFacts: A Kerala math head challenged state land reform laws. The case grew into a question about the Constitution itself: how far can Parliament amend it under Article 368?\n\nIssue: Is Parliament's amending power unlimited?\n\nHeld: Parliament can amend any part of the Constitution, including fundamental rights, but it cannot destroy or damage its basic structure.\n\nWhy it matters:\n• Partly overruled Golaknath (1967), which had said fundamental rights could not be amended at all.\n• Created the basic structure doctrine. The judges gave examples (supremacy of the Constitution, democracy, secularism, separation of powers, federalism), not a closed list.\n• Applied later in Indira Gandhi v. Raj Narain (1975) and Minerva Mills (1980).\n\nExam line: \"Amend, yes; abrogate, no.\"\n\nMore case briefs and moot practice: https://asknyaya.in/students?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day07-quiz",
+      "date": "2026-11-22",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "How many judges sat on the bench in Kesavananda Bharati v. State of Kerala (1973)?",
+      "options": [
+        "7",
+        "9",
+        "11",
+        "13"
+      ],
+      "correct": 3,
+      "explanation": "13, the largest bench ever. By 7:6 it held Parliament can amend the Constitution but not its basic structure."
+    },
+    {
+      "id": "day08-oldtonew",
+      "date": "2026-11-23",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 120B → BNS 61(2)\n\nPunishment of criminal conspiracy.\nOld: IPC s.120B (and the definition in s.120A)\nNew: BNS s.61: the definition is s.61(1), the punishment s.61(2).\n\nTwo sections became one section with two sub-sections, a pattern you'll see across the BNS.\n\nhttps://asknyaya.in/convert?q=IPC+120B&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day08-quiz",
+      "date": "2026-11-23",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Which of these IPC offences has NO counterpart in the BNS?",
+      "options": [
+        "s.354D (stalking)",
+        "s.377 (unnatural offences)",
+        "s.509 (insulting modesty of a woman)",
+        "s.279 (rash driving)"
+      ],
+      "correct": 1,
+      "explanation": "The BNS has no counterpart to s.377. Stalking is BNS s.78, s.509 is s.79, rash driving is s.281."
+    },
+    {
+      "id": "day09-oldtonew",
+      "date": "2026-11-24",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 506 → BNS 351(2) and 351(3)\n\nCriminal intimidation.\nOld: IPC s.506 (definition in s.503)\nNew: BNS s.351. The definition is s.351(1). The punishment is s.351(2): up to 2 years, or fine, or both.\n\nExam trap: a threat to cause death or grievous hurt, to destroy property by fire, and similar serious threats fall under s.351(3): up to 7 years, or fine, or both.\n\nhttps://asknyaya.in/convert?q=IPC+506&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day09-quiz",
+      "date": "2026-11-24",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Under BNSS s.187, police custody of up to 15 days in total can be authorised:",
+      "options": [
+        "Only in the first 15 days after arrest",
+        "In whole or in parts, within the first 40 or 60 days of detention",
+        "Only after the chargesheet is filed",
+        "Never; only judicial custody is allowed"
+      ],
+      "correct": 1,
+      "explanation": "The 15 days can be split and used within the first 40 or 60 days (of a 60- or 90-day total). Under CrPC s.167 it was read as the first 15 days only."
+    },
+    {
+      "id": "day10-oldtonew",
+      "date": "2026-11-25",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 304B → BNS 80\n\nDowry death.\nOld: IPC s.304B\nNew: BNS s.80: at least 7 years, up to imprisonment for life.\n\nSame ingredients: death of a woman by burns, bodily injury or in unnatural circumstances within 7 years of marriage, after cruelty or harassment linked to a dowry demand \"soon before her death\".\n\nThe presumption that goes with it (old Evidence Act s.113B) is now BSA s.118.\n\nhttps://asknyaya.in/convert?q=IPC+304B&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day10-quiz",
+      "date": "2026-11-25",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Murder by a group of five or more on grounds such as race, caste, community, sex, language or personal belief is covered by:",
+      "options": [
+        "BNS s.101(2)",
+        "BNS s.103(2)",
+        "BNS s.109(2)",
+        "BNS s.111"
+      ],
+      "correct": 1,
+      "explanation": "BNS s.103(2): each member is punishable with death or life imprisonment, and fine. The IPC had no such provision."
+    },
+    {
+      "id": "day11-oldtonew",
+      "date": "2026-11-26",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 354D → BNS 78\n\nStalking.\nOld: IPC s.354D\nNew: BNS s.78. First conviction: up to 3 years, and fine. Subsequent conviction: up to 5 years, and fine.\n\nNeighbours to remember: IPC 354 → BNS 74, IPC 509 → BNS 79.\n\nhttps://asknyaya.in/convert?q=IPC+354D&utm_source=telegram&utm_medium=channel\n\nToday is Constitution Day. The Constituent Assembly adopted the Constitution on 26 November 1949."
+    },
+    {
+      "id": "day11-quiz",
+      "date": "2026-11-26",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "The rule that information from an accused in police custody leading to discovery of a fact can be proved (Evidence Act s.27) is now in:",
+      "options": [
+        "BSA s.22",
+        "BSA s.23, proviso",
+        "BSA s.25",
+        "BSA s.27"
+      ],
+      "correct": 1,
+      "explanation": "The proviso to BSA s.23(2). s.23 also carries over old ss.25–26: confessions to police, or in police custody, can't be proved."
+    },
+    {
+      "id": "day12-oldtonew",
+      "date": "2026-11-27",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 499/500 → BNS 356\n\nDefamation.\nOld: IPC s.499 (definition) and s.500 (punishment)\nNew: BNS s.356(1) defines it; s.356(2) punishes it with simple imprisonment up to 2 years, or fine, or both, or community service.\n\nWhat's new: community service is now one of the possible sentences. It's one of the new punishments added by BNS s.4(f).\n\nhttps://asknyaya.in/convert?q=IPC+500&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day12-explained",
+      "date": "2026-11-27",
+      "slot": "fri",
+      "type": "text",
+      "text": "#Explained · Weekend reading\n\nThe legal side of this week's news, in plain words. Good for GD-PI prep and current-affairs answers in judiciary mains.\n\nhttps://asknyaya.in/explained?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day12-quiz",
+      "date": "2026-11-27",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Snatching is now a separate offence under the BNS. Which section?",
+      "options": [
+        "BNS s.302",
+        "BNS s.303",
+        "BNS s.304",
+        "BNS s.305"
+      ],
+      "correct": 2,
+      "explanation": "BNS s.304: up to 3 years and fine. Under the IPC, snatching was charged as theft or robbery. s.303 is theft."
+    },
+    {
+      "id": "day13-oldtonew",
+      "date": "2026-11-28",
+      "slot": "am",
+      "type": "text",
+      "text": "#OldToNew · IPC 124A → BNS 152\n\nSedition is gone, at least in name.\nOld: IPC s.124A (sedition). Kept in abeyance by the Supreme Court in S.G. Vombatkere v. Union of India (2022).\nNew: BNS s.152, \"Act endangering sovereignty, unity and integrity of India\": imprisonment for life or up to 7 years, and fine.\n\nExam angle: the word \"sedition\" doesn't appear in the BNS. s.152 targets acts against India's sovereignty, unity and integrity rather than \"disaffection towards the Government\".\n\nhttps://asknyaya.in/convert?q=IPC+124A&utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day13-digest",
+      "date": "2026-11-28",
+      "slot": "sat",
+      "type": "text",
+      "text": "#Digest · This week in the Supreme Court\n\nThe week's important judgments, summarised and sourced:\nhttps://asknyaya.in/digest?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day13-quiz",
+      "date": "2026-11-28",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "How many sections does the Bharatiya Nyaya Sanhita, 2023 have?",
+      "options": [
+        "358",
+        "511",
+        "531",
+        "170"
+      ],
+      "correct": 0,
+      "explanation": "The BNS has 358 sections (the IPC had 511). The BNSS has 531 and the BSA 170."
+    },
+    {
+      "id": "day14-landmark",
+      "date": "2026-11-29",
+      "slot": "am",
+      "type": "text",
+      "text": "#Landmark · Arnesh Kumar v. State of Bihar (2014)\n\nCitation: (2014) 8 SCC 273 · decided 2 July 2014\nBench: Chandramauli Kr. Prasad and Pinaki Chandra Ghose, JJ.\n\nFacts: A husband accused under IPC s.498A and the Dowry Prohibition Act sought anticipatory bail. The Court used the case to address routine arrests.\n\nIssue: Can police arrest automatically for offences punishable with up to 7 years?\n\nHeld: No. For such offences, police must be satisfied that arrest is necessary on the grounds in CrPC s.41 and record their reasons. Magistrates must check those reasons before authorising detention.\n\nThe directions:\n• Police to use a checklist of the s.41(1)(b)(ii) grounds and send it, with reasons, to the Magistrate.\n• Where arrest isn't needed, serve a notice of appearance (CrPC s.41A) within 2 weeks of the case being registered.\n• Police who don't comply face departmental action and contempt; Magistrates who authorise detention mechanically face departmental action.\n\nWhere it lives now: the arrest power and the notice of appearance are in BNSS s.35. The Court reaffirmed these directions in Satender Kumar Antil v. CBI (2022).\n\nMore case briefs and moot practice: https://asknyaya.in/students?utm_source=telegram&utm_medium=channel"
+    },
+    {
+      "id": "day14-quiz",
+      "date": "2026-11-29",
+      "slot": "pm",
+      "type": "quiz",
+      "question": "Arnesh Kumar v. State of Bihar (2014) told police not to arrest automatically for offences punishable with imprisonment of up to:",
+      "options": [
+        "3 years",
+        "5 years",
+        "7 years",
+        "10 years"
+      ],
+      "correct": 2,
+      "explanation": "7 years. Police must record reasons for arrest; the notice of appearance (old CrPC s.41A) is now in BNSS s.35."
+    }
+  ]
+}
