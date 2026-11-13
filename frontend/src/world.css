@@ -705,3 +705,77 @@ a.site-banner:hover { background: #A8321F; }
 .case-card p { margin: 0; }
 .case-card--soon { border-color: rgba(255, 107, 91, 0.6); }
 .case-notes { white-space: pre-line; font-size: 14px; color: var(--ink-80); }
+
+/* ---------- Trust: who wrote and reviewed an answer ---------- */
+.answer-byline { display: grid; gap: 4px; margin-top: 4px; font-size: 14px; color: var(--ink-80); }
+.answer-byline p { margin: 0; }
+.answer-reviewed { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%;
+  font-size: 11px; font-weight: 700; background: #7FD1A8; color: #0B1F14; vertical-align: 1px; }
+.tpl-credit { margin: 4px 0 12px; font-size: 13px; color: var(--ink-60); }
+
+/* ---------- Free legal aid checker ---------- */
+.aid-q { display: grid; gap: 12px; margin-bottom: 16px; }
+.aid-q .zone-title { margin: 0; }
+.aid-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.aid-option { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; cursor: pointer;
+  border: 1px solid var(--line-2); font-size: 15px; line-height: 1.45; color: var(--ink-80);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease); }
+.aid-option:hover { border-color: var(--coral); }
+.aid-option.is-on { border-color: #7FD1A8; background: rgba(127, 209, 168, 0.1); color: var(--ink); }
+.aid-option input { margin-top: 3px; flex: none; width: 18px; height: 18px; accent-color: #7FD1A8; }
+.aid-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice.is-on, .choice[aria-checked="true"] { background: var(--cream); color: var(--navy); border-color: var(--cream); }
+.aid-result { display: grid; gap: 10px; border-left: 4px solid var(--line-2); }
+.aid-result p { margin: 0; line-height: 1.55; }
+.aid-result--yes { border-left-color: #7FD1A8; }
+.aid-result--maybe { border-left-color: #F2C14E; }
+.aid-result--no { border-left-color: var(--ink-45); }
+.aid-verdict { margin: 0; font-size: clamp(20px, 3.2vw, 26px); line-height: 1.2; letter-spacing: -0.02em; }
+.aid-flag { padding: 10px 12px; border-radius: 10px; background: rgba(255, 107, 91, 0.12); border: 1px solid rgba(255, 107, 91, 0.35); }
+.aid-gets { margin: 0; padding-left: 20px; display: grid; gap: 6px; line-height: 1.5; }
+.aid-steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.aid-steps li { display: grid; gap: 2px; line-height: 1.5; }
+.aid-steps a { color: inherit; }
+
+/* ---------- How long will my case take ---------- */
+.hl-time { margin: 0; font-size: 16px; line-height: 1.45; color: var(--ink); }
+.hl-real { display: grid; gap: 8px; margin: 18px 0; }
+.hl-real p { margin: 0; line-height: 1.55; }
+
+/* ---------- Widget page ---------- */
+.widget-preview { padding: 12px; margin-bottom: 16px; }
+.widget-preview iframe { display: block; border-radius: 10px; }
+.widget-code { display: grid; gap: 12px; }
+.widget-code-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.widget-code-head .zone-title { margin: 0; }
+.widget-snippet { margin: 0; padding: 14px; border-radius: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+  font-size: 12.5px; line-height: 1.55; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); }
+
+/* ---------- The embedded lookup (asknyaya.in/embed/law, inside other sites) ---------- */
+html.embed-doc, html.embed-doc body { background: transparent; min-height: 0; }
+html.embed-doc body::before, html.embed-doc body::after { display: none; }
+.embed { --e-bg: #FFFFFF; --e-ink: #14213D; --e-muted: #5A6478; --e-line: #D9DEE7; --e-accent: #C8402F; --e-accent-ink: #FFF8EE;
+  box-sizing: border-box; min-height: 100vh; padding: 14px 16px 10px; display: grid; gap: 10px; align-content: start;
+  font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--e-ink); background: var(--e-bg);
+  border: 1px solid var(--e-line); border-radius: 12px; }
+@media (prefers-color-scheme: dark) {
+  .embed:not(.embed--light) { --e-bg: #101B36; --e-ink: #F4EDE0; --e-muted: #A9B1C2; --e-line: #2A3657; --e-accent: #FF6B5B; --e-accent-ink: #101B36; }
+}
+.embed--dark { --e-bg: #101B36; --e-ink: #F4EDE0; --e-muted: #A9B1C2; --e-line: #2A3657; --e-accent: #FF6B5B; --e-accent-ink: #101B36; }
+.embed a { color: var(--e-accent); }
+.embed-label { font-weight: 650; font-size: 15px; }
+.embed-form { display: grid; gap: 6px; }
+.embed-row { display: flex; gap: 8px; }
+.embed-row input { flex: 1; min-width: 0; font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--e-line);
+  background: transparent; color: var(--e-ink); }
+.embed-row input:focus { outline: 2px solid var(--e-accent); outline-offset: 1px; }
+.embed-row button { font: inherit; font-weight: 600; padding: 9px 14px; border-radius: 8px; border: 0; cursor: pointer;
+  background: var(--e-accent); color: var(--e-accent-ink); }
+.embed-out { min-height: 48px; }
+.embed-out p { margin: 0; }
+.embed-muted { color: var(--e-muted); font-size: 14px; }
+.embed-ex { font: inherit; padding: 0; border: 0; background: none; color: var(--e-accent); text-decoration: underline; cursor: pointer; }
+.embed-foot { margin: 0; font-size: 12px; color: var(--e-muted); }
+.embed-foot a { color: var(--e-muted); }
+.aid-q, .aid-result, .hl-real, .widget-code { padding: 20px; }
+@media (max-width: 520px) { .aid-q, .aid-result, .hl-real, .widget-code { padding: 16px; } }

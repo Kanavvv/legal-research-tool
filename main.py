@@ -979,3 +979,5 @@ import library  # noqa: E402
 app.include_router(library.router)
 import cases  # noqa: E402
 app.include_router(cases.router)
+import weekly_email  # noqa: E402
+app.include_router(weekly_email.router)

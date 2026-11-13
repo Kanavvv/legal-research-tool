@@ -24,5 +24,7 @@ COPY control.py .
 COPY growth.py .
 COPY library.py .
 COPY cases.py .
+COPY weekly_email.py .
+COPY weekly_picks.json .
 
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

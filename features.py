@@ -177,8 +177,12 @@ def get_share(share_id: str, req: Request):
         raise HTTPException(status_code=404, detail="That shared answer doesn't exist.")
     d = snap.to_dict()
     out = {"id": share_id, "question": d["question"], "answer": d["answer"], "sources": d.get("sources", []),
-           "public": bool(d.get("public")),
-           "created": d["created"].isoformat() if d.get("created") else None}
+           "public": bool(d.get("public")), "library": bool(d.get("library")),
+           "created": d["created"].isoformat() if d.get("created") else None,
+           "updated": d["updated"].isoformat() if d.get("updated") else None,
+           "review": ({"name": d["review"]["name"], "credential": d["review"].get("credential", ""),
+                       "date": d["review"]["date"].isoformat() if d["review"].get("date") else None}
+                      if (d.get("review") or {}).get("name") else None)}
     guard.cache_set(f"share|{share_id}", out, shared=False)
     return out
 

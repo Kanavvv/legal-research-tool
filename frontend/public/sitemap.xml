@@ -3,7 +3,6 @@
   <url><loc>https://asknyaya.in/</loc><priority>1.0</priority></url>
   <url><loc>https://asknyaya.in/convert</loc><priority>0.9</priority></url>
   <url><loc>https://asknyaya.in/rights</loc><priority>0.9</priority></url>
-  <url><loc>https://asknyaya.in/trending</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://asknyaya.in/templates</loc><priority>0.9</priority></url>
   <url><loc>https://asknyaya.in/students</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/statutes</loc><priority>0.8</priority></url>
@@ -27,6 +26,9 @@
   <url><loc>https://asknyaya.in/answers</loc><priority>0.9</priority></url>
   <url><loc>https://asknyaya.in/explained</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/cases</loc><priority>0.7</priority></url>
+  <url><loc>https://asknyaya.in/legal-aid</loc><priority>0.9</priority></url>
+  <url><loc>https://asknyaya.in/how-long</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/widget</loc><priority>0.5</priority></url>
   <url><loc>https://asknyaya.in/rights/arrest</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/rights/fir</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/rights/bail</loc><priority>0.8</priority></url>
@@ -40,6 +42,11 @@
   <url><loc>https://asknyaya.in/templates/consumer-complaint</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/templates/cheque-bounce-notice</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/templates/rent-agreement</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/templates/police-complaint</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/templates/rti-first-appeal</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/templates/deposit-refund-notice</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/templates/salary-dues-notice</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/templates/legal-aid-application</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/now/cyber-fraud</loc><priority>0.9</priority></url>
   <url><loc>https://asknyaya.in/now/arrested</loc><priority>0.9</priority></url>
   <url><loc>https://asknyaya.in/now/fir-refused</loc><priority>0.9</priority></url>
@@ -53,6 +60,15 @@
   <url><loc>https://asknyaya.in/help/consumer</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/help/rti</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/help/women</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/cheque-bounce-case</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/consumer-complaint</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/mutual-consent-divorce</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/contested-divorce</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/maintenance-case</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/bail</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/domestic-violence-case</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/rti-reply</loc><priority>0.8</priority></url>
+  <url><loc>https://asknyaya.in/how-long/civil-suit</loc><priority>0.8</priority></url>
   <url><loc>https://asknyaya.in/law/arbitration-act/1</loc><priority>0.5</priority></url>
   <url><loc>https://asknyaya.in/law/arbitration-act/2</loc><priority>0.5</priority></url>
   <url><loc>https://asknyaya.in/law/arbitration-act/3</loc><priority>0.5</priority></url>

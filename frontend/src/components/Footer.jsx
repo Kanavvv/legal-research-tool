@@ -81,10 +81,10 @@ export default function Footer() {
 
         <Reveal className="foot-news" style={{ "--i": 1 }}>
           <p className="mono foot-news-label">weekly</p>
-          <h2 className="foot-news-title">The week's judgments, <em>briefly</em>.</h2>
-          <p className="foot-news-sub">One short email on notable new Supreme Court decisions. No spam; leave whenever you like.</p>
+          <h2 className="foot-news-title">Your rights, <em>every Sunday</em>.</h2>
+          <p className="foot-news-sub">One right most people don't know, the answers India read most, and a free template. Plus the Supreme Court's notable judgments on Mondays. Leave whenever you like.</p>
           {status === "done" ? (
-            <p className="foot-news-status" role="status">You're on the list. The first one arrives after the next notable week.</p>
+            <p className="foot-news-status" role="status">You're on the list. The first one arrives on Sunday.</p>
           ) : status === "already" ? (
             <p className="foot-news-status" role="status">You're already on the list.</p>
           ) : (
@@ -132,9 +132,12 @@ export default function Footer() {
           <Link to="/notice">Got a notice?</Link>
           <Link to="/is-it-legal">Is this legal?</Link>
           <Link to="/deadlines">Deadline calculator</Link>
+          <Link to="/how-long">How long will my case take?</Link>
+          <Link to="/legal-aid">Free lawyer? Check</Link>
           <Link to="/rights">Know your rights</Link>
           <Link to="/templates">Free templates</Link>
           <Link to="/lawyers">Find a lawyer</Link>
+          <Link to="/widget">Free widget for your site</Link>
           <Link to="/digest">Weekly digest</Link>
         </div>
         <div>

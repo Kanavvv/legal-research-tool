@@ -5,8 +5,10 @@ import { Link, useParams } from "react-router-dom";
 import { TEMPLATES, findTemplate } from "../data/templates";
 import { setPageMeta } from "../ui/meta";
 import NotFound from "./NotFound";
+import { trackEvent } from "../ui/track";
 
 const STORE = "nyaya-template-";
+const CREDIT = "Prepared free with Nyaya · asknyaya.in/templates";
 
 function load(slug) {
   try { return JSON.parse(localStorage.getItem(STORE + slug)) || {}; } catch { return {}; }
@@ -25,7 +27,12 @@ function Field({ f, value, onChange }) {
   return (
     <div className="field">
       <label htmlFor={id}>{f.label}{f.required && <span aria-hidden="true"> *</span>}</label>
-      {f.type === "textarea" ? (
+      {f.type === "select" ? (
+        <select id={id} className="field-input" value={value || ""} onChange={(e) => onChange(e.target.value)}>
+          <option value="">Choose…</option>
+          {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : f.type === "textarea" ? (
         <textarea id={id} className="field-input" rows={f.rows || 3} value={value || ""} placeholder={f.placeholder} onChange={(e) => onChange(e.target.value)} />
       ) : (
         <input id={id} type={f.type || "text"} value={value || ""} placeholder={f.placeholder} onChange={(e) => onChange(e.target.value)} />
@@ -91,6 +98,7 @@ function Assist({ cfg, onFill }) {
 function Filler({ tpl }) {
   const [values, setValues] = useState(() => load(tpl.slug));
   const [copied, setCopied] = useState(false);
+  const [credit, setCredit] = useState(() => { try { return localStorage.getItem("nyaya-template-credit") !== "0"; } catch { return true; } });
   const text = useMemo(() => tpl.render(values), [tpl, values]);
 
   useEffect(() => {
@@ -102,6 +110,27 @@ function Filler({ tpl }) {
 
   async function copy() {
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* clipboard blocked */ }
+  }
+
+  function toggleCredit(on) {
+    setCredit(on);
+    try { localStorage.setItem("nyaya-template-credit", on ? "1" : "0"); } catch { /* storage off */ }
+  }
+
+  // A real Word file, so people can edit it before printing. Loaded only when asked for.
+  async function word() {
+    const { Document, Packer, Paragraph, TextRun } = await import("docx");
+    const para = (line, opts = {}) => new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: line, font: "Times New Roman", size: 24, ...opts })] });
+    const body = text.split("\n").map((line) => para(line));
+    if (credit) body.push(para(""), para(CREDIT, { size: 16, color: "888888" }));
+    const doc = new Document({ sections: [{ properties: { page: { margin: { top: 1250, bottom: 1250, left: 1250, right: 1250 } } }, children: body }] });
+    const blob = await Packer.toBlob(doc);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${tpl.slug}.docx`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    trackEvent("template_word");
   }
 
   function download() {
@@ -117,7 +146,8 @@ function Filler({ tpl }) {
     const w = window.open("", "_blank");
     if (!w) return;
     const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-    w.document.write(`<!doctype html><title>${tpl.title}</title><style>body{font:12pt/1.6 "Times New Roman",serif;margin:2.2cm;white-space:pre-wrap}</style><body>${esc}`);
+    const foot = credit ? `<p class="credit">${CREDIT}</p>` : "";
+    w.document.write(`<!doctype html><title>${tpl.title}</title><style>body{font:12pt/1.6 "Times New Roman",serif;margin:2.2cm}.doc{white-space:pre-wrap}.credit{margin-top:2em;font:8pt/1.4 Arial,sans-serif;color:#888}</style><body><div class="doc">${esc}</div>${foot}`);
     w.document.close();
     w.focus();
     w.print();
@@ -135,8 +165,13 @@ function Filler({ tpl }) {
         <div className="answer-actions">
           <button type="button" className="btn btn--lime btn--sm" onClick={print}>Print or save as PDF</button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={copy}>{copied ? "Copied" : "Copy text"}</button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={word}>Download Word</button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={download}>Download .txt</button>
         </div>
+        <label className="tpl-check tpl-credit">
+          <input type="checkbox" checked={credit} onChange={(e) => toggleCredit(e.target.checked)} />
+          <span>Add a small “Prepared free with Nyaya” line at the bottom</span>
+        </label>
         <pre className="card tpl-doc">{text}</pre>
       </section>
     </div>
@@ -148,7 +183,7 @@ export default function Templates() {
   const tpl = slug ? findTemplate(slug) : null;
 
   useEffect(() => {
-    if (tpl) setPageMeta({ title: `Free ${tpl.title} template · Nyaya`, description: tpl.blurb, path: `/templates/${tpl.slug}` });
+    if (tpl) setPageMeta({ title: `Free ${/^[A-Z][a-z]/.test(tpl.title) ? tpl.title[0].toLowerCase() + tpl.title.slice(1) : tpl.title} template · Nyaya`, description: tpl.blurb, path: `/templates/${tpl.slug}` });
   }, [tpl]);
 
   if (slug && !tpl) return <NotFound />;

@@ -25,7 +25,8 @@ router = APIRouter()
 
 _BOT_RE = re.compile(r"bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|whatsapp", re.I)
 _EVENTS = {"share_link", "friend_wa", "card_saved", "card_shared", "trending_open", "guide_wa",
-           "triage", "triage_open", "wa_daily_join", "wa_notice", "answers_open", "case_added", "explainer_open", "moot_share"}
+           "triage", "triage_open", "wa_daily_join", "wa_notice", "answers_open", "case_added", "explainer_open", "moot_share",
+           "template_word", "legal_aid_check", "embed_view", "embed_lookup", "how_long_open", "widget_copy"}
 _REF_RE = re.compile(r"^[a-z0-9_-]{1,20}$")
 _HOST_RE = re.compile(r"^[a-z0-9.-]{3,80}$")
 OWN_HOSTS = ("asknyaya.in", "www.asknyaya.in", "localhost", "127.0.0.1")

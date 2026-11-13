@@ -9,7 +9,7 @@ export const HUBS = [
     lede: { en: "Deposits, rent, repairs, notice and eviction: your rights as a tenant, and what to do when they're ignored.", hi: "डिपॉज़िट, किराया, मरम्मत, नोटिस और बेदख़ली: किराएदार के तौर पर आपके अधिकार, और उनकी अनदेखी हो तो क्या करें।" },
     now: ["landlord", "legal-notice"],
     rights: ["tenant"],
-    templates: ["rent-agreement"],
+    templates: ["rent-agreement", "deposit-refund-notice"],
     deadlines: ["tenancy", "money"],
     helplines: ["112", "15100"],
     questions: {
@@ -37,7 +37,7 @@ export const HUBS = [
     lede: { en: "Get records from any government office: file status, notings, spending, decisions. Rs 10, 30 days, and two appeals if they don't answer.", hi: "किसी भी सरकारी दफ़्तर से रिकॉर्ड पाएँ: फ़ाइल की स्थिति, नोटिंग, ख़र्च, फ़ैसले। Rs 10, 30 दिन, और जवाब न मिले तो दो अपील।" },
     now: [],
     rights: [],
-    templates: ["rti-application"],
+    templates: ["rti-application", "rti-first-appeal"],
     deadlines: ["rti"],
     helplines: [],
     tips: {
@@ -55,7 +55,7 @@ export const HUBS = [
     lede: { en: "Domestic violence, harassment at work or online, dowry, maintenance. Where to get protection fast, and the law that backs you.", hi: "घरेलू हिंसा, काम पर या ऑनलाइन उत्पीड़न, दहेज, गुज़ारा भत्ता। जल्दी सुरक्षा कहाँ मिलेगी, और कौन-सा क़ानून आपके साथ है।" },
     now: ["domestic-violence", "fir-refused", "cyber-fraud"],
     rights: ["domestic-violence", "workplace-harassment", "fir", "free-legal-aid"],
-    templates: [],
+    templates: ["legal-aid-application"],
     deadlines: [],
     helplines: ["112", "181", "15100", "14416"],
     questions: {
