@@ -18,6 +18,8 @@ import { HUBS } from "../src/data/hubs.js";
 import { TEMPLATES } from "../src/data/templates.js";
 import { DEADLINES } from "../src/data/deadlines.js";
 import { ACTS } from "../src/lawCodes.js";
+import { HOW_LONG, NJDG } from "../src/data/howLong.js";
+import { CATEGORIES, GETS } from "../src/data/legalAid.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIST = join(here, "..", "dist");
@@ -69,18 +71,36 @@ for (const [path, [title, description]] of Object.entries(META)) {
   const ld = path === "/"
     ? [{ "@type": "WebSite", "@id": `${SITE}/#site`, url: SITE, name: "Nyaya", description, publisher: { "@id": `${SITE}/#org` }, inLanguage: ["en-IN", "hi-IN"],
         potentialAction: { "@type": "SearchAction", target: `${SITE}/answers?q={search_term_string}`, "query-input": "required name=search_term_string" } }]
-    : [{ "@type": "WebPage", name: title, description, url: SITE + path, isPartOf: { "@id": `${SITE}/#site` } }];
+    : [{ "@type": path === "/about" ? "AboutPage" : "WebPage", name: title, description, url: SITE + path, isPartOf: { "@id": `${SITE}/#site` } }];
   let body = `<h1>${esc(title.replace(/ · Nyaya$/, ""))}</h1><p>${esc(description)}</p>`;
   if (path === "/") {
     body += "<h2>Help with a problem right now</h2><ul>"
       + GUIDES.map((g) => `<li><a href="/now/${g.slug}">${esc(g.title.en)}</a></li>`).join("") + "</ul>"
       + "<h2>Know your rights</h2><ul>" + RIGHTS.map((g) => `<li><a href="/rights/${g.slug}">${esc(g.title.en)}</a></li>`).join("") + "</ul>"
-      + '<p><a href="/answers">Questions people asked</a> · <a href="/convert">IPC to BNS converter</a> · <a href="/notice">Got a legal notice?</a> · <a href="/templates">Free templates</a> · <a href="/lawyers">Find a lawyer</a></p>';
+      + '<p><a href="/answers">Questions people asked</a> · <a href="/convert">IPC to BNS converter</a> · <a href="/notice">Got a legal notice?</a> · <a href="/templates">Free templates</a> · <a href="/legal-aid">Can I get a free lawyer?</a> · <a href="/how-long">How long will my case take?</a> · <a href="/lawyers">Find a lawyer</a></p>';
   }
   if (path === "/now") body += "<ul>" + GUIDES.map((g) => `<li><a href="/now/${g.slug}">${esc(g.title.en)}</a>: ${esc(g.lede.en)}</li>`).join("") + "</ul>";
   if (path === "/rights") body += "<ul>" + RIGHTS.map((g) => `<li><a href="/rights/${g.slug}">${esc(g.title.en)}</a>: ${esc(g.lede.en)}</li>`).join("") + "</ul>";
   if (path === "/help") body += "<ul>" + HUBS.map((h) => `<li><a href="/help/${h.slug}">${esc(h.title.en)}</a>: ${esc(h.lede.en)}</li>`).join("") + "</ul>";
   if (path === "/templates") body += "<ul>" + TEMPLATES.map((t) => `<li><a href="/templates/${t.slug}">${esc(t.title)}</a>: ${esc(t.blurb)}</li>`).join("") + "</ul>";
+  if (path === "/legal-aid") {
+    body += "<h2>You get a free lawyer, whatever your income, if</h2><ul>"
+      + CATEGORIES.map((c) => `<li>${esc(c.en.replace(/^I am /, "You are ").replace(/^I have /, "You have ").replace(/^I was /, "You were ").replace(/^I belong /, "You belong "))} (Legal Services Authorities Act ${esc(c.law)})</li>`).join("")
+      + "<li>Or your family's income is below the limit your state sets (s.12(h))</li></ul>"
+      + "<h2>What you get</h2><ul>" + GETS.en.map((g) => `<li>${esc(g)}</li>`).join("") + "</ul>"
+      + '<h2>How to apply</h2><ol><li>Call the NALSA helpline <a href="tel:15100">15100</a>.</li><li>Go to the District Legal Services Authority, usually in the district court complex.</li><li>Or apply online on the NALSA portal.</li><li><a href="/templates/legal-aid-application">Fill in the free legal aid application</a>.</li></ol>';
+  }
+  if (path === "/about") {
+    body += "<h2>Who is behind Nyaya</h2><p>Nyaya is an independent project built in India. It is not a law firm and does not give legal advice. Nobody pays to be mentioned in an answer, and Nyaya does not rank or recommend advocates.</p>"
+      + '<h2 id="checks">How we check answers</h2><ul><li>Every claim points to its source: each answer lists the judgments and sections it relied on.</li>'
+      + "<li>No source, no citation: parts the sources don't cover are marked \"More generally\" and carry no citation.</li>"
+      + "<li>Answers name the new BNS, BNSS and BSA sections and the IPC, CrPC and Evidence Act sections they replaced on 1 July 2024.</li>"
+      + "<li>Published answers show when they were written and updated, and the advocate who reviewed them, if any.</li>"
+      + "<li>Guides cite the section behind every step.</li></ul>"
+      + "<h2>Spotted a mistake?</h2><p>Tell us on WhatsApp or with the thumbs-down under any answer, and we'll check it against the source and correct it.</p>"
+      + "<h2>Our data</h2><p>Supreme Court and High Court judgments from the public eCourts datasets on AWS Open Data (CC-BY-4.0); Acts from India Code and PRS Legislative Research.</p>";
+  }
+  if (path === "/how-long") body += "<ul>" + HOW_LONG.map((h) => `<li><a href="/how-long/${h.slug}">${esc(h.q)}</a> ${esc(h.short)}</li>`).join("") + "</ul>";
   if (path === "/deadlines") body += "<ul>" + DEADLINES.map((d) => `<li>${esc(d.title.en)}: ${esc(d.blurb.en)}</li>`).join("") + "</ul>";
   count += page(path, { title, description, body, ld });
 }
@@ -130,11 +150,28 @@ for (const h of HUBS) {
 // ---------- templates ----------
 for (const t of TEMPLATES) {
   const path = `/templates/${t.slug}`;
-  const title = `Free ${t.title} template (India) · Nyaya`;
-  const body = `<h1>Free ${esc(t.title)} template</h1><p>${esc(t.blurb)}</p>${t.note ? `<p>${esc(t.note)}</p>` : ""}`
+  const name = /^[A-Z][a-z]/.test(t.title) ? t.title[0].toLowerCase() + t.title.slice(1) : t.title; // "Police complaint" -> "police complaint", "RTI" stays
+  const title = `Free ${name} template (India) · Nyaya`;
+  const body = `<h1>Free ${esc(name)} template</h1><p>${esc(t.blurb)}</p>${t.note ? `<p>${esc(t.note)}</p>` : ""}`
     + `<p>Fill in: ${t.fields.map((f) => esc(f.label)).join(", ")}.</p>`;
   count += page(path, { title, description: clip(`${t.blurb} Fill it in online and print it. Free, no sign-in.`), body,
     ld: [crumbs([["Nyaya", "/"], ["Free templates", "/templates"], [t.title, path]])] });
+}
+
+// ---------- how long will my case take ----------
+for (const h of HOW_LONG) {
+  const path = `/how-long/${h.slug}`;
+  const title = `${h.q.replace(/\?$/, "")}: what the law says · Nyaya`;
+  const body = `<h1>${esc(h.q)}</h1><p>${esc(h.short)}</p><h2>What the law says</h2><ol>`
+    + h.law.map((s) => `<li><strong>${esc(s.step)}</strong>: ${esc(s.time)}${s.cite && ACTS[s.cite[0]] ? ` <a href="/law/${s.cite[0]}/${encodeURIComponent(s.cite[1])}">${esc(s.law)}</a>` : ` (${esc(s.law)})`}</li>`).join("") + "</ol>"
+    + `<h2>Why it usually takes longer</h2><p>${esc(h.why)}</p><p>Live pendency for your court: <a href="${NJDG}">National Judicial Data Grid</a>.</p>`
+    + `<h2>How to make yours faster</h2><ul>${h.faster.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>`
+    + (h.links?.length ? `<ul>${h.links.map(([to, label]) => `<li><a href="${esc(to)}">${esc(label)}</a></li>`).join("")}</ul>` : "");
+  const ld = [
+    { "@type": "FAQPage", mainEntity: [{ "@type": "Question", name: h.q, acceptedAnswer: { "@type": "Answer", text: h.short } }] },
+    crumbs([["Nyaya", "/"], ["How long will my case take?", "/how-long"], [h.title, path]]),
+  ];
+  count += page(path, { title, description: clip(h.short), body, ld });
 }
 
 // ---------- Act sections ----------

@@ -26,7 +26,7 @@ function Subscribe() {
     try {
       const res = await fetch(`${API_URL}/subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       const d = await res.json().catch(() => ({}));
-      setState(res.ok ? (d.status === "already_subscribed" ? "You're already on the list." : "Subscribed. See you Monday.") : d.detail || "That didn't work. Try again.");
+      setState(res.ok ? (d.status === "already_subscribed" ? "You're already on the list." : "Subscribed. See you Sunday.") : d.detail || "That didn't work. Try again.");
     } catch {
       setState("That didn't work. Check your connection.");
     }

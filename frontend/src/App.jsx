@@ -38,6 +38,10 @@ const Hub = lazy(() => import("./pages/Hub"));
 const Answers = lazy(() => import("./pages/Answers"));
 const Explained = lazy(() => import("./pages/Explained"));
 const Cases = lazy(() => import("./pages/Cases"));
+const LegalAid = lazy(() => import("./pages/LegalAid"));
+const HowLong = lazy(() => import("./pages/HowLong"));
+const Widget = lazy(() => import("./pages/Widget"));
+const Embed = lazy(() => import("./pages/Embed"));
 
 import { SITE, DEFAULT_DESC, META } from "./routeMeta";
 
@@ -65,14 +69,16 @@ function ScrollManager() {
       setMeta('link[rel="canonical"]', "href", SITE + pathname);
       return;
     }
-    if (/^\/(law|rights|templates|now|help|explained)\/./.test(pathname)) {
+    if (/^\/(law|rights|templates|now|help|explained|how-long)\/./.test(pathname)) {
       // These pages set their own title and description once their content loads
       document.head.querySelector('meta[name="robots"]')?.remove();
       setMeta('meta[property="og:url"]', "content", SITE + pathname);
       setMeta('link[rel="canonical"]', "href", SITE + pathname);
       return;
     }
-    const [title, desc] = META[pathname] || ["Page not found · Nyaya", DEFAULT_DESC];
+    const [title, desc] = META[pathname] || (pathname.startsWith("/embed/")
+      ? ["IPC ↔ BNS section lookup · Nyaya", DEFAULT_DESC] // embedded on other sites; kept out of search by noindex below
+      : ["Page not found · Nyaya", DEFAULT_DESC]);
     document.title = title;
     setMeta('meta[name="description"]', "content", desc);
     setMeta('meta[property="og:title"]', "content", title);
@@ -104,6 +110,7 @@ export default function App() {
         <ScrollManager />
         <Routes>
           <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
+          <Route path="/embed/law" element={<Suspense fallback={null}><Embed /></Suspense>} />
           <Route path="*" element={
             <Chrome>
               <Suspense fallback={<Loading />}>
@@ -143,6 +150,10 @@ export default function App() {
                   <Route path="/explained" element={<Explained />} />
                   <Route path="/explained/:slug" element={<Explained />} />
                   <Route path="/cases" element={<Cases />} />
+                  <Route path="/legal-aid" element={<LegalAid />} />
+                  <Route path="/how-long" element={<HowLong />} />
+                  <Route path="/how-long/:slug" element={<HowLong />} />
+                  <Route path="/widget" element={<Widget />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

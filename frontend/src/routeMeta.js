@@ -10,7 +10,7 @@ export const META = {
   "/compare": ["Compare Cases · Nyaya", "Put two Indian judgments side by side: facts, holdings and reasoning, with citations."],
   "/statutes": ["Statute Browser · Nyaya", "Read India's central Acts section by section, with plain-English help on each provision."],
   "/account": ["My Desk · Nyaya", "Your saved answers, arguments and comparisons on Nyaya."],
-  "/about": ["How Nyaya works", "How Nyaya finds, reads and cites Indian judgments and Acts, and where its limits are."],
+  "/about": ["About Nyaya: how answers are made and checked", "Who is behind Nyaya, how it finds, reads and cites Indian judgments and Acts, how answers are checked and corrected, and where its limits are."],
   "/privacy": ["Privacy Policy · Nyaya", "How Nyaya handles your information."],
   "/terms": ["Terms of Use · Nyaya", "The terms for using Nyaya. Nyaya is a research aid, not legal advice."],
   "/pricing": PRO_ON
@@ -19,7 +19,7 @@ export const META = {
   "/documents": ["Explain a legal document · Nyaya", "Upload a notice, agreement, FIR or order, even a phone photo, and get it explained in plain words with the Indian law that applies."],
   "/convert": ["IPC to BNS converter: old and new criminal law sections · Nyaya", "Convert IPC to BNS, CrPC to BNSS and Evidence Act to BSA sections, both ways, and read the old and new text side by side."],
   "/rights": ["Know your rights: plain guides to Indian law · Nyaya", "Short, cited guides to your rights in India: arrest, FIR, bail, tenants, consumers, workplace and more. In English and Hindi."],
-  "/templates": ["Free legal templates: RTI, consumer complaint, cheque bounce notice · Nyaya", "Fill-in templates for an RTI application, consumer complaint, cheque-bounce notice and rent agreement. Free, no sign-in."],
+  "/templates": ["Free legal templates: RTI, police complaint, consumer complaint, legal notices · Nyaya", "Fill-in templates for an RTI application and appeal, police complaint for an FIR, consumer complaint, cheque-bounce, deposit and salary notices, legal aid application and rent agreement. Print or download as Word. Free, no sign-in."],
   "/students": ["Law student mode: case briefs, moot practice, quizzes · Nyaya", "Case briefs from real judgments, moot court practice with a questioning bench, and quizzes on the new criminal codes."],
   "/lawyers": ["Find a lawyer · Nyaya", "A directory of advocates in India who listed themselves, by city and area of practice."],
   "/lawyers/join": ["List yourself as an advocate · Nyaya", "Advocates can add a free listing to Nyaya's directory."],
@@ -34,6 +34,9 @@ export const META = {
   "/answers": ["Questions people asked about Indian law, answered with sources · Nyaya", "Real questions about Indian law: tenants, cheques, FIRs, consumers, family and more, each answered from judgments and Acts with the sources shown."],
   "/explained": ["Legal news explained: what it means for you · Nyaya", "When a judgment or new rule makes headlines, what it actually says and what it means for you, from the law itself."],
   "/cases": ["My cases: hearing reminders and court orders explained · Nyaya", "Keep your court cases with the next hearing date, get email reminders before each hearing, and upload an order to have it explained in plain words. Free."],
+  "/legal-aid": ["Free legal aid: can I get a free lawyer in India? · Nyaya", "Women, children, SC/ST, people with disabilities, industrial workers, people in custody and low-income families get a free lawyer from the State. Check if you qualify and how to apply."],
+  "/how-long": ["How long will my case take? Cheque bounce, divorce, consumer, bail · Nyaya", "The time limits Indian law sets for cheque bounce, consumer, divorce, maintenance, bail, DV and civil cases, why cases take longer, and how to speed yours up."],
+  "/widget": ["Free IPC to BNS lookup widget for your website · Nyaya", "Add a free IPC ↔ BNS section lookup to your blog, college, moot society or law firm website with two lines of code."],
   "/drafts": ["Draft a legal document · Nyaya", "First drafts of legal notice replies, RTI applications and consumer complaints, grounded in cited law."],
 };
 

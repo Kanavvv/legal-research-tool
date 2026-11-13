@@ -4,6 +4,27 @@ import { API_URL } from "../api";
 import ResultView from "../ui/ResultView";
 import ShareTools from "../ui/ShareTools";
 
+const day = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "");
+
+// Who stands behind the answer and how fresh it is: shown to people, and the same facts
+// go into the page's structured data for search engines (see /seo/a/<id> in library.py).
+function Byline({ data }) {
+  const { review } = data;
+  const updated = review?.date || data.updated || data.created;
+  return (
+    <div className="answer-byline">
+      {review ? (
+        <p><span className="answer-reviewed" aria-hidden="true">✓</span> Reviewed by <strong>{review.name}</strong>{review.credential ? `, ${review.credential}` : ""}, on {day(review.date)}</p>
+      ) : data.library ? (
+        <p>Written by Nyaya from the judgments and Acts listed with it. Not yet reviewed by an advocate.</p>
+      ) : (
+        <p>Answered by Nyaya for someone who asked, from the sources listed with it.</p>
+      )}
+      <p className="mono muted">{data.created && `Written ${day(data.created)}`}{updated && updated !== data.created ? ` · Updated ${day(updated)}` : ""} · <Link to="/about#checks" className="text-link">How we check answers</Link></p>
+    </div>
+  );
+}
+
 export default function SharedAnswer() {
   const { id } = useParams();
   const [data, setData] = useState(null);
@@ -50,7 +71,7 @@ export default function SharedAnswer() {
       <header className="result-head">
         <p className="mono muted">shared answer</p>
         <h1 className="result-q">{data ? data.question : error ? "Not found" : "Loading…"}</h1>
-        {data?.created && <p className="mono muted">answered {new Date(data.created).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
+        {data && <Byline data={data} />}
       </header>
       {error && <div className="alert" role="alert">{error}</div>}
       {data && (

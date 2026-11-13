@@ -226,6 +226,244 @@ WITNESSES
 1. Name and address: __________________   Signature: __________
 2. Name and address: __________________   Signature: __________`,
   },
+  {
+    slug: "police-complaint",
+    title: "Police complaint (to register an FIR)",
+    blurb: "A written complaint to the officer in charge of a police station asking for an FIR under Section 173 of the BNSS.",
+    note: "Hand it in at the police station of the area where it happened (any station must register a Zero FIR and transfer it). Keep a copy and get it stamped or signed as received. The FIR copy is free. If they refuse, send this complaint by post to the Superintendent of Police (Section 173(4) BNSS), and after that you can apply to the Magistrate (Section 175(3) BNSS). Many states also take e-FIRs online for theft and lost property.",
+    rights: "fir",
+    fields: [
+      { id: "station", label: "Police station", required: true, placeholder: "e.g. Police Station Saket, New Delhi" },
+      { id: "name", label: "Your name", required: true },
+      { id: "relation", label: "Son / daughter / wife of (optional)" },
+      { id: "address", label: "Your address", type: "textarea" },
+      { id: "phone", label: "Your phone number" },
+      { id: "when", label: "Date and time it happened", placeholder: "e.g. 12 November 2026, around 9:30 pm" },
+      { id: "where", label: "Where it happened", placeholder: "e.g. outside Gate 2, Select Citywalk Mall, Saket" },
+      { id: "accused", label: "Who did it (name, description, or 'unknown persons')", type: "textarea", rows: 2 },
+      { id: "facts", label: "What happened, in order, one point per line", type: "textarea", rows: 7, required: true, placeholder: "I was walking to the metro station when two men on a black motorcycle snatched my phone.\nThe phone is a Samsung Galaxy S23, IMEI ...\nI shouted for help; a shopkeeper, Mr ..., saw it." },
+      { id: "loss", label: "Loss or injury (optional)", type: "textarea", rows: 2, placeholder: "e.g. phone worth Rs 62,000; scratches on my left arm" },
+      { id: "witnesses", label: "Witnesses (optional)", type: "textarea", rows: 2 },
+      { id: "docs", label: "What you are attaching (optional)", type: "textarea", rows: 2, placeholder: "e.g. phone bill, photos, medical report" },
+    ],
+    render: (f) => `To,
+The Station House Officer,
+${v(f.station)}
+
+Subject: Complaint for registration of an FIR under Section 173 of the Bharatiya Nagarik Suraksha Sanhita, 2023
+
+Sir/Madam,
+
+I, ${v(f.name)}${f.relation ? `, ${f.relation}` : ""}, residing at ${v(f.address)}, wish to report the following cognizable offence and request that an FIR be registered.
+
+Date and time: ${v(f.when)}
+Place: ${v(f.where)}
+Person(s) responsible: ${v(f.accused)}
+
+What happened:
+${numbered(f.facts)}
+${f.loss ? `\nLoss or injury: ${f.loss}\n` : ""}${f.witnesses ? `\nWitnesses: ${f.witnesses}\n` : ""}
+I request you to register an FIR, investigate, and give me a free copy of the FIR as Section 173(2) of the BNSS requires.
+${f.docs ? `\nAttached: ${f.docs}\n` : ""}
+The facts above are true to the best of my knowledge.
+
+Name: ${v(f.name)}
+Phone: ${v(f.phone)}
+Date: ${today()}
+
+Signature: __________`,
+  },
+  {
+    slug: "rti-first-appeal",
+    title: "RTI first appeal",
+    blurb: "Appeal to the First Appellate Authority when an RTI reply is late, incomplete or refused.",
+    note: "File within 30 days of the reply, or of the date the reply was due (30 days after your application). Send it to the First Appellate Authority named in the reply (an officer senior to the PIO, in the same office). Central public authorities charge no fee for a first appeal; check your state's rules. The appeal should be decided within 30 days, or 45 with written reasons. If it isn't, or you're still not satisfied, a second appeal goes to the Information Commission within 90 days.",
+    rights: null,
+    fields: [
+      { id: "faa", label: "First Appellate Authority (name or designation, and office)", required: true, placeholder: "e.g. Deputy Commissioner (First Appellate Authority), MCD South Zone" },
+      { id: "address", label: "Office address", type: "textarea" },
+      { id: "name", label: "Your name", required: true },
+      { id: "applicant_address", label: "Your address", type: "textarea" },
+      { id: "rti_date", label: "Date of your RTI application", type: "date" },
+      { id: "rti_ref", label: "Registration or reference number (if any)" },
+      { id: "pio", label: "PIO it was addressed to" },
+      { id: "reply_date", label: "Date of the PIO's reply (leave blank if none came)", type: "date" },
+      { id: "ground", label: "Main ground", type: "select", options: ["No reply within 30 days", "Information refused", "Incomplete or misleading reply", "Fee demanded wrongly"] },
+      { id: "details", label: "What was wrong, one point per line", type: "textarea", rows: 5, placeholder: "Point 2 of my application was not answered.\nThe PIO cited Section 8(1)(j) without saying how the information is personal." },
+    ],
+    render: (f) => `To,
+The First Appellate Authority,
+${v(f.faa)}
+${v(f.address)}
+
+Subject: First appeal under Section 19(1) of the Right to Information Act, 2005
+
+Sir/Madam,
+
+1. Name and address of the appellant: ${v(f.name)}, ${v(f.applicant_address)}
+
+2. Particulars of the RTI application: dated ${v(f.rti_date)}${f.rti_ref ? `, reference no. ${f.rti_ref}` : ""}, addressed to ${v(f.pio, "the Public Information Officer")}.
+
+3. ${f.reply_date ? `Reply received: dated ${f.reply_date}.` : "No reply was received within the 30 days allowed by Section 7(1) of the Act, which amounts to a refusal under Section 7(2)."}
+
+4. Ground of appeal: ${v(f.ground, "__________")}.
+
+5. Details:
+${f.details ? numbered(f.details) : "__________"}
+
+6. Prayer: I request you to direct the Public Information Officer to provide the complete information sought, free of charge under Section 7(6) since the time limit was not met${f.reply_date ? " (where applicable)" : ""}, and to pass any other order you think fit.
+
+A copy of my RTI application${f.reply_date ? " and of the reply" : ""} is attached.
+
+Name: ${v(f.name)}
+Date: ${today()}
+Place: __________
+
+Signature: __________`,
+  },
+  {
+    slug: "deposit-refund-notice",
+    title: "Security deposit refund notice",
+    blurb: "A firm written demand to your landlord to return your security deposit after you've moved out.",
+    note: "Send it by registered post with acknowledgement and also on WhatsApp or email, and keep the receipts. Attach copies of the rent agreement, your deposit receipt or bank transfer, and photos of the flat when you left. If the deposit still isn't returned, you can file a civil suit for recovery (a small amount can also go to Lok Adalat), and in states that have adopted the Model Tenancy Act, the Rent Authority.",
+    rights: "tenant",
+    fields: [
+      { id: "name", label: "Your name", required: true },
+      { id: "address", label: "Your current address", type: "textarea" },
+      { id: "landlord", label: "Landlord's name", required: true },
+      { id: "landlord_address", label: "Landlord's address", type: "textarea" },
+      { id: "premises", label: "The flat or house you rented", placeholder: "e.g. Flat 302, Shanti Apartments, Sector 21, Gurugram" },
+      { id: "agreement_date", label: "Date of the rent agreement", type: "date" },
+      { id: "deposit", label: "Deposit paid (Rs)", type: "number", required: true },
+      { id: "vacated", label: "Date you handed over the keys", type: "date" },
+      { id: "deductions", label: "Any agreed deductions (optional)", placeholder: "e.g. Rs 3,000 for the broken geyser, as agreed on WhatsApp" },
+      { id: "days", label: "Days you are giving them to pay", type: "number", placeholder: "15" },
+      { id: "upi", label: "Where to pay (UPI ID or bank account)" },
+    ],
+    render: (f) => `By Registered Post A.D. / WhatsApp / Email
+
+Date: ${today()}
+
+To,
+${v(f.landlord)}
+${v(f.landlord_address)}
+
+Subject: Demand for refund of security deposit of Rs ${v(f.deposit)}
+
+Sir/Madam,
+
+1. I was your tenant at ${v(f.premises)} under a rent agreement dated ${v(f.agreement_date)}.
+
+2. At the start of the tenancy I paid you a refundable security deposit of Rs ${v(f.deposit)}.
+
+3. I vacated the premises and handed over vacant possession and the keys to you on ${v(f.vacated)}, with all rent paid up to that date.
+
+4. The deposit was refundable on my vacating the premises.${f.deductions ? ` The only deduction agreed between us is: ${f.deductions}.` : " No deduction has been agreed or justified to me in writing."} Despite this, you have not returned it.
+
+5. I therefore call upon you to refund Rs ${v(f.deposit)}${f.deductions ? ", less the agreed deduction," : ""} within ${v(f.days, "15")} days of receiving this notice${f.upi ? `, to ${f.upi}` : ""}.
+
+6. If you fail to do so, I will be compelled to take legal proceedings for recovery of the amount with interest and costs, without further notice.
+
+${v(f.name)}
+${v(f.address)}
+
+Signature: __________`,
+  },
+  {
+    slug: "salary-dues-notice",
+    title: "Unpaid salary notice",
+    blurb: "A written demand to a former or current employer for unpaid salary or final settlement dues.",
+    note: "Send it to the company's registered office and HR by email and registered post, and keep proof. Under the Code on Wages, 2019, wages due to someone who resigns or is removed must be paid within two working days of leaving. If the employer still doesn't pay, you can file a claim with the Labour Department's authority under the Code, or, if you were a manager or in a senior role the Code doesn't cover, a civil suit for recovery.",
+    rights: null,
+    fields: [
+      { id: "name", label: "Your name", required: true },
+      { id: "address", label: "Your address", type: "textarea" },
+      { id: "employee_id", label: "Employee ID (optional)" },
+      { id: "designation", label: "Your designation" },
+      { id: "company", label: "Company name", required: true },
+      { id: "company_address", label: "Company address", type: "textarea" },
+      { id: "joined", label: "Date you joined", type: "date" },
+      { id: "left", label: "Last working day (leave blank if still employed)", type: "date" },
+      { id: "dues", label: "What is unpaid, one item per line", type: "textarea", rows: 4, required: true, placeholder: "Salary for September 2026: Rs 48,000\nSalary for 1 to 15 October 2026: Rs 24,000\nLeave encashment for 12 days: Rs 19,200" },
+      { id: "total", label: "Total due (Rs)", type: "number" },
+      { id: "days", label: "Days you are giving them to pay", type: "number", placeholder: "7" },
+    ],
+    render: (f) => `By Email and Registered Post A.D.
+
+Date: ${today()}
+
+To,
+The Managing Director / HR Head,
+${v(f.company)}
+${v(f.company_address)}
+
+Subject: Demand for payment of unpaid salary and dues${f.total ? ` of Rs ${f.total}` : ""}
+
+Sir/Madam,
+
+1. I, ${v(f.name)}${f.employee_id ? ` (Employee ID ${f.employee_id})` : ""}, was employed with your company as ${v(f.designation)} from ${v(f.joined)}${f.left ? ` to ${f.left}, my last working day` : ""}.
+
+2. The following amounts are due to me and remain unpaid:
+${numbered(f.dues)}
+${f.total ? `\nTotal: Rs ${f.total}\n` : ""}
+3. I have done the work these amounts are for, and ${f.left ? "my final settlement was due within two working days of my leaving under Section 17(2) of the Code on Wages, 2019" : "they fell due on the company's usual pay dates"}. My requests to pay them have not been met.
+
+4. I call upon you to pay the full amount due within ${v(f.days, "7")} days of receiving this notice, along with my salary slips${f.left ? ", relieving letter and experience certificate" : ""}.
+
+5. If you fail to do so, I will file a claim before the competent authority under the Code on Wages, 2019, and take any other legal proceedings open to me, at your risk as to costs.
+
+${v(f.name)}
+${v(f.address)}
+
+Signature: __________`,
+  },
+  {
+    slug: "legal-aid-application",
+    title: "Legal aid application (free lawyer)",
+    blurb: "Ask the District Legal Services Authority for a free lawyer under the Legal Services Authorities Act, 1987.",
+    note: "Take it to the District Legal Services Authority office (usually inside the district court complex), or apply online on the NALSA portal, or call 15100. Attach proof of the category you fall in (for example a caste certificate, disability certificate, or an income certificate or affidavit) and copies of any papers in your case. If you qualify and have a case worth pursuing, the Authority assigns a lawyer and pays the court fees. Not sure if you qualify? Use Nyaya's free legal aid checker first.",
+    rights: "free-legal-aid",
+    fields: [
+      { id: "district", label: "District", required: true, placeholder: "e.g. South District, Saket, New Delhi" },
+      { id: "name", label: "Your name", required: true },
+      { id: "relation", label: "Son / daughter / wife of (optional)" },
+      { id: "age", label: "Age" },
+      { id: "address", label: "Your address", type: "textarea" },
+      { id: "phone", label: "Phone number" },
+      { id: "category", label: "Why you qualify", type: "select", options: ["I am a woman", "I am a child (or applying for a child)", "I belong to a Scheduled Caste or Scheduled Tribe", "I am a person with a disability", "I am an industrial worker", "I am in custody", "I am a victim of trafficking or forced labour", "I am a victim of a disaster, ethnic or caste violence", "My annual income is below the limit"] },
+      { id: "income", label: "Annual family income (Rs, optional)", type: "number" },
+      { id: "matter", label: "Your legal problem, briefly", type: "textarea", rows: 5, required: true, placeholder: "My husband left me and our two children in March 2026 and pays nothing. I want to claim maintenance." },
+      { id: "court", label: "Court and case number, if a case is already filed (optional)" },
+    ],
+    render: (f) => `To,
+The Member Secretary / Secretary,
+District Legal Services Authority,
+${v(f.district)}
+
+Subject: Application for free legal services under Sections 12 and 13 of the Legal Services Authorities Act, 1987
+
+Sir/Madam,
+
+1. Name: ${v(f.name)}${f.relation ? `, ${f.relation}` : ""}
+   Age: ${v(f.age)}
+   Address: ${v(f.address)}
+   Phone: ${v(f.phone)}
+
+2. I am entitled to free legal services under Section 12 of the Act because: ${v(f.category)}.${f.income ? `\n   My annual family income is Rs ${f.income}.` : ""}
+
+3. My legal problem:
+${v(f.matter)}
+${f.court ? `\n4. Case already filed: ${f.court}\n` : ""}
+I request you to provide me free legal services, including a panel lawyer to advise and represent me, and the court fees and other costs of the case.
+
+I declare that the facts above are true to the best of my knowledge. I am attaching proof of my eligibility and copies of the papers I have.
+
+Name: ${v(f.name)}
+Date: ${today()}
+Place: __________
+
+Signature / Thumb impression: __________`,
+  },
 ];
 
 export const findTemplate = (slug) => TEMPLATES.find((t) => t.slug === slug);

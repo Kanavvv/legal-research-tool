@@ -6,6 +6,7 @@
                    POST /admin/explainers/draft    admin; Claude drafts one from a headline, from the index
                    GET/POST /admin/explainers      admin; edit, publish, unpublish
   Sitemap          GET /sitemap-content.xml        library answers and explainers
+  Review           POST /admin/library/{id}/review admin; record the advocate who checked an answer
 
 Library answers are ordinary shares (shares/), made by the owner and public from the start,
 so /a/<id>, /trending and sitemap-shares.xml all pick them up with no extra code.
@@ -50,9 +51,12 @@ def _iso(v):
 
 
 def _snippet(md, n=180):
-    text = re.sub(r"\[Source \d+\]", "", md or "")
+    # A leading "# Title" just repeats the question; start from the answer itself
+    text = re.sub(r"^\s*#{1,6}\s[^\n]*\n", "", md or "", count=1)
+    text = re.sub(r"\[Source \d+\]", "", text)
     text = re.sub(r"[#*_>`|\[\]]", "", text)
     text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r" ([.,;:])", r"\1", text)
     return text[:n] + ("…" if len(text) > n else "")
 
 
@@ -152,7 +156,8 @@ def library_list(claims=Depends(_admin)):
     for snap in _need_db().collection("shares").where("library", "==", True).limit(500).stream():
         d = snap.to_dict() or {}
         rows.append({"id": snap.id, "question": d.get("question", ""), "views": d.get("views", 0),
-                     "public": bool(d.get("public")), "topic": d.get("topic", ""), "date": _iso(d.get("created"))})
+                     "public": bool(d.get("public")), "topic": d.get("topic", ""), "date": _iso(d.get("created")),
+                     "review": _review_out(d.get("review"))})
     rows.sort(key=lambda r: r["date"] or "", reverse=True)
     return {"library": rows}
 
@@ -173,6 +178,38 @@ def library_toggle(share_id: str, body: Listed, claims=Depends(_admin)):
     _cache.pop("answers", None)
     features._sitemap_cache.clear()
     return {"public": body.public}
+
+
+class Review(BaseModel):
+    name: str = ""
+    credential: str = ""
+
+
+def _review_out(r):
+    """{name, credential, date} as stored, with the date as ISO; None if never reviewed."""
+    if not r or not r.get("name"):
+        return None
+    return {"name": r["name"], "credential": r.get("credential", ""), "date": _iso(r.get("date"))}
+
+
+@router.post("/admin/library/{share_id}/review")
+def library_review(share_id: str, body: Review, claims=Depends(_admin)):
+    """Records that an advocate read and checked an answer (an empty name clears it).
+    Shown on the answer page and in its structured data, so people and search engines
+    can see who stands behind it."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{6,20}", share_id):
+        raise HTTPException(status_code=404, detail="No such answer.")
+    ref = _need_db().collection("shares").document(share_id)
+    if not ref.get().exists:
+        raise HTTPException(status_code=404, detail="No such answer.")
+    name = re.sub(r"\s+", " ", body.name).strip()[:80]
+    review = {"name": name, "credential": re.sub(r"\s+", " ", body.credential).strip()[:120], "date": _now(),
+              "by": claims.get("email", "")} if name else None
+    ref.update({"review": review, "updated": _now()})
+    guard._mem_cache.pop(f"share|{share_id}", None)
+    _cache.pop("answers", None)
+    log_event("library_reviewed", cleared=not name)
+    return {"review": _review_out(review)}
 
 
 # ---------------- explainers ----------------
@@ -417,13 +454,26 @@ def seo_answer(share_id: str, req: Request):
     d = snap.to_dict()
     q, answer, public = d.get("question", ""), d.get("answer", ""), bool(d.get("public"))
     created = _iso(d.get("created"))
+    review = _review_out(d.get("review"))
+    modified = (review or {}).get("date") or _iso(d.get("updated")) or created
     desc = _snippet(answer, 155)
-    ld = {"@context": "https://schema.org", "@type": "QAPage", "mainEntity": {
+    org = {"@type": "Organization", "name": "Nyaya", "url": "https://asknyaya.in"}
+    ld = {"@context": "https://schema.org", "@type": "QAPage", "dateModified": modified, "publisher": org, "mainEntity": {
         "@type": "Question", "name": q, "answerCount": 1, "dateCreated": created,
         "acceptedAnswer": {"@type": "Answer", "text": _snippet(answer, 4000), "dateCreated": created,
-                           "url": f"https://asknyaya.in/a/{share_id}",
-                           "author": {"@type": "Organization", "name": "Nyaya", "url": "https://asknyaya.in"}}}}
-    body = f"<h1>{_html.escape(q)}</h1>{_md_html(answer)}{_sources_html(d.get('sources'))}"
+                           "dateModified": modified, "url": f"https://asknyaya.in/a/{share_id}", "author": org}}}
+    if review:
+        ld["reviewedBy"] = {"@type": "Person", "name": review["name"],
+                            **({"jobTitle": review["credential"]} if review["credential"] else {})}
+        ld["lastReviewed"] = review["date"]
+    day = lambda v: datetime.datetime.fromisoformat(v).strftime("%-d %B %Y") if v else ""
+    byline = ("<p>Written by Nyaya from the judgments and Acts listed below"
+              + (f"; reviewed by {_html.escape(review['name'])}"
+                 + (f", {_html.escape(review['credential'])}" if review["credential"] else "")
+                 + f", on {day(review['date'])}" if review else "")
+              + (f". Updated {day(modified)}." if modified else ".")
+              + ' <a href="/about#checks">How we check answers</a></p>')
+    body = f"<h1>{_html.escape(q)}</h1>{byline}{_md_html(answer)}{_sources_html(d.get('sources'))}"
     out = _fill(shell, f"/a/{share_id}", f"{q[:70]} · Nyaya", desc, body, ld, index=public)
     return HTMLResponse(out, headers={"Cache-Control": "public, max-age=600"})
 

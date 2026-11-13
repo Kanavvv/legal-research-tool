@@ -1,0 +1,152 @@
+{
+ "rights": [
+  {
+   "path": "/rights/arrest",
+   "title": "If the police arrest you",
+   "lede": "Arrest is not punishment. The law gives you rights from the first minute, and the police must follow them.",
+   "point": "You must be told why you are being arrested, and, if the offence is bailable, that you can be released on bail."
+  },
+  {
+   "path": "/rights/fir",
+   "title": "Filing an FIR",
+   "lede": "For a cognizable offence (theft, assault, cheating and the like), the police must record your complaint. Here is how, and what to do if they refuse.",
+   "point": "You can report at any police station, wherever the offence happened (a \"zero FIR\"). It is then sent to the right station."
+  },
+  {
+   "path": "/rights/bail",
+   "title": "Bail, in plain words",
+   "lede": "Bail lets you stay free while the case goes on. Whether it is a right or the court's choice depends on the offence.",
+   "point": "For a bailable offence, bail is your right. The police or court must release you once you give bail or a bond."
+  },
+  {
+   "path": "/rights/consumer",
+   "title": "Consumer complaints",
+   "lede": "A faulty product, a service not given, an unfair charge: you can take it to a Consumer Commission yourself, without a lawyer.",
+   "point": "File in the District Commission for claims up to ₹50 lakh (the limit set in 2021). Bigger claims go to the State or National Commission."
+  },
+  {
+   "path": "/rights/tenant",
+   "title": "Renting a home",
+   "lede": "Rent law is mostly state law, so details vary. These points hold across India.",
+   "point": "A lease for a year or more must be in writing and registered. That is why many agreements are for 11 months."
+  },
+  {
+   "path": "/rights/domestic-violence",
+   "title": "Domestic violence",
+   "lede": "Abuse at home is not only physical. The law protects women against physical, sexual, verbal, emotional and economic abuse.",
+   "point": "Cruelty by a husband or his relatives, including harassment for dowry, is a crime."
+  },
+  {
+   "path": "/rights/cheque-bounce",
+   "title": "When a cheque bounces",
+   "lede": "A bounced cheque for a debt is a criminal offence, but the deadlines are strict. Miss one and the case can fail.",
+   "point": "Send a written demand notice to the person who gave the cheque within 30 days of the bank's return memo."
+  },
+  {
+   "path": "/rights/workplace-harassment",
+   "title": "Sexual harassment at work",
+   "lede": "Every workplace with ten or more employees must have an Internal Committee to hear complaints. Smaller ones are covered by a Local Committee.",
+   "point": "Complain in writing to the Internal Committee within three months of the incident (or the last one). The Committee can extend this by three months."
+  },
+  {
+   "path": "/rights/free-legal-aid",
+   "title": "Free legal aid",
+   "lede": "The Constitution promises justice that doesn't depend on money. Legal Services Authorities give free lawyers and advice to many people.",
+   "point": "The State must make sure no one is denied justice for lack of money, and provide free legal aid."
+  }
+ ],
+ "guides": [
+  {
+   "path": "/now/cyber-fraud",
+   "title": "Money lost to an online fraud",
+   "lede": "UPI, card, bank or investment scam. The first hour matters most: money can often be frozen before it moves on."
+  },
+  {
+   "path": "/now/arrested",
+   "title": "Someone close to you was arrested",
+   "lede": "What to do in the first hours, and the rights the person has from the moment of arrest."
+  },
+  {
+   "path": "/now/fir-refused",
+   "title": "The police won't register your FIR",
+   "lede": "For a cognizable offence (theft, assault, cheating and the like), registering an FIR is the police's duty. Here's the ladder if they refuse."
+  },
+  {
+   "path": "/now/cheque-bounced",
+   "title": "A cheque given to you bounced",
+   "lede": "A bounced cheque can be a criminal case, but only if you keep to strict time limits. Miss one and the case can fail."
+  },
+  {
+   "path": "/now/road-accident",
+   "title": "You were in a road accident",
+   "lede": "Care first, then the paperwork that decides compensation. There is a six-month limit on claims."
+  },
+  {
+   "path": "/now/legal-notice",
+   "title": "You received a legal notice",
+   "lede": "A notice is a demand, not a court order. Don't ignore it, and don't panic: read it, note the deadline, and reply carefully."
+  },
+  {
+   "path": "/now/domestic-violence",
+   "title": "You face violence at home",
+   "lede": "Your safety comes first. The law protects you from physical, emotional, sexual and financial abuse, and from being thrown out of your home."
+  },
+  {
+   "path": "/now/landlord",
+   "title": "Landlord keeping your deposit or forcing you out",
+   "lede": "A landlord can end a tenancy only by proper notice and, if you don't leave, through a court. Locking you out or cutting the water is not the way."
+  },
+  {
+   "path": "/now/consumer",
+   "title": "A product or service let you down",
+   "lede": "Defective goods, a service not delivered, a refund refused. Consumer Commissions are cheap, need no lawyer, and you can file online."
+  }
+ ],
+ "templates": [
+  {
+   "path": "/templates/rti-application",
+   "title": "RTI application",
+   "blurb": "Ask any public authority for information under the Right to Information Act, 2005."
+  },
+  {
+   "path": "/templates/consumer-complaint",
+   "title": "Consumer complaint",
+   "blurb": "A complaint to the District Consumer Commission about a defective product or deficient service."
+  },
+  {
+   "path": "/templates/cheque-bounce-notice",
+   "title": "Cheque bounce notice",
+   "blurb": "The demand notice under Section 138 of the Negotiable Instruments Act that must go out before any case."
+  },
+  {
+   "path": "/templates/rent-agreement",
+   "title": "Rent agreement (11 months)",
+   "blurb": "A plain residential leave-and-licence style rent agreement for up to 11 months."
+  },
+  {
+   "path": "/templates/police-complaint",
+   "title": "Police complaint (to register an FIR)",
+   "blurb": "A written complaint to the officer in charge of a police station asking for an FIR under Section 173 of the BNSS."
+  },
+  {
+   "path": "/templates/rti-first-appeal",
+   "title": "RTI first appeal",
+   "blurb": "Appeal to the First Appellate Authority when an RTI reply is late, incomplete or refused."
+  },
+  {
+   "path": "/templates/deposit-refund-notice",
+   "title": "Security deposit refund notice",
+   "blurb": "A firm written demand to your landlord to return your security deposit after you've moved out."
+  },
+  {
+   "path": "/templates/salary-dues-notice",
+   "title": "Unpaid salary notice",
+   "blurb": "A written demand to a former or current employer for unpaid salary or final settlement dues."
+  },
+  {
+   "path": "/templates/legal-aid-application",
+   "title": "Legal aid application (free lawyer)",
+   "blurb": "Ask the District Legal Services Authority for a free lawyer under the Legal Services Authorities Act, 1987."
+  }
+ ]
+}
