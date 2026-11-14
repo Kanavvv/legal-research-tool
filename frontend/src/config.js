@@ -1,4 +1,4 @@
-// Nyaya Pro is paused until Razorpay is live. To bring it back, set this to true
+// Nyaya Pro is paused until Cashfree is live. To bring it back, set this to true
 // and set PRO_ENABLED=1 on the backend (Cloud Run env var).
 export const PRO_ON = false;
 

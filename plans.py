@@ -11,11 +11,14 @@ Pro is sold as a 30-day pass paid once through Razorpay Checkout (an Order,
 not an auto-renewing subscription), so nobody is charged again without
 coming back to pay. Buying again while Pro extends it by 30 days.
 
-Razorpay settings come from environment variables; until they are set the
-payment endpoints answer 503 and everything else keeps working:
+Payments go through Cashfree when its keys are set, otherwise Razorpay.
+Until one of them is set the payment endpoints answer 503 and everything else
+keeps working:
+  CASHFREE_APP_ID, CASHFREE_SECRET_KEY, CASHFREE_ENV (sandbox | production)
   RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
 """
 
+import base64
 import datetime
 import hashlib
 import hmac
@@ -46,6 +49,25 @@ PRO_ENABLED = os.environ.get("PRO_ENABLED", "0") == "1"
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 RZP_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
+
+CF_APP_ID = os.environ.get("CASHFREE_APP_ID", "").strip()
+CF_SECRET = os.environ.get("CASHFREE_SECRET_KEY", "").strip()
+CF_ENV = "production" if os.environ.get("CASHFREE_ENV", "sandbox").strip() == "production" else "sandbox"
+CF_BASE = "https://api.cashfree.com/pg" if CF_ENV == "production" else "https://sandbox.cashfree.com/pg"
+CF_API_VERSION = "2026-01-01"
+SITE_URL = os.environ.get("SITE_URL", "https://asknyaya.in")
+API_PUBLIC_URL = os.environ.get("API_PUBLIC_URL", "https://api.asknyaya.in")
+# Cashfree insists on a 10-digit phone; we don't ask for one, and its checkout
+# asks the payer directly where a method (UPI, wallets) needs it.
+CF_PLACEHOLDER_PHONE = "9999999999"
+
+
+def provider():
+    if CF_APP_ID and CF_SECRET:
+        return "cashfree"
+    if RZP_KEY_ID and RZP_KEY_SECRET:
+        return "razorpay"
+    return None
 
 router = APIRouter()
 _db = None
@@ -174,7 +196,7 @@ def me(req: Request, claims=Depends(required_user)):
         "limits": PLANS[plan],
         "used_today": usage_today(req, uid),
         "price_inr": PRO_PRICE_PAISE // 100,
-        "payments_enabled": PRO_ENABLED and bool(RZP_KEY_ID and RZP_KEY_SECRET),
+        "payments_enabled": PRO_ENABLED and provider() is not None,
         "pro_enabled": PRO_ENABLED,
     }
 
@@ -184,7 +206,7 @@ def me(req: Request, claims=Depends(required_user)):
 def _require_payments():
     if not PRO_ENABLED:
         raise HTTPException(status_code=503, detail="Nyaya Pro is paused for a few days. Everything else is free to use.")
-    if not (RZP_KEY_ID and RZP_KEY_SECRET):
+    if not provider():
         raise HTTPException(status_code=503, detail="Payments aren't switched on yet. Please check back soon.")
 
 
@@ -220,6 +242,8 @@ def create_order(req: Request, claims=Depends(required_user)):
     _require_payments()
     guard.rate_limit(req, "compare")  # a few a minute is plenty
     uid = claims["uid"]
+    if provider() == "cashfree":
+        return _cf_create_order(claims)
     try:
         resp = requests.post(
             "https://api.razorpay.com/v1/orders",
@@ -248,6 +272,8 @@ class VerifyRequest(BaseModel):
 @router.post("/billing/verify")
 def verify_payment(body: VerifyRequest, claims=Depends(required_user)):
     _require_payments()
+    if provider() != "razorpay":
+        raise HTTPException(status_code=400, detail="That payment couldn't be verified.")
     expected = hmac.new(RZP_KEY_SECRET.encode(), f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
                         hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, body.razorpay_signature):
@@ -283,4 +309,132 @@ async def razorpay_webhook(request: Request):
     uid = (payment.get("notes") or {}).get("uid")
     if uid and payment.get("amount") == PRO_PRICE_PAISE and payment.get("currency") == "INR":
         grant_pro(uid, payment["id"], payment.get("order_id", ""), payment["amount"], "webhook")
+    return {"status": "ok"}
+
+
+# ---- Cashfree ----------------------------------------------------------------
+# Flow: /billing/order creates a Cashfree order tagged with the user's uid and
+# returns its payment_session_id; the page opens Cashfree's popup; then
+# /billing/cashfree/verify asks Cashfree for the order and switches Pro on only
+# if Cashfree itself says PAID for this user and the right amount. The webhook
+# is the backup for a closed browser and runs the same check.
+
+def _cf_headers():
+    return {"x-client-id": CF_APP_ID, "x-client-secret": CF_SECRET,
+            "x-api-version": CF_API_VERSION, "Content-Type": "application/json"}
+
+
+def _cf_create_order(claims):
+    uid = claims["uid"]
+    order_id = f"pro_{''.join(c for c in uid if c.isalnum())[:20]}_{int(time.time())}"
+    customer_id = "".join(c for c in uid if c.isalnum())[:50] or "nyaya_user"
+    body = {
+        "order_id": order_id,
+        "order_amount": round(PRO_PRICE_PAISE / 100, 2),
+        "order_currency": "INR",
+        "customer_details": {"customer_id": customer_id, "customer_phone": CF_PLACEHOLDER_PHONE,
+                             "customer_email": claims.get("email") or None,
+                             "customer_name": (claims.get("name") or "")[:100] or None},
+        "order_meta": {"return_url": f"{SITE_URL}/pricing?cf_order={order_id}",
+                       "notify_url": f"{API_PUBLIC_URL}/billing/cashfree/webhook"},
+        "order_tags": {"uid": uid, "product": "nyaya_pro_30d"},
+        "order_note": "30 days of Nyaya Pro",
+    }
+    body["customer_details"] = {k: v for k, v in body["customer_details"].items() if v}
+    try:
+        resp = requests.post(f"{CF_BASE}/orders", headers=_cf_headers(), json=body, timeout=20)
+    except requests.RequestException:
+        raise HTTPException(status_code=502, detail="Couldn't reach the payment service. Try again shortly.")
+    if resp.status_code not in (200, 201):
+        log_event("cashfree_order_error", severity="ERROR", status=resp.status_code, body=resp.text[:300])
+        raise HTTPException(status_code=502, detail="Couldn't start the payment. Try again shortly.")
+    order = resp.json()
+    return {"provider": "cashfree", "mode": CF_ENV, "order_id": order["order_id"],
+            "payment_session_id": order["payment_session_id"],
+            "amount": PRO_PRICE_PAISE, "currency": "INR"}
+
+
+def _cf_fetch_order(order_id):
+    if not order_id or len(order_id) > 45 or not all(c.isalnum() or c in "_-" for c in order_id):
+        return None
+    resp = requests.get(f"{CF_BASE}/orders/{order_id}", headers=_cf_headers(), timeout=20)
+    if resp.status_code != 200:
+        return None
+    return resp.json()
+
+
+def _cf_settle(order_id, source, expect_uid=None):
+    """Asks Cashfree for the order and grants Pro if it is PAID, in INR, for the
+    Pro price, and tagged with a user. Returns (uid, until) or raises."""
+    try:
+        order = _cf_fetch_order(order_id)
+    except requests.RequestException:
+        raise HTTPException(status_code=502, detail="Couldn't confirm the payment. If you were charged, Pro will switch on within a few minutes.")
+    if not order:
+        raise HTTPException(status_code=404, detail="We couldn't find that payment.")
+    uid = (order.get("order_tags") or {}).get("uid")
+    if expect_uid is not None and uid != expect_uid:
+        raise HTTPException(status_code=400, detail="That payment doesn't match this account.")
+    try:
+        amount_paise = round(float(order.get("order_amount")) * 100)
+    except (TypeError, ValueError):
+        amount_paise = None
+    if not uid or amount_paise != PRO_PRICE_PAISE or order.get("order_currency") != "INR":
+        log_event("cashfree_order_mismatch", severity="WARNING", order_id=order_id)
+        raise HTTPException(status_code=400, detail="That payment doesn't match this account.")
+    if order.get("order_status") != "PAID":
+        return uid, None, order.get("order_status")
+    until = grant_pro(uid, f"cf_{order.get('cf_order_id') or order_id}", order_id, amount_paise, source)
+    return uid, until, "PAID"
+
+
+class CashfreeVerify(BaseModel):
+    order_id: str
+
+
+@router.post("/billing/cashfree/verify")
+def cashfree_verify(body: CashfreeVerify, claims=Depends(required_user)):
+    _require_payments()
+    if provider() != "cashfree":
+        raise HTTPException(status_code=400, detail="That payment couldn't be verified.")
+    _, until, status = _cf_settle(body.order_id, "checkout", expect_uid=claims["uid"])
+    if status != "PAID":
+        return {"plan": get_plan(claims["uid"])[0], "status": status, "pro_until": None}
+    plan, until_now = get_plan(claims["uid"])
+    when = until or until_now
+    return {"plan": plan, "status": "PAID", "pro_until": when.isoformat() if when else None}
+
+
+def cf_signature_ok(raw: bytes, timestamp: str, signature: str) -> bool:
+    if not (CF_SECRET and timestamp and signature):
+        return False
+    expected = base64.b64encode(hmac.new(CF_SECRET.encode(), timestamp.encode() + raw, hashlib.sha256).digest()).decode()
+    return hmac.compare_digest(expected, signature)
+
+
+@router.post("/billing/cashfree/webhook")
+async def cashfree_webhook(request: Request):
+    """Backup path: Cashfree calls this when a payment succeeds, so Pro still
+    switches on if the browser closed before /billing/cashfree/verify ran.
+    The payload is only a hint: we re-read the order from Cashfree."""
+    if provider() != "cashfree":
+        raise HTTPException(status_code=503, detail="Webhook not configured.")
+    raw = await request.body()
+    if not cf_signature_ok(raw, request.headers.get("x-webhook-timestamp", ""),
+                           request.headers.get("x-webhook-signature", "")):
+        log_event("cashfree_bad_signature", severity="WARNING")
+        raise HTTPException(status_code=400, detail="Bad signature.")
+    try:
+        event = json.loads(raw)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Bad body.")
+    if event.get("type") != "PAYMENT_SUCCESS_WEBHOOK":
+        return {"status": "ignored"}
+    order_id = ((event.get("data") or {}).get("order") or {}).get("order_id", "")
+    try:
+        _cf_settle(order_id, "webhook")
+    except HTTPException as e:
+        if e.status_code == 502:
+            raise  # let Cashfree retry later
+        return {"status": "ignored"}
     return {"status": "ok"}
