@@ -46,9 +46,9 @@ const NODES = {
   resend: { x: 770, y: 400, w: 190, label: "Email", sub: "Resend", check: "Email (Resend)",
     what: "Sends the weekly digest and sign-up emails.", cost: "Free tier.", manage: "https://resend.com/overview",
     broken: "Emails don't go out; nothing else is affected." },
-  razorpay: { x: 770, y: 490, w: 190, label: "Payments", sub: "Razorpay", check: "Payments (Razorpay)",
-    what: "Takes payment for Nyaya Pro. Pro is paused until you have your own Razorpay account.",
-    cost: "About 2% per payment.", manage: "https://dashboard.razorpay.com/",
+  razorpay: { x: 770, y: 490, w: 190, label: "Payments", sub: "Cashfree", check: "Payments",
+    what: "Takes payment for Nyaya Pro. Pro is paused until your Cashfree account is approved.",
+    cost: "About 2% per payment.", manage: "https://merchant.cashfree.com/",
     broken: "People can't buy Pro; everything free keeps working." },
 };
 const EDGES = [

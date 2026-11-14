@@ -52,7 +52,7 @@ export default function Terms() {
       <p>
         Nyaya Pro is a one-time 30-day pass for one person, priced as shown on the <a href="/pricing">pricing page</a> (currently
         Rs 199, inclusive of any applicable taxes). It does not renew automatically. Buying again before a pass ends adds 30 days
-        to it. Payments are processed by Razorpay; we never see or store your card, UPI or bank details.
+        to it. Payments are processed by Cashfree Payments; we never see or store your card, UPI or bank details.
       </p>
       <p>
         <strong>Cancellation.</strong> Since nothing renews, there is nothing to cancel. Your pass simply ends after 30 days.
@@ -60,7 +60,7 @@ export default function Terms() {
       <p>
         <strong>Refunds.</strong> If Pro isn't right for you, email us within 7 days of payment from the address on your account
         and we will refund the full amount. Duplicate or failed-but-charged payments are always refunded. Approved refunds go back
-        to the original payment method through Razorpay, usually within 5 to 7 working days. Once refunded, the pass ends.
+        to the original payment method through Cashfree, usually within 5 to 7 working days. Once refunded, the pass ends.
       </p>
       <p>
         Daily limits on both plans are listed on the pricing page and may change; we will not reduce the limits of a Pro pass
@@ -70,7 +70,7 @@ export default function Terms() {
       <h2>8. Third-Party Services</h2>
       <p>
         The Service relies on third-party infrastructure (including Anthropic, Google Cloud, Firebase,
-        Vercel, Qdrant, Razorpay and Resend). We are not responsible for outages or issues originating from
+        Vercel, Qdrant, Cashfree and Resend). We are not responsible for outages or issues originating from
         these providers.
       </p>
 

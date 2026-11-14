@@ -21,7 +21,7 @@ export default function Privacy() {
       Anthropic for that purpose, and then discarded. We do not save the file or its text.</p>
       <p><strong>Share links.</strong> When you press "Share link", the question, answer and sources are saved so anyone with the
       link can read them. Shared answers do not include your name or email.</p>
-      <p><strong>Payments.</strong> Nyaya Pro is paid through Razorpay. Razorpay handles your card, UPI or bank details; we receive
+      <p><strong>Payments.</strong> Nyaya Pro is paid through Cashfree Payments. Cashfree handles your card, UPI or bank details; we receive
       only the payment ID, amount and status, which we keep as a record of your purchase.</p>
       <p><strong>Usage counts and logs.</strong> To apply daily limits and stop abuse, we count requests per account, or per
       hashed IP address if you are not signed in. Our hosting providers (Google Cloud, Vercel) also keep standard technical
@@ -51,7 +51,7 @@ export default function Privacy() {
         <li><strong>Google Cloud and Firebase</strong>: host our backend, sign-in and account data</li>
         <li><strong>Vercel</strong>: hosts the website and, if you allow it, counts anonymous page visits</li>
         <li><strong>Qdrant</strong>: hosts our database of judgment text</li>
-        <li><strong>Razorpay</strong>: processes Nyaya Pro payments</li>
+        <li><strong>Cashfree Payments</strong>: processes Nyaya Pro payments</li>
         <li><strong>Resend</strong>: sends the weekly digest and case alert emails</li>
       </ul>
 

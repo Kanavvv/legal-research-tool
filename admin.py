@@ -463,7 +463,7 @@ def recent_errors(hours: int = 24, claims=Depends(_admin)):
 # ---------------- health and issues ----------------
 
 PLAIN_SECRET_NAMES = ("ANTHROPIC_API_KEY", "QDRANT_API_KEY", "RESEND_API_KEY", "RAZORPAY_KEY_SECRET",
-                      "RAZORPAY_WEBHOOK_SECRET", "FIREBASE_SERVICE_ACCOUNT_B64")
+                      "RAZORPAY_WEBHOOK_SECRET", "CASHFREE_SECRET_KEY", "FIREBASE_SERVICE_ACCOUNT_B64")
 
 
 def _check(name, fn):
@@ -516,7 +516,13 @@ def _check_email():
 def _check_payments():
     if not plans.PRO_ENABLED:
         return "warn", "Nyaya Pro is paused (PRO_ENABLED is off)"
-    return ("ok", "Razorpay keys set") if os.environ.get("RAZORPAY_KEY_ID") else ("fail", "Pro is on but Razorpay keys are missing")
+    which = plans.provider()
+    if which == "cashfree":
+        return ("ok" if plans.CF_ENV == "production" else "warn",
+                "Cashfree keys set" + ("" if plans.CF_ENV == "production" else " (test mode: no real money)"))
+    if which == "razorpay":
+        return "ok", "Razorpay keys set"
+    return "fail", "Pro is on but no payment keys are set"
 
 
 def _check_daily():
@@ -535,7 +541,7 @@ def health(claims=Depends(_admin)):
     from concurrent.futures import ThreadPoolExecutor
     named = [("Database (Firestore)", _check_firestore), ("Search index (Qdrant)", _check_search),
              ("Claude API", _check_claude), ("Daily spend", _check_budget), ("WhatsApp number", _check_whatsapp),
-             ("Law of the day", _check_daily), ("Email (Resend)", _check_email), ("Payments (Razorpay)", _check_payments)]
+             ("Law of the day", _check_daily), ("Email (Resend)", _check_email), ("Payments", _check_payments)]
     with ThreadPoolExecutor(max_workers=8) as pool:
         checks = list(pool.map(lambda nf: _check(*nf), named))
     issues = []

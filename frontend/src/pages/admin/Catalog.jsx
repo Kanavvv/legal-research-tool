@@ -55,7 +55,7 @@ const GROUPS = [
   ] },
   { name: "Accounts and money", about: "Sign-in, the desk, and the paid plan (paused).", items: [
     { name: "Google sign-in and My desk", what: "Recent questions, saved cases, folders and alerts in one place.", to: "/account", who: "Signed-in people" },
-    { name: "Pro plan and payments", what: "₹199 a month through Razorpay. Paused until your own Razorpay account is ready.", to: "/pricing", who: "Paying users", pro: true },
+    { name: "Pro plan and payments", what: "₹199 for 30 days through Cashfree. Paused until your Cashfree account is approved.", to: "/pricing", who: "Paying users", pro: true },
     { name: "Explain a document", what: "Upload a notice, agreement or FIR and get it in plain words.", to: "/documents", who: "Pro users", ai: true, pro: true },
     { name: "Drafts", what: "First drafts of letters and notices, grounded in cited law.", to: "/drafts", who: "Pro users", ai: true, pro: true },
     { name: "Case alerts", what: "Weekly email when new judgments match a topic you follow.", to: "/account", who: "Pro users", pro: true },

@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { API_URL, apiFetch, responseError } from "../api";
 import { PRO_ON, WHATSAPP_URL } from "../config";
 
 const FREE = ["10 questions a day", "5 case comparisons a day", "5 argument briefs a day", "Follow-up questions", "Save answers to folders", "Share links"];
 const PRO = ["200 questions a day", "50 comparisons and 50 briefs a day", "Explain any notice, agreement, FIR or order, even from a photo", "Drafts: legal notice replies, RTI applications, consumer complaints", "Weekly email alerts on up to 5 topics", "Everything in Free"];
+
+function loadCashfree(mode) {
+  return new Promise((resolve, reject) => {
+    const ready = () => resolve(window.Cashfree({ mode }));
+    if (window.Cashfree) return ready();
+    const s = document.createElement("script");
+    s.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    s.onload = ready;
+    s.onerror = () => reject(new Error("Couldn't load the payment window."));
+    document.body.appendChild(s);
+  });
+}
 
 function loadCheckout() {
   return new Promise((resolve, reject) => {
@@ -32,11 +44,42 @@ function PricingFull() {
   const [me, setMe] = useState(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const returned = params.get("cf_order");
 
   useEffect(() => {
     if (!user) return;
     apiFetch(`${API_URL}/me`).then((r) => (r.ok ? r.json() : null)).then(setMe).catch(() => {});
   }, [user]);
+
+  // Back from Cashfree's own page (phones and in-app browsers go there instead of the popup)
+  useEffect(() => {
+    if (!user || !returned) return;
+    confirmCashfree(returned).finally(() => setParams({}, { replace: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, returned]);
+
+  async function confirmCashfree(orderId) {
+    setStatus("Confirming your payment…");
+    try {
+      const v = await apiFetch(`${API_URL}/billing/cashfree/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      if (!v.ok) throw await responseError(v);
+      const r = await v.json();
+      if (r.status !== "PAID") {
+        setStatus(r.status === "ACTIVE" ? "The payment didn't go through. You haven't been charged." : "That payment isn't complete. You haven't been charged.");
+        return;
+      }
+      const fresh = await apiFetch(`${API_URL}/me`).then((x) => x.json());
+      setMe(fresh);
+      setStatus("You're on Pro. Thank you.");
+    } catch (err) {
+      setStatus(err?.userMessage || "If you were charged, Pro will switch on within a few minutes. Refresh this page shortly.");
+    }
+  }
 
   const isPro = me?.plan === "pro";
   const until = me?.pro_until ? new Date(me.pro_until).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -49,6 +92,14 @@ function PricingFull() {
       const res = await apiFetch(`${API_URL}/billing/order`, { method: "POST" });
       if (!res.ok) throw await responseError(res);
       const order = await res.json();
+      if (order.provider === "cashfree") {
+        const cashfree = await loadCashfree(order.mode);
+        const result = await cashfree.checkout({ paymentSessionId: order.payment_session_id, redirectTarget: "_modal" });
+        if (result?.redirect) return; // Cashfree sends them back to /pricing?cf_order=…
+        // Paid, failed or closed the window: Cashfree's own record decides, never the popup
+        await confirmCashfree(order.order_id);
+        return;
+      }
       const Razorpay = await loadCheckout();
       const rzp = new Razorpay({
         key: order.key_id,
@@ -117,7 +168,7 @@ function PricingFull() {
               {busy ? "Opening…" : user ? "Get Pro" : "Sign in to get Pro"}
             </button>
           )}
-          <p className="plan-fine mono muted">One payment, no auto-renewal. UPI, cards and netbanking via Razorpay.</p>
+          <p className="plan-fine mono muted">One payment, no auto-renewal. UPI, cards and netbanking via Cashfree.</p>
         </section>
       </div>
       {status && <p className="plan-status" role="status">{status}</p>}
