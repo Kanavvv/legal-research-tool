@@ -11,7 +11,7 @@ import re
 import time
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 import features
@@ -71,7 +71,13 @@ def _google():
 def _graph(path, **params):
     r = requests.get(f"https://graph.facebook.com/v21.0/{path}", params=params,
                      headers={"Authorization": f"Bearer {WA_TOKEN}"}, timeout=10)
-    r.raise_for_status()
+    if not r.ok:
+        # Meta's own words ("API access blocked.", "Error validating access token...") beat "403 Client Error".
+        try:
+            msg = (r.json().get("error") or {}).get("message") or r.reason
+        except ValueError:
+            msg = r.reason
+        raise RuntimeError(f"Meta says: {msg}")
     return r.json()
 
 
@@ -491,10 +497,18 @@ def _check_claude():
     return "ok", "API key works"
 
 
+WA_BLOCKED_FIX = ("Meta has blocked Nyaya's access to WhatsApp, so the bot can't receive or send messages. "
+                  "Usually Meta wants the developer account confirmed: open developers.facebook.com/apps, press "
+                  "Confirm Account and enter the code sent by SMS to the Nyaya number. Access comes back a few "
+                  "minutes later. If it says the token expired instead, make a new system user token.")
+
+
 def _check_whatsapp():
     if not WA_ON:
         return "warn", "Not configured"
     p = _graph(WA_PHONE_ID, fields="quality_rating,messaging_limit_tier,status")
+    if str(p.get("status", "")).upper() not in ("CONNECTED", ""):
+        return "fail", f"Number status is {str(p.get('status')).lower()} (should be connected)"
     q = p.get("quality_rating", "UNKNOWN")
     status = "ok" if q in ("GREEN", "UNKNOWN") else "warn" if q == "YELLOW" else "fail"
     return status, f"Quality {q.lower()}, limit {p.get('messaging_limit_tier', '?')}, {str(p.get('status', '')).lower()}"
@@ -536,6 +550,81 @@ def _check_daily():
     return ("ok" if not code else "fail"), f"{job.get('state', '?').lower()}, last run {last[:16].replace('T', ' ')} UTC" + (f", failed (code {code})" if code else "")
 
 
+# ---------------- hourly WhatsApp watch ----------------
+# Cloud Scheduler calls this every hour. If Meta cuts the bot off, the admins get an email
+# (WhatsApp itself can't tell them), then one more when it's back. Repeats at most every 6 hours.
+
+WATCH_AUDIENCE = os.environ.get("WATCH_AUDIENCE", "https://api.asknyaya.in/whatsapp/watch")
+WATCH_REPEAT_HOURS = 6
+
+
+def _email_admins(subject, html):
+    key = os.environ.get("RESEND_API_KEY", "")
+    from extras import ADMIN_EMAILS
+    if not key or not ADMIN_EMAILS:
+        return False
+    sender = os.environ.get("ALERTS_FROM_ADDRESS", os.environ.get("DIGEST_FROM_ADDRESS", "Nyaya <digest@asknyaya.in>"))
+    try:
+        r = requests.post("https://api.resend.com/emails",
+                          headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                          json={"from": sender, "to": sorted(ADMIN_EMAILS), "subject": subject, "html": html}, timeout=10)
+        return r.ok
+    except requests.RequestException:
+        return False
+
+
+def _watch_step(status, detail, prev, now):
+    """Pure decision: returns (new_state, email or None). email = (subject, html)."""
+    down = status == "fail"
+    was_down = prev.get("state") == "down"
+    last = prev.get("alerted")
+    esc = lambda x: str(x or "").replace("&", "&amp;").replace("<", "&lt;")  # noqa: E731
+    if down:
+        due = not was_down or not last or (now - last).total_seconds() >= WATCH_REPEAT_HOURS * 3600
+        state = {"state": "down", "since": prev.get("since") if was_down else now, "detail": detail[:300],
+                 "alerted": now if due else last}
+        if not due:
+            return state, None
+        blocked = "blocked" in detail.lower() or "access token" in detail.lower()
+        body = (f"<p><strong>The Nyaya WhatsApp bot is not working.</strong> People who message it get no reply.</p>"
+                f"<p>{esc(WA_BLOCKED_FIX if blocked else 'The WhatsApp health check is failing.')}</p>"
+                f"<p style=\"color:#666\">Details: {esc(detail)}</p>"
+                '<p>Check it in the control room: <a href="https://asknyaya.in/admin#issues">asknyaya.in/admin</a>. '
+                "You'll get another email when it's working again.</p>")
+        return state, ("⚠️ Nyaya WhatsApp bot is down" + (" (still)" if was_down else ""), body)
+    if was_down:
+        mins = int((now - prev["since"]).total_seconds() // 60) if prev.get("since") else None
+        return {"state": "ok", "since": now}, (
+            "✅ Nyaya WhatsApp bot is working again",
+            f"<p>The WhatsApp bot is connected again{f' after about {mins // 60} h {mins % 60} min' if mins is not None else ''}. "
+            "Messages sent while it was down were not delivered, so nothing is waiting.</p>")
+    return {"state": "ok", "since": prev.get("since") or now}, None
+
+
+@router.post("/whatsapp/watch")
+def whatsapp_watch(req: Request):
+    """Called every hour by Cloud Scheduler with a Google-signed token."""
+    if not (WA_ON and DAILY_INVOKER):
+        raise HTTPException(status_code=404)
+    from google.auth.transport import requests as g_requests
+    from google.oauth2 import id_token
+    token = req.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    try:
+        claims = id_token.verify_oauth2_token(token, g_requests.Request(), audience=WATCH_AUDIENCE)
+    except Exception:
+        raise HTTPException(status_code=403)
+    if claims.get("email") != DAILY_INVOKER or not claims.get("email_verified"):
+        raise HTTPException(status_code=403)
+    c = _check("WhatsApp number", _check_whatsapp)
+    ref = _col("settings").document("wa_watch")
+    snap = ref.get()
+    state, email = _watch_step(c["status"], c["detail"], (snap.to_dict() or {}) if snap.exists else {}, _now())
+    ref.set(state)
+    sent = _email_admins(*email) if email else None
+    log_event("whatsapp_watch", status=c["status"], emailed=sent, severity="WARNING" if c["status"] == "fail" else "INFO")
+    return {"status": c["status"], "emailed": sent}
+
+
 @router.get("/admin/health")
 def health(claims=Depends(_admin)):
     from concurrent.futures import ThreadPoolExecutor
@@ -550,7 +639,11 @@ def health(claims=Depends(_admin)):
         issues.append({"severity": severity, "title": title, "detail": detail, "action": action, "tab": tab})
 
     for c in checks:
-        if c["status"] == "fail":
+        if c["status"] == "fail" and c["name"] == "WhatsApp number":
+            blocked = "blocked" in c["detail"].lower() or "access token" in c["detail"].lower()
+            issue("high", "WhatsApp bot is cut off" if blocked else "WhatsApp number is failing",
+                  (WA_BLOCKED_FIX + f" ({c['detail']})") if blocked else c["detail"], tab="whatsapp")
+        elif c["status"] == "fail":
             issue("high", f"{c['name']} is failing", c["detail"],
                   action="raise_budget" if c["name"] == "Daily spend" else "run_daily" if c["name"] == "Law of the day" else None,
                   tab="settings" if c["name"] == "Daily spend" else None)

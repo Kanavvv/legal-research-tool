@@ -62,6 +62,7 @@ const GROUPS = [
   ] },
   { name: "Behind the scenes", about: "Things visitors don't see that keep Nyaya safe and cheap.", items: [
     { name: "Daily spending cap", what: "AI answers stop for the day once spend reaches the cap; cached answers keep working. Change it in Settings.", who: "Automatic", admin: "settings" },
+    { name: "WhatsApp watch", what: "Checks the WhatsApp connection every hour and emails you if Meta cuts the bot off, then again when it's back.", who: "You only", admin: "issues", since: "New" },
     { name: "Answer cache", what: "The same question asked again is answered from memory, free.", who: "Automatic" },
     { name: "Rate limits", what: "Stops any one person or bot from flooding the site.", who: "Automatic" },
     { name: "Safety checks", what: "Emergency helplines shown first when a question mentions danger, violence or self-harm.", who: "Automatic" },
