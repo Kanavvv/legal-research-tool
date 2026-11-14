@@ -15,7 +15,8 @@ export default function TrendingAdmin() {
   const list = items ?? d?.featured ?? [];
   const dirty = items !== null;
 
-  function set(i, k, v) { setItems(list.map((x, j) => (j === i ? { ...x, [k]: v } : x))); }
+  // Editing an automatic pick keeps it: it becomes yours and the weekly job leaves it alone.
+  function set(i, k, v) { setItems(list.map((x, j) => (j === i ? { ...x, [k]: v, auto: false } : x))); }
   function add(item) {
     if (list.length >= 12) { setMsg("The page shows up to 12. Remove one first."); return; }
     setItems([...list, { ...BLANK, ...item }]); setMsg("");
@@ -43,12 +44,13 @@ export default function TrendingAdmin() {
               <h2>On the trending page now</h2>
               <a className="adm-link" href="/trending" target="_blank" rel="noreferrer">Open the page ↗</a>
             </div>
-            <p className="cr-muted">Write each one the way a visitor would read it. Leave out names, phone numbers and anything that could identify the person who asked. Paste a shared answer link (asknyaya.in/a/…) to show that exact answer; otherwise tapping it asks Nyaya fresh.</p>
+            <p className="cr-muted">Every Monday Nyaya picks 5 of last week's most-asked questions by itself, rewritten so nothing personal shows, and emails you the list (marked Auto). Ones you add or edit stay put. Write each one the way a visitor would read it. Leave out names, phone numbers and anything that could identify the person who asked. Paste a shared answer link (asknyaya.in/a/…) to show that exact answer; otherwise tapping it asks Nyaya fresh.</p>
             {list.length === 0 && <p className="cr-muted">Nothing featured yet. The page shows everyday questions by topic until you add some.</p>}
             <ol className="cr-trend-edit">
               {list.map((it, i) => (
                 <li key={i}>
                   <span className="cr-trend-n mono">{String(i + 1).padStart(2, "0")}</span>
+                  {it.auto && <span className="cr-muted" title="Picked by the weekly job. It's replaced next Monday unless you edit it.">Auto</span>}
                   <div className="cr-trend-fields">
                     <input className="adm-input" value={it.title} maxLength={140} placeholder="Headline, e.g. Can my landlord keep my deposit?" aria-label={`Headline ${i + 1}`} onChange={(e) => set(i, "title", e.target.value)} />
                     <div className="cr-trend-row">
